@@ -244,7 +244,7 @@ export default function SignInModal({ onClose }) {
                     type="submit"
                     disabled={isResolving}
                     aria-busy={isResolving}
-                    className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full disabled:cursor-not-allowed disabled:opacity-50"
+                    className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50"
                   >
                     <div
                       className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
@@ -271,7 +271,7 @@ export default function SignInModal({ onClose }) {
                       >
                         {isResolving ? (
                           <span
-                            className="size-4 rounded-full border-2 border-[#3A3869]/25 border-t-[#3A3869] animate-spin"
+                            className="size-4 rounded-full border-2 border-black/20 border-t-black animate-spin"
                             aria-hidden="true"
                           />
                         ) : (
