@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const banners = [
   {
@@ -81,28 +81,87 @@ const bets = [
 
 function BannerCarousel() {
   const [activeBanner, setActiveBanner] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartX = useRef(0);
+  const dragPointerId = useRef(null);
+  const carouselWidth = useRef(0);
 
   useEffect(() => {
+    if (isDragging) return undefined;
     const timer = window.setInterval(
       () => setActiveBanner((current) => (current + 1) % banners.length),
       6000,
     );
     return () => window.clearInterval(timer);
-  }, []);
+  }, [isDragging]);
+
+  const startDragging = (event) => {
+    if (!event.isPrimary || event.button !== 0) return;
+    dragPointerId.current = event.pointerId;
+    dragStartX.current = event.clientX;
+    carouselWidth.current = event.currentTarget.getBoundingClientRect().width;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragOffset(0);
+    setIsDragging(true);
+  };
+
+  const dragBanner = (event) => {
+    if (!isDragging || event.pointerId !== dragPointerId.current) return;
+    setDragOffset(event.clientX - dragStartX.current);
+  };
+
+  const finishDragging = (event, cancelled = false) => {
+    if (!isDragging || event.pointerId !== dragPointerId.current) return;
+
+    const offset = event.clientX - dragStartX.current;
+    const threshold = Math.min(100, carouselWidth.current * 0.12);
+    if (!cancelled && Math.abs(offset) >= threshold) {
+      setActiveBanner((current) =>
+        offset < 0
+          ? (current + 1) % banners.length
+          : (current - 1 + banners.length) % banners.length,
+      );
+    }
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    dragPointerId.current = null;
+    setDragOffset(0);
+    setIsDragging(false);
+  };
 
   return (
     <div className="flex flex-col relative">
       <div className="rounded-xl md:rounded-2xl lg:rounded-3xl overflow-hidden relative bg-[#253665]">
         <section
-          className="carousel is-ltr is-effect-slide"
           dir="ltr"
           aria-label="Gallery"
           tabIndex={0}
+          className={`carousel is-ltr is-effect-slide ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+          style={{ touchAction: "pan-y" }}
+          onPointerDown={startDragging}
+          onPointerMove={dragBanner}
+          onPointerUp={(event) => finishDragging(event)}
+          onPointerCancel={(event) => finishDragging(event, true)}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowLeft") {
+              setActiveBanner(
+                (current) => (current - 1 + banners.length) % banners.length,
+              );
+            }
+            if (event.key === "ArrowRight") {
+              setActiveBanner((current) => (current + 1) % banners.length);
+            }
+          }}
         >
           <div className="overflow-hidden">
             <ol
-              className="flex transition-transform duration-500 ease-out"
-              style={{ transform: `translateX(-${activeBanner * 100}%)` }}
+              className={`flex ease-out ${isDragging ? "" : "transition-transform duration-500"}`}
+              style={{
+                transform: `translateX(calc(-${activeBanner * 100}% + ${dragOffset}px))`,
+              }}
             >
               {banners.map((banner) => (
                 <li
@@ -134,7 +193,9 @@ function BannerCarousel() {
               type="button"
               aria-label={`Show banner ${index + 1}`}
               data-active={activeBanner === index}
-              className={`rounded-full h-[5px] transition-[width,background] duration-200 origin-center ${activeBanner === index ? "bg-white w-10 shadow-[0_0_35px_5px_rgba(243,178,57,0.35)]" : "w-3 bg-white/20"}`}
+              data-banner-pagination=""
+              id={`banner-${index}`}
+              className={`rounded-full h-[5px] transition-[width,background] duration-200 origin-center ${activeBanner === index ? "bg-white w-10 shadow-[0_0_35px_5px_rgba(243,178,57,0.35)] delay-300" : "w-3 bg-white/20"}`}
               onClick={() => setActiveBanner(index)}
             />
           ))}
