@@ -9,7 +9,7 @@ export default function GamesDropdown({ style, selectedGame, onSelect }) {
       <div
         data-dismissable-layer=""
         tabIndex={-1}
-        className="shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 bg-[#263457] flex flex-col gap-1.5 rounded-lg p-2 z-100 min-w-(--reka-popover-trigger-width)"
+        className="shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 bg-[#263457] flex w-40 min-w-40 flex-col gap-1.5 rounded-lg p-2 z-100"
         id="reka-popover-content-v-0-9"
         data-state="open"
         aria-labelledby="reka-popover-trigger-v-0-0"
@@ -25,6 +25,8 @@ export default function GamesDropdown({ style, selectedGame, onSelect }) {
             "var(--reka-popper-available-height)",
           "--reka-popover-trigger-width": "var(--reka-popper-anchor-width)",
           "--reka-popover-trigger-height": "var(--reka-popper-anchor-height)",
+          scale: "var(--games-dropdown-scale, 1)",
+          transformOrigin: "top left",
         }}
       >
         <a

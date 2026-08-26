@@ -1,6 +1,6 @@
 export default function Subheader() {
   return (
-    <div className="fixed z-100 top-[75px] left-0 right-0 bg-linear-to-r from-[#131C2F] to-[#141E4C] pr-6 gap-4.5 lg:gap-5 items-center font-semibold hidden md:flex h-10 pl-[calc(var(--layout-left,0px)+24px)] ease-in-out transition-[padding-left] duration-200">
+    <div className="fixed z-100 top-20 left-0 right-0 bg-linear-to-r from-[#131C2F] to-[#141E4C] pr-6 gap-4.5 lg:gap-5 items-center font-semibold hidden md:flex h-10 pl-[calc(var(--layout-left,0px)+24px)] ease-in-out transition-[padding-left] duration-200">
       <a
         href="/affiliates"
         className="text-[#8894AF] hover:text-[#a2adc7] transition-colors flex items-center gap-1.5"
