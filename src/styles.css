@@ -66,3 +66,13 @@ a {
   pointer-events: none;
   user-select: none;
 }
+
+.chat-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chat-scrollbar::-webkit-scrollbar {
+  display: none;
+}
