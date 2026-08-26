@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function SignInModal({ onClose }) {
   const [agreed, setAgreed] = useState(false);
+  const [username, setUsername] = useState("");
+  const [hasResolvedUser, setHasResolvedUser] = useState(false);
   const [dialogState, setDialogState] = useState("open");
   const isClosingRef = useRef(false);
   const closeTimerRef = useRef(null);
@@ -66,7 +68,12 @@ export default function SignInModal({ onClose }) {
               <div className="bg-[#FFC055]/80 absolute -bottom-4.5 sm:-bottom-6 left-1/2 -translate-x-1/2 w-6/12 h-10 rounded-full blur-[84px] pointer-events-none" />
               <form
                 className="flex flex-col gap-5.5 relative flex-1"
-                onSubmit={(event) => event.preventDefault()}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!hasResolvedUser && username.trim() && agreed) {
+                    setHasResolvedUser(true);
+                  }
+                }}
               >
                 <div className="flex flex-col gap-2">
                   <h2
@@ -86,7 +93,7 @@ export default function SignInModal({ onClose }) {
                 <div className="w-full h-0.5 bg-[#445696]/35 rounded-full" />
                 <div>
                   <label
-                    htmlFor="v-7-0"
+                    htmlFor="v-1-0"
                     className="mb-1.75 block w-fit text-sm font-medium text-accent uppercase"
                   >
                     ROBLOX USERNAME
@@ -104,19 +111,43 @@ export default function SignInModal({ onClose }) {
                       />
                     </svg>
                     <input
-                      id="v-7-0"
+                      id="v-1-0"
                       name="username"
                       placeholder="Enter your roblox username..."
                       className="bg-transparent outline-none size-full font-medium peer text-[15px] placeholder:text-accent px-2"
+                      value={username}
+                      onChange={(event) => {
+                        setUsername(event.target.value);
+                        if (hasResolvedUser) setHasResolvedUser(false);
+                      }}
                       autoFocus
                     />
                   </div>
                 </div>
-                <div className="w-full">
+                {hasResolvedUser ? (
+                  <div className="bg-[#283564]/85 rounded-lg p-3 gap-3 flex items-center mt-2">
+                    <div className="size-16 rounded-lg overflow-hidden bg-[#1D284E] flex justify-center items-end">
+                      <img
+                        src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-7E27815C7C5F72DA623094CFB3768D15-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                        alt={`${username.trim()} Roblox avatar`}
+                        className="w-13 h-16 object-contain object-bottom"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="text-white font-medium text-[15px]">
+                        {username.trim()}
+                      </p>
+                      <p className="text-accent font-medium text-sm">
+                        @{username.trim()}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+                <div className={`w-full ${hasResolvedUser ? "hidden" : ""}`}>
                   <div className="flex items-center gap-2">
                     <button
                       className="cursor-pointer peer shrink-0 rounded-md ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-[#0F1222]/55 data-[state=checked]:bg-[#F2BE66] size-5 data-[state=checked]:text-[#1D284E]"
-                      id="v-19-1"
+                      id="v-1-1"
                       role="checkbox"
                       type="button"
                       aria-checked={agreed}
@@ -147,7 +178,7 @@ export default function SignInModal({ onClose }) {
                       ) : null}
                     </button>
                     <label
-                      htmlFor="v-19-1"
+                      htmlFor="v-1-1"
                       className="text-sm font-semibold cursor-pointer text-accent"
                     >
                       I agree to all{" "}
@@ -193,6 +224,38 @@ export default function SignInModal({ onClose }) {
                       </div>
                     </div>
                   </button>
+                  {hasResolvedUser ? (
+                    <button
+                      type="button"
+                      className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full"
+                      onClick={() => setHasResolvedUser(false)}
+                    >
+                      <div
+                        className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                        style={{
+                          top: "var(--sb-shadow-size,3px)",
+                          backgroundColor: "rgb(34, 51, 100)",
+                        }}
+                      />
+                      <div
+                        className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0"
+                        style={{
+                          height: "calc(100% - var(--sb-shadow-size,3px))",
+                          backgroundColor: "rgb(87, 104, 154)",
+                          color: "rgb(255, 255, 255)",
+                        }}
+                      >
+                        <div
+                          className="transition-opacity flex items-center justify-center size-full"
+                          style={{
+                            filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                          }}
+                        >
+                          <span>Go Back</span>
+                        </div>
+                      </div>
+                    </button>
+                  ) : null}
                 </div>
               </form>
             </div>
