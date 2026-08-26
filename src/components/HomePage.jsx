@@ -3,17 +3,17 @@ import { useEffect, useState } from "react";
 const banners = [
   {
     desktop: "/banner-release.webp",
-    mobile: "/banner-mobile-release.webp",
+    mobile: "/banner-release.webp",
     alt: "Banner",
   },
   {
     desktop: "/banner-discord.webp",
-    mobile: "/banner-mobile-discord.webp",
+    mobile: "/banner-discord.webp",
     alt: "Discord Banner",
   },
   {
     desktop: "/banner-leaderboards.webp",
-    mobile: "/banner-mobile-leaderboards.webp",
+    mobile: "/banner-leaderboards.webp",
     alt: "Leaderboards Banner",
   },
 ];
@@ -158,13 +158,13 @@ function GameCard({ game }) {
       <div className="flex items-center relative">
         <div className="flex-1 pb-[100%]" />
         <img
-          src={`/games/${game.slug}.webp`}
+          src={`/${game.slug}.webp`}
           alt="Game"
           className="game-image"
         />
       </div>
       <img
-        src={`/games/${game.slug}.webp`}
+        src={`/${game.slug}.webp`}
         alt=""
         className={`game-image-overlay -translate-1/2 ${game.overlay}`}
       />
