@@ -139,7 +139,7 @@ function BannerCarousel() {
           dir="ltr"
           aria-label="Gallery"
           tabIndex={0}
-          className={`carousel is-ltr is-effect-slide ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+          className="carousel is-ltr is-effect-slide cursor-default"
           style={{ touchAction: "pan-y" }}
           onPointerDown={startDragging}
           onPointerMove={dragBanner}
