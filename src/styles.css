@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans: Rubik, Arial, Helvetica, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --color-primary: #f3b239;
+  --color-surface-hover: #aeaeae;
+  --color-accent: #a7bff5;
+  --color-accent-foreground: #0d1b24;
+  --color-accent-light: #d9e5ff;
+  --color-muted: #6b7280;
+  --color-muted-foreground: #9ca3af;
+  --color-border: #374151;
+  --color-ring: #1475e1;
+  --color-success: #5bffa8;
+  --color-warning: #ffa553;
+  --color-error: #fc5c5b;
+  --color-info: #3b82f6;
+  --layout-top: 120px;
+  --layout-left: 320px;
+  --layout-right: 0px;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-synthesis: none;
+  line-height: 1.5;
+  tab-size: 4;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border: 0 solid;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #0d1429;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+.no-interaction {
+  pointer-events: none;
+  user-select: none;
+}
