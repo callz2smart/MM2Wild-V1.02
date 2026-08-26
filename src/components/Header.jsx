@@ -275,7 +275,7 @@ export default function Header() {
                       >
                         {/**/}
                         <div className="transition-opacity flex items-center justify-center size-full">
-                          <RewardsIcon className="size-5 shrink-0 xl:mr-2" />
+                          <RewardsIcon className="size-4.5 shrink-0 xl:mr-1.75" />
                           <span className="hidden xl:block">REWARDS</span>
                         </div>
                       </div>
