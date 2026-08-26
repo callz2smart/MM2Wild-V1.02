@@ -37,7 +37,14 @@ export default function SignInModal({ onClose }) {
 
   const resolveRobloxUser = async (event) => {
     event.preventDefault();
-    if (hasResolvedUser || isResolving || !username.trim() || !agreed) return;
+    if (hasResolvedUser || isResolving) return;
+
+    if (username.trim().length < 3) {
+      setLookupError("Minimum 3 characters.");
+      return;
+    }
+
+    if (!agreed) return;
 
     setLookupError("");
     setIsResolving(true);
@@ -124,7 +131,11 @@ export default function SignInModal({ onClose }) {
                     ROBLOX USERNAME
                   </label>
                   <div className="w-full relative flex group rounded-lg items-center justify-center bg-[#0F1222]/55 h-11.5 px-2.25">
-                    <div className="absolute inset-0.25 ring-2 ring-transparent rounded-lg transition-shadow pointer-events-none" />
+                    <div
+                      className={`absolute inset-0.25 ring-2 rounded-lg transition-shadow pointer-events-none ${
+                        lookupError ? "ring-error/50" : "ring-transparent"
+                      }`}
+                    />
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 24 24"
@@ -153,7 +164,7 @@ export default function SignInModal({ onClose }) {
                     />
                   </div>
                   {lookupError ? (
-                    <p className="mt-1.75 text-sm font-medium text-[#FC5C5B]">
+                    <p className="font-medium transition-colors duration-150 mt-1 text-[13px] text-error">
                       {lookupError}
                     </p>
                   ) : null}
