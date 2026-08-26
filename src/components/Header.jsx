@@ -221,18 +221,18 @@ export default function Header() {
                     aria-expanded={isGamesOpen}
                     aria-controls="reka-popover-content-v-0-9"
                     data-state={isGamesOpen ? "open" : "closed"}
-                    className="h-10 relative group/button"
+                    className="h-[38px] relative group/button"
                   >
                     <div className="absolute top-1/2 left-0 right-0 bottom-0 bg-[#D38502] rounded-lg" />
                     <button
                       type="button"
-                      className="min-w-36 h-[calc(100%-3px)] bg-[#E5AD4E] group-hover/button:-translate-y-0.5 group-data-[state=open]/button:translate-y-0 transition-transform duration-125 text-[#3A3869] [&>*]:drop-shadow-[0_2px_0_#D38502] rounded-lg px-3.5 flex items-center outline-none cursor-pointer group relative"
+                      className="min-w-35 h-[calc(100%-3px)] bg-[#E5AD4E] group-hover/button:-translate-y-0.5 group-data-[state=open]/button:translate-y-0 transition-transform duration-125 text-[#3A3869] text-[13px] [&>*]:drop-shadow-[0_2px_0_#D38502] rounded-lg px-3.25 flex items-center outline-none cursor-pointer group relative"
                       onClick={() => setIsGamesOpen((open) => !open)}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 14 14"
-                        className="size-5.25 mr-2"
+                        className="size-5 mr-1.75"
                       >
                         <path
                           fill="currentColor"
@@ -245,7 +245,7 @@ export default function Header() {
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
-                        className="size-4.5 transition-transform -rotate-180 group-data-[state=open]/button:rotate-0 ml-auto"
+                        className="size-4 transition-transform -rotate-180 group-data-[state=open]/button:rotate-0 ml-auto"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={3}
@@ -261,21 +261,21 @@ export default function Header() {
                   <div className="relative group">
                     <a
                       href="/rewards"
-                      className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10 xl:w-[120px]"
+                      className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-[38px] xl:w-[116px]"
                     >
                       <div
                         className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none bg-[#FFC055]"
                         style={{ top: "var(--sb-shadow-size,3px)" }}
                       />
                       <div
-                        className="rounded-lg size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 bg-[linear-gradient(94deg,#FFD896_34%,#FFFFFF_50%,#FFD896_67%)] text-[#40324C] [&>*]:drop-shadow-[0_2px_0_#FFC055] font-bold px-3.25"
+                        className="rounded-lg size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 bg-[linear-gradient(94deg,#FFD896_34%,#FFFFFF_50%,#FFD896_67%)] text-[#40324C] text-[13px] [&>*]:drop-shadow-[0_2px_0_#FFC055] font-bold px-3"
                         style={{
                           height: "calc(100% - var(--sb-shadow-size,3px))",
                         }}
                       >
                         {/**/}
                         <div className="transition-opacity flex items-center justify-center size-full">
-                          <RewardsIcon className="size-4.5 shrink-0 xl:mr-1.75" />
+                          <RewardsIcon className="relative left-0.5 -top-0.25 size-4.5 shrink-0 xl:mr-1.75" />
                           <span className="hidden xl:block">REWARDS</span>
                         </div>
                       </div>
@@ -284,7 +284,7 @@ export default function Header() {
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 128 37"
-                      className="absolute top-0 -left-0.25 w-11.5 xl:w-[120px] h-10 pointer-events-none"
+                      className="absolute top-0 -left-0.25 w-11 xl:w-[116px] h-[38px] pointer-events-none"
                     >
                       <path fill="url(#i856738536__a)" d="M3 7h1v7H3z" />
                       <path
@@ -486,7 +486,7 @@ export default function Header() {
                 </div>
                 <button
                   type="button"
-                  className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10"
+                  className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-[38px] text-[13px]"
                   onClick={() => setIsSignInOpen(true)}
                 >
                   <div
@@ -497,7 +497,7 @@ export default function Header() {
                     }}
                   />
                   <div
-                    className="rounded-lg size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 font-bold px-3.25"
+                    className="rounded-lg size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 font-bold px-3"
                     style={{
                       height: "calc(100% - var(--sb-shadow-size,3px))",
                       backgroundColor: "rgb(243, 178, 57)",
@@ -516,7 +516,7 @@ export default function Header() {
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
-                        className="size-5 ml-1.5"
+                        className="size-4.5 ml-1.25"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="2.5"
