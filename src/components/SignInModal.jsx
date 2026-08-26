@@ -116,7 +116,7 @@ export default function SignInModal({ onClose }) {
                   <div className="flex items-center gap-2">
                     <button
                       className="cursor-pointer peer shrink-0 rounded-md ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-[#0F1222]/55 data-[state=checked]:bg-[#F2BE66] size-5 data-[state=checked]:text-[#1D284E]"
-                      id="v-7-1"
+                      id="v-19-1"
                       role="checkbox"
                       type="button"
                       aria-checked={agreed}
@@ -125,10 +125,29 @@ export default function SignInModal({ onClose }) {
                       aria-label=" I agree to all Terms & Conditions and I'm over 18 years of age. "
                       onClick={() => setAgreed((checked) => !checked)}
                     >
-                      {agreed ? "✓" : null}
+                      {agreed ? (
+                        <span
+                          data-state="checked"
+                          className="flex h-full w-full items-center justify-center text-current"
+                          style={{ pointerEvents: "none" }}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            className="size-[60%]"
+                            strokeWidth="4.5"
+                          >
+                            <path
+                              fill="none"
+                              stroke="currentColor"
+                              d="M20 6 9 17l-5-5"
+                            />
+                          </svg>
+                        </span>
+                      ) : null}
                     </button>
                     <label
-                      htmlFor="v-7-1"
+                      htmlFor="v-19-1"
                       className="text-sm font-semibold cursor-pointer text-accent"
                     >
                       I agree to all{" "}
