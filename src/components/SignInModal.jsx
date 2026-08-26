@@ -232,7 +232,8 @@ export default function SignInModal({ onClose }) {
                   <button
                     type="submit"
                     disabled={isResolving}
-                    className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full"
+                    aria-busy={isResolving}
+                    className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <div
                       className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
@@ -252,10 +253,19 @@ export default function SignInModal({ onClose }) {
                       <div
                         className="transition-opacity flex items-center justify-center size-full"
                         style={{
-                          filter: "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)",
+                          filter: isResolving
+                            ? "none"
+                            : "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)",
                         }}
                       >
-                        <span>{isResolving ? "Loading..." : "Continue"}</span>
+                        {isResolving ? (
+                          <span
+                            className="size-4 rounded-full border-2 border-[#3A3869]/25 border-t-[#3A3869] animate-spin"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <span>Continue</span>
+                        )}
                       </div>
                     </div>
                   </button>
