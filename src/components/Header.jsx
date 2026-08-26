@@ -78,7 +78,7 @@ export default function Header() {
   return (
     <>
       <div className="flex fixed top-0 left-0 right-0 z-100">
-        <div className="pl-3 md:pl-6 h-20 shrink-0 bg-[#152340] relative flex items-center justify-center overflow-hidden">
+        <div className="pl-3 md:pl-[22px] h-20 lg:h-[75px] shrink-0 bg-[#152340] relative flex items-center justify-center overflow-hidden">
           <a
             href="/"
             className="router-link-active router-link-exact-active block"
@@ -115,7 +115,7 @@ export default function Header() {
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 983 185"
-              className="w-[194px] h-[36px] max-lg:invisible max-lg:absolute"
+              className="w-[174px] h-[33px] max-lg:invisible max-lg:absolute"
             >
               <path
                 fill="url(#i-1853660109__a)"
@@ -208,7 +208,7 @@ export default function Header() {
         <div className="md:hidden absolute -top-5 -left-9 size-7 bg-[#FFD896] rounded-full blur-[26px]" />
         <div className="flex flex-col flex-1">
           <div className="flex flex-col relative">
-            <div className="bg-linear-to-r from-[#152340] to-[#212A53] h-20 flex items-center px-3 md:px-6 relative">
+            <div className="bg-linear-to-r from-[#152340] to-[#212A53] h-20 lg:h-[75px] flex items-center px-3 md:px-[22px] relative">
               <div className="flex items-center justify-between flex-1">
                 <div className="md:hidden" />
                 <div className="items-center gap-3 hidden md:flex">
@@ -220,12 +220,12 @@ export default function Header() {
                     aria-expanded={isGamesOpen}
                     aria-controls="reka-popover-content-v-0-9"
                     data-state={isGamesOpen ? "open" : "closed"}
-                    className="h-11 relative group/button"
+                    className="h-10 relative group/button"
                   >
                     <div className="absolute top-1/2 left-0 right-0 bottom-0 bg-[#D38502] rounded-lg" />
                     <button
                       type="button"
-                      className="min-w-40 h-[calc(100%-3px)] bg-[#E5AD4E] group-hover/button:-translate-y-0.5 group-data-[state=open]/button:translate-y-0 transition-transform duration-125 text-[#3A3869] [&>*]:drop-shadow-[0_2px_0_#D38502] rounded-lg px-4 flex items-center outline-none cursor-pointer group relative"
+                      className="min-w-36 h-[calc(100%-3px)] bg-[#E5AD4E] group-hover/button:-translate-y-0.5 group-data-[state=open]/button:translate-y-0 transition-transform duration-125 text-[#3A3869] [&>*]:drop-shadow-[0_2px_0_#D38502] rounded-lg px-3.5 flex items-center outline-none cursor-pointer group relative"
                       onClick={() => setIsGamesOpen((open) => !open)}
                     >
                       <svg
@@ -260,7 +260,7 @@ export default function Header() {
                   <div className="relative group">
                     <a
                       href="/rewards"
-                      className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-11"
+                      className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10 xl:w-[120px]"
                     >
                       <div
                         className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none bg-[#FFC055]"
@@ -292,7 +292,7 @@ export default function Header() {
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 128 37"
-                      className="absolute top-0 -left-0.25 w-11.5 xl:w-33.5 h-11 pointer-events-none"
+                      className="absolute top-0 -left-0.25 w-11.5 xl:w-[120px] h-10 pointer-events-none"
                     >
                       <path fill="url(#i856738536__a)" d="M3 7h1v7H3z" />
                       <path
@@ -494,7 +494,7 @@ export default function Header() {
                 </div>
                 <button
                   type="button"
-                  className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5"
+                  className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10"
                   onClick={() => setIsSignInOpen(true)}
                 >
                   <div

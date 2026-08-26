@@ -20,7 +20,7 @@ export default function SignInModal({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[9998] bg-[#070A14]/75 backdrop-blur-sm"
+      className="fixed inset-0 z-[9998] bg-[#0C1535]/80"
       onPointerDown={onClose}
     >
       <div
