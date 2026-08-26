@@ -1,28 +1,41 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function SignInModal({ onClose }) {
   const [agreed, setAgreed] = useState(false);
+  const [dialogState, setDialogState] = useState("open");
+  const isClosingRef = useRef(false);
+  const closeTimerRef = useRef(null);
+
+  const requestClose = useCallback(() => {
+    if (isClosingRef.current) return;
+
+    isClosingRef.current = true;
+    setDialogState("closed");
+    closeTimerRef.current = window.setTimeout(onClose, 200);
+  }, [onClose]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     const closeOnEscape = (event) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") requestClose();
     };
 
     document.addEventListener("keydown", closeOnEscape);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
+      window.clearTimeout(closeTimerRef.current);
     };
-  }, [onClose]);
+  }, [requestClose]);
 
   return (
     <div
-      className="fixed inset-0 z-[9998] bg-[#0C1535]/80"
+      className="fixed inset-0 z-[9998] bg-[#0C1535]/80 transition-opacity duration-200 data-[state=closed]:opacity-0"
+      data-state={dialogState}
       onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (event.target === event.currentTarget) requestClose();
       }}
     >
       <div
@@ -35,7 +48,7 @@ export default function SignInModal({ onClose }) {
         aria-modal="true"
         aria-describedby="reka-dialog-description-v-13"
         aria-labelledby="reka-dialog-title-v-12"
-        data-state="open"
+        data-state={dialogState}
         style={{
           maxWidth: "min(100dvw - 24px, 780px)",
           maxHeight: "calc(100% - 24px)",

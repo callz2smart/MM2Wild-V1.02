@@ -261,7 +261,7 @@ export default function Header() {
                   <div className="relative group">
                     <a
                       href="/rewards"
-                      className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10 xl:w-[120px]"
+                      className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-11"
                     >
                       <div
                         className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none bg-[#FFC055]"
@@ -275,7 +275,7 @@ export default function Header() {
                       >
                         {/**/}
                         <div className="transition-opacity flex items-center justify-center size-full">
-                          <RewardsIcon className="size-5 shrink-0 xl:mr-2" />
+                          <RewardsIcon className="size-5 xl:mr-2" />
                           <span className="hidden xl:block">REWARDS</span>
                         </div>
                       </div>
@@ -284,7 +284,7 @@ export default function Header() {
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 128 37"
-                      className="absolute top-0 -left-0.25 w-11.5 xl:w-[120px] h-10 pointer-events-none"
+                      className="absolute top-0 -left-0.25 w-11.5 xl:w-33.5 h-11 pointer-events-none"
                     >
                       <path fill="url(#i856738536__a)" d="M3 7h1v7H3z" />
                       <path
