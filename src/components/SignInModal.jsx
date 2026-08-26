@@ -1,7 +1,116 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const verificationPhrase =
-  "horse, wise able, stag, owl dolphin loom, cottage, tree duck, blossom, winter, heron harp, drum spring, vault, mountain, vibrant";
+const verificationWords = [
+  "acorn",
+  "amber",
+  "anchor",
+  "apple",
+  "autumn",
+  "bamboo",
+  "beacon",
+  "berry",
+  "birch",
+  "blossom",
+  "breeze",
+  "brook",
+  "candle",
+  "canyon",
+  "cedar",
+  "cherry",
+  "cloud",
+  "clover",
+  "coral",
+  "cottage",
+  "creek",
+  "crystal",
+  "daisy",
+  "dawn",
+  "dolphin",
+  "dove",
+  "dream",
+  "drum",
+  "duck",
+  "eagle",
+  "elm",
+  "feather",
+  "fern",
+  "field",
+  "finch",
+  "flame",
+  "forest",
+  "garden",
+  "glow",
+  "grape",
+  "grove",
+  "harbor",
+  "harp",
+  "hazel",
+  "heron",
+  "hill",
+  "honey",
+  "horse",
+  "island",
+  "ivy",
+  "jade",
+  "lake",
+  "lantern",
+  "leaf",
+  "lemon",
+  "lily",
+  "loom",
+  "maple",
+  "meadow",
+  "melon",
+  "mint",
+  "moon",
+  "mountain",
+  "oak",
+  "ocean",
+  "olive",
+  "orchid",
+  "owl",
+  "pearl",
+  "pebble",
+  "pine",
+  "pond",
+  "rainbow",
+  "reed",
+  "river",
+  "robin",
+  "rose",
+  "sage",
+  "shell",
+  "sky",
+  "snow",
+  "sparrow",
+  "spring",
+  "stag",
+  "star",
+  "stone",
+  "stream",
+  "summer",
+  "sun",
+  "swan",
+  "tree",
+  "tulip",
+  "valley",
+  "violet",
+  "wave",
+  "willow",
+  "winter",
+  "wise",
+];
+
+function createVerificationPhrase() {
+  const words = [...verificationWords];
+
+  for (let index = words.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [words[index], words[randomIndex]] = [words[randomIndex], words[index]];
+  }
+
+  return words.slice(0, 50).join(", ");
+}
 
 function CopyIcon({ className }) {
   return (
@@ -22,8 +131,8 @@ function CopyIcon({ className }) {
   );
 }
 
-function VerificationPhrase({ user }) {
-  const copyPhrase = () => navigator.clipboard.writeText(verificationPhrase);
+function VerificationPhrase({ phrase, user }) {
+  const copyPhrase = () => navigator.clipboard.writeText(phrase);
 
   return (
     <div className="flex flex-col gap-5.5 h-full">
@@ -42,7 +151,7 @@ function VerificationPhrase({ user }) {
         </span>
       </p>
       <div className="bg-[#283564] rounded-lg p-3 gap-3 justify-between flex items-center">
-        <p className="text-accent font-medium text-sm">{verificationPhrase}</p>
+        <p className="text-accent font-medium text-sm">{phrase}</p>
         <button
           type="button"
           className="relative cursor-pointer outline-none flex select-none text-accent hover:bg-accent/10 hover:text-accent-light rounded-full size-8 shrink-0 transition-colors"
@@ -124,6 +233,7 @@ export default function SignInModal({ onClose }) {
   const [isResolving, setIsResolving] = useState(false);
   const [isContinuing, setIsContinuing] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
+  const [verificationPhrase, setVerificationPhrase] = useState("");
   const [dialogState, setDialogState] = useState("open");
   const isClosingRef = useRef(false);
   const closeTimerRef = useRef(null);
@@ -160,6 +270,7 @@ export default function SignInModal({ onClose }) {
       setIsContinuing(true);
       await new Promise((resolve) => window.setTimeout(resolve, 650));
       setIsContinuing(false);
+      setVerificationPhrase(createVerificationPhrase());
       setShowVerification(true);
       return;
     }
@@ -206,7 +317,7 @@ export default function SignInModal({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[9998] bg-[#0C1535]/80 transition-opacity duration-200 data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0"
+      className="fixed inset-0 z-[9998] bg-[#0C1535]/65 transition-opacity duration-200 data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0"
       data-state={dialogState}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) requestClose();
@@ -239,7 +350,10 @@ export default function SignInModal({ onClose }) {
             <div className="flex flex-col gap-5.5 relative shrink p-6">
               <div className="bg-[#FFC055]/80 absolute -bottom-4.5 sm:-bottom-6 left-1/2 -translate-x-1/2 w-6/12 h-10 rounded-full blur-[84px] pointer-events-none" />
               {showVerification && resolvedUser ? (
-                <VerificationPhrase user={resolvedUser} />
+                <VerificationPhrase
+                  phrase={verificationPhrase}
+                  user={resolvedUser}
+                />
               ) : (
                 <form
                   className="flex flex-col gap-5.5 relative flex-1"
