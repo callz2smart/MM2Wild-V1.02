@@ -542,7 +542,10 @@ export default function Header() {
           <GamesDropdown
             style={dropdownStyle}
             selectedGame={selectedGame}
-            onSelect={setSelectedGame}
+            onSelect={(game) => {
+              setSelectedGame(game);
+              setIsGamesOpen(false);
+            }}
           />,
           document.body,
         )}
