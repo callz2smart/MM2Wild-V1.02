@@ -92,6 +92,46 @@ a {
   user-select: none;
 }
 
+.ring-loader {
+  color: #3a3869;
+  transform-origin: center;
+  animation: ring-loader-rotate var(--uib-speed, 1.5s) linear infinite;
+}
+
+.ring-loader .track {
+  stroke: currentColor;
+  opacity: 0.2;
+}
+
+.ring-loader .car {
+  stroke: currentColor;
+  stroke-linecap: round;
+  animation: ring-loader-dash var(--uib-speed, 1.5s) ease-in-out infinite;
+}
+
+@keyframes ring-loader-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ring-loader-dash {
+  0% {
+    stroke-dasharray: 1 100;
+    stroke-dashoffset: 0;
+  }
+
+  50% {
+    stroke-dasharray: 75 100;
+    stroke-dashoffset: -25;
+  }
+
+  100% {
+    stroke-dasharray: 75 100;
+    stroke-dashoffset: -99;
+  }
+}
+
 .chat-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;

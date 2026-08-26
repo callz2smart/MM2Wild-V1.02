@@ -7,6 +7,7 @@ export default function SignInModal({ onClose }) {
   const [resolvedUser, setResolvedUser] = useState(null);
   const [lookupError, setLookupError] = useState("");
   const [isResolving, setIsResolving] = useState(false);
+  const [isContinuing, setIsContinuing] = useState(false);
   const [dialogState, setDialogState] = useState("open");
   const isClosingRef = useRef(false);
   const closeTimerRef = useRef(null);
@@ -37,7 +38,14 @@ export default function SignInModal({ onClose }) {
 
   const resolveRobloxUser = async (event) => {
     event.preventDefault();
-    if (hasResolvedUser || isResolving) return;
+    if (isResolving || isContinuing) return;
+
+    if (hasResolvedUser) {
+      setIsContinuing(true);
+      await new Promise((resolve) => window.setTimeout(resolve, 650));
+      setIsContinuing(false);
+      return;
+    }
 
     if (username.trim().length < 3) {
       setLookupError("Minimum 3 characters.");
@@ -249,12 +257,22 @@ export default function SignInModal({ onClose }) {
                     </label>
                   </div>
                 </div>
-                <div className="flex gap-3 mt-auto">
+                <div
+                  className={`flex gap-3 mt-auto ${
+                    isResolving || isContinuing
+                      ? "opacity-40 pointer-events-none"
+                      : ""
+                  }`}
+                >
                   <button
                     type="submit"
-                    disabled={isResolving}
-                    aria-busy={isResolving}
-                    className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50"
+                    disabled={isResolving || isContinuing}
+                    aria-busy={isResolving || isContinuing}
+                    className={`relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full ${
+                      isResolving || isContinuing
+                        ? "opacity-40 pointer-events-none"
+                        : ""
+                    }`}
                   >
                     <div
                       className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
@@ -271,26 +289,43 @@ export default function SignInModal({ onClose }) {
                         color: "rgb(58, 56, 105)",
                       }}
                     >
+                      {isResolving || isContinuing ? (
+                        <svg
+                          className="ring-loader absolute top-1/2 left-1/2 -translate-1/2 size-5.5 [--uib-speed:1.5s]"
+                          viewBox="0 0 40 40"
+                          strokeWidth="5"
+                          aria-hidden="true"
+                        >
+                          <circle
+                            className="track"
+                            cx="20"
+                            cy="20"
+                            r="17.5"
+                            pathLength="100"
+                            fill="none"
+                          />
+                          <circle
+                            className="car"
+                            cx="20"
+                            cy="20"
+                            r="17.5"
+                            pathLength="100"
+                            fill="none"
+                          />
+                        </svg>
+                      ) : null}
                       <div
-                        className="transition-opacity flex items-center justify-center size-full"
+                        className={`transition-opacity flex items-center justify-center size-full ${
+                          isResolving || isContinuing
+                            ? "opacity-0 pointer-events-none"
+                            : ""
+                        }`}
                         style={{
-                          filter: isResolving
-                            ? "none"
-                            : "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)",
+                          filter:
+                            "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)",
                         }}
                       >
-                        {isResolving ? (
-                          <span
-                            className="size-4.5 rounded-full animate-spin"
-                            style={{
-                              border: "3px solid rgba(0, 0, 0, 0.22)",
-                              borderTopColor: "#000000",
-                            }}
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          <span>Continue</span>
-                        )}
+                        <span>Continue</span>
                       </div>
                     </div>
                   </button>
