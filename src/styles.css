@@ -57,6 +57,16 @@ body {
   background: #0d1429;
 }
 
+.app-background {
+  pointer-events: none;
+  background-image:
+    linear-gradient(135deg, rgba(19, 28, 47, 0.88), rgba(33, 42, 83, 0.88)),
+    url("/landscape.avif");
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
 button,
 a {
   font: inherit;

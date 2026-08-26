@@ -5,11 +5,14 @@ import HomePage from "./components/HomePage";
 
 export default function App() {
   return (
-    <main>
-      <Header />
-      <Subheader />
-      <ChatSidebar />
-      <HomePage />
-    </main>
+    <>
+      <div className="app-background fixed inset-0 size-full bg-linear-to-br from-[#131C2F] to-[#212A53] z-0" />
+      <main className="relative z-1">
+        <Header />
+        <Subheader />
+        <ChatSidebar />
+        <HomePage />
+      </main>
+    </>
   );
 }
