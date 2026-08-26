@@ -70,6 +70,16 @@ body {
 
 .app-background {
   pointer-events: none;
+  background-image:
+    linear-gradient(
+      to bottom right,
+      rgba(19, 28, 47, 0.35),
+      rgba(33, 42, 83, 0.35)
+    ),
+    url("/landscape.avif");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 button,
