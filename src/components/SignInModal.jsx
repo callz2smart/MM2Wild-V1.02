@@ -28,7 +28,7 @@ function VerificationPhrase({ user }) {
   return (
     <div className="flex flex-col gap-5.5 h-full">
       <div className="flex flex-col gap-2">
-        <h2 className="text-lg sm:text-xl font-bold">Get Started! ðŸ‘‹</h2>
+        <h2 className="text-lg sm:text-xl font-bold">Get Started! 👋</h2>
         <p className="text-accent font-medium text-sm">
           Log in with your Roblox username, then verify your account by putting
           a verification phrase in your Roblox bio.

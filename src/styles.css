@@ -84,7 +84,7 @@ body {
 
 button,
 a {
-  font: inherit;
+  font-family: inherit;
 }
 
 .no-interaction {
