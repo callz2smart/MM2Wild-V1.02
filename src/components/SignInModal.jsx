@@ -4,6 +4,9 @@ export default function SignInModal({ onClose }) {
   const [agreed, setAgreed] = useState(false);
   const [username, setUsername] = useState("");
   const [hasResolvedUser, setHasResolvedUser] = useState(false);
+  const [resolvedUser, setResolvedUser] = useState(null);
+  const [lookupError, setLookupError] = useState("");
+  const [isResolving, setIsResolving] = useState(false);
   const [dialogState, setDialogState] = useState("open");
   const isClosingRef = useRef(false);
   const closeTimerRef = useRef(null);
@@ -31,6 +34,33 @@ export default function SignInModal({ onClose }) {
       window.clearTimeout(closeTimerRef.current);
     };
   }, [requestClose]);
+
+  const resolveRobloxUser = async (event) => {
+    event.preventDefault();
+    if (hasResolvedUser || isResolving || !username.trim() || !agreed) return;
+
+    setLookupError("");
+    setIsResolving(true);
+    try {
+      const response = await fetch(
+        `/api/roblox-user?username=${encodeURIComponent(username.trim())}`,
+      );
+      const payload = await response.json();
+      if (!response.ok || !payload.avatarUrl) {
+        throw new Error(payload.error || "Roblox user could not be loaded.");
+      }
+
+      setUsername(payload.name);
+      setResolvedUser(payload);
+      setHasResolvedUser(true);
+    } catch (error) {
+      setResolvedUser(null);
+      setHasResolvedUser(false);
+      setLookupError(error.message || "Roblox user could not be loaded.");
+    } finally {
+      setIsResolving(false);
+    }
+  };
 
   return (
     <div
@@ -68,12 +98,7 @@ export default function SignInModal({ onClose }) {
               <div className="bg-[#FFC055]/80 absolute -bottom-4.5 sm:-bottom-6 left-1/2 -translate-x-1/2 w-6/12 h-10 rounded-full blur-[84px] pointer-events-none" />
               <form
                 className="flex flex-col gap-5.5 relative flex-1"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!hasResolvedUser && username.trim() && agreed) {
-                    setHasResolvedUser(true);
-                  }
-                }}
+                onSubmit={resolveRobloxUser}
               >
                 <div className="flex flex-col gap-2">
                   <h2
@@ -118,27 +143,36 @@ export default function SignInModal({ onClose }) {
                       value={username}
                       onChange={(event) => {
                         setUsername(event.target.value);
-                        if (hasResolvedUser) setHasResolvedUser(false);
+                        setLookupError("");
+                        if (hasResolvedUser) {
+                          setResolvedUser(null);
+                          setHasResolvedUser(false);
+                        }
                       }}
                       autoFocus
                     />
                   </div>
+                  {lookupError ? (
+                    <p className="mt-1.75 text-sm font-medium text-[#FC5C5B]">
+                      {lookupError}
+                    </p>
+                  ) : null}
                 </div>
-                {hasResolvedUser ? (
+                {hasResolvedUser && resolvedUser ? (
                   <div className="bg-[#283564]/85 rounded-lg p-3 gap-3 flex items-center mt-2">
                     <div className="size-16 rounded-lg overflow-hidden bg-[#1D284E] flex justify-center items-end">
                       <img
-                        src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-7E27815C7C5F72DA623094CFB3768D15-Png/180/180/AvatarHeadshot/Webp/noFilter"
-                        alt={`${username.trim()} Roblox avatar`}
+                        src={resolvedUser.avatarUrl}
+                        alt={`${resolvedUser.name} Roblox avatar`}
                         className="w-13 h-16 object-contain object-bottom"
                       />
                     </div>
                     <div className="flex flex-col">
                       <p className="text-white font-medium text-[15px]">
-                        {username.trim()}
+                        {resolvedUser.displayName}
                       </p>
                       <p className="text-accent font-medium text-sm">
-                        @{username.trim()}
+                        @{resolvedUser.name}
                       </p>
                     </div>
                   </div>
@@ -197,6 +231,7 @@ export default function SignInModal({ onClose }) {
                 <div className="flex gap-3 mt-auto">
                   <button
                     type="submit"
+                    disabled={isResolving}
                     className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full"
                   >
                     <div
@@ -220,7 +255,7 @@ export default function SignInModal({ onClose }) {
                           filter: "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)",
                         }}
                       >
-                        <span>Continue</span>
+                        <span>{isResolving ? "Loading..." : "Continue"}</span>
                       </div>
                     </div>
                   </button>
@@ -228,7 +263,10 @@ export default function SignInModal({ onClose }) {
                     <button
                       type="button"
                       className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full"
-                      onClick={() => setHasResolvedUser(false)}
+                      onClick={() => {
+                        setResolvedUser(null);
+                        setHasResolvedUser(false);
+                      }}
                     >
                       <div
                         className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
