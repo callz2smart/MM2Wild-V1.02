@@ -85,6 +85,11 @@ function RainPot() {
         alt=""
         className="size-28 object-contain absolute right-0 -top-1 pointer-events-none"
       />
+      <img
+        src="/simple-leafs.webp"
+        alt=""
+        className="size-38 object-contain absolute right-6 -bottom-12 pointer-events-none"
+      />
       <div className="left-0 right-0 absolute bottom-0 h-1 bg-[#667297] z-10">
         <div
           className="bg-[#E5AD4E] h-full transition-[width] duration-1000"
