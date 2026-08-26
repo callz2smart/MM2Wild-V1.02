@@ -48,6 +48,7 @@ export default function SignInModal({ onClose }) {
 
     setLookupError("");
     setIsResolving(true);
+    const loadingStartedAt = performance.now();
     try {
       const response = await fetch(
         `/api/roblox-user?username=${encodeURIComponent(username.trim())}`,
@@ -65,6 +66,15 @@ export default function SignInModal({ onClose }) {
       setHasResolvedUser(false);
       setLookupError(error.message || "Roblox user could not be loaded.");
     } finally {
+      const remainingLoadingTime = Math.max(
+        0,
+        650 - (performance.now() - loadingStartedAt),
+      );
+      if (remainingLoadingTime > 0) {
+        await new Promise((resolve) =>
+          window.setTimeout(resolve, remainingLoadingTime),
+        );
+      }
       setIsResolving(false);
     }
   };
@@ -271,7 +281,11 @@ export default function SignInModal({ onClose }) {
                       >
                         {isResolving ? (
                           <span
-                            className="size-4 rounded-full border-2 border-black/20 border-t-black animate-spin"
+                            className="size-4.5 rounded-full animate-spin"
+                            style={{
+                              border: "3px solid rgba(0, 0, 0, 0.22)",
+                              borderTopColor: "#000000",
+                            }}
                             aria-hidden="true"
                           />
                         ) : (
