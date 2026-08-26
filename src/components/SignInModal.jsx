@@ -1,5 +1,120 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+const verificationPhrase =
+  "horse, wise able, stag, owl dolphin loom, cottage, tree duck, blossom, winter, heron harp, drum spring, vault, mountain, vibrant";
+
+function CopyIcon({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className={className}
+    >
+      <path
+        fill="currentColor"
+        d="M15.24 2h-3.894c-1.764 0-3.162 0-4.255.148-1.126.152-2.037.472-2.755 1.193-.719.721-1.038 1.636-1.189 2.766C3 7.205 3 8.608 3 10.379v5.838c0 1.508.92 2.8 2.227 3.342-.067-.91-.067-2.185-.067-3.247v-5.01c0-1.281 0-2.386.118-3.27.127-.948.413-1.856 1.147-2.593s1.639-1.024 2.583-1.152c.88-.118 1.98-.118 3.257-.118h3.07c1.276 0 2.374 0 3.255.118A3.6 3.6 0 0 0 15.24 2"
+      />
+      <path
+        fill="currentColor"
+        d="M6.6 11.397c0-2.726 0-4.089.844-4.936.843-.847 2.2-.847 4.916-.847h2.88c2.715 0 4.073 0 4.917.847S21 8.671 21 11.397v4.82c0 2.726 0 4.089-.843 4.936-.844.847-2.202.847-4.917.847h-2.88c-2.715 0-4.073 0-4.916-.847-.844-.847-.844-2.21-.844-4.936z"
+      />
+    </svg>
+  );
+}
+
+function VerificationPhrase({ user }) {
+  const copyPhrase = () => navigator.clipboard.writeText(verificationPhrase);
+
+  return (
+    <div className="flex flex-col gap-5.5 h-full">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg sm:text-xl font-bold">Get Started! ðŸ‘‹</h2>
+        <p className="text-accent font-medium text-sm">
+          Log in with your Roblox username, then verify your account by putting
+          a verification phrase in your Roblox bio.
+        </p>
+      </div>
+      <div className="w-full h-0.5 bg-[#445696]/35 rounded-full" />
+      <p className="text-accent font-medium text-sm">
+        Verification Phrase -{" "}
+        <span className="text-accent/70">
+          Please copy this phrase into your roblox bio.
+        </span>
+      </p>
+      <div className="bg-[#283564] rounded-lg p-3 gap-3 justify-between flex items-center">
+        <p className="text-accent font-medium text-sm">{verificationPhrase}</p>
+        <button
+          type="button"
+          className="relative cursor-pointer outline-none flex select-none text-accent hover:bg-accent/10 hover:text-accent-light rounded-full size-8 shrink-0 transition-colors"
+          onClick={copyPhrase}
+          aria-label="Copy verification phrase"
+        >
+          <div className="transition-opacity flex items-center justify-center size-full">
+            <CopyIcon className="size-4" />
+          </div>
+        </button>
+      </div>
+      <div className="flex gap-3">
+        <button
+          type="button"
+          className="relative cursor-pointer outline-none flex select-none transition-opacity bg-[#364677] hover:bg-[#475992] h-11 flex-1 rounded-lg text-sm font-medium"
+          onClick={copyPhrase}
+        >
+          <div className="transition-opacity flex items-center justify-center size-full">
+            <CopyIcon className="size-4.5 mr-1.5" />
+            Copy Phrase
+          </div>
+        </button>
+        <a
+          href={`https://www.roblox.com/users/${user.id}/profile`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-[#283564] hover:bg-[#334279] h-11 flex-1 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 no-underline transition-colors"
+        >
+          My Roblox Profile
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            className="size-4 rotate-90"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="3"
+          >
+            <path fill="none" stroke="currentColor" d="m18 15-6-6-6 6" />
+          </svg>
+        </a>
+      </div>
+      <button
+        type="button"
+        className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full mt-auto"
+      >
+        <div
+          className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+          style={{
+            top: "var(--sb-shadow-size,3px)",
+            backgroundColor: "rgb(211, 133, 2)",
+          }}
+        />
+        <div
+          className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0"
+          style={{
+            height: "calc(100% - var(--sb-shadow-size,3px))",
+            backgroundColor: "rgb(243, 178, 57)",
+            color: "rgb(58, 56, 105)",
+          }}
+        >
+          <div
+            className="transition-opacity flex items-center justify-center size-full"
+            style={{ filter: "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)" }}
+          >
+            I&apos;ve entered the phrase
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+}
+
 export default function SignInModal({ onClose }) {
   const [agreed, setAgreed] = useState(false);
   const [username, setUsername] = useState("");
@@ -8,6 +123,7 @@ export default function SignInModal({ onClose }) {
   const [lookupError, setLookupError] = useState("");
   const [isResolving, setIsResolving] = useState(false);
   const [isContinuing, setIsContinuing] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
   const [dialogState, setDialogState] = useState("open");
   const isClosingRef = useRef(false);
   const closeTimerRef = useRef(null);
@@ -44,6 +160,7 @@ export default function SignInModal({ onClose }) {
       setIsContinuing(true);
       await new Promise((resolve) => window.setTimeout(resolve, 650));
       setIsContinuing(false);
+      setShowVerification(true);
       return;
     }
 
@@ -121,10 +238,13 @@ export default function SignInModal({ onClose }) {
           <div className="flex flex-col-reverse sm:flex-row">
             <div className="flex flex-col gap-5.5 relative shrink p-6">
               <div className="bg-[#FFC055]/80 absolute -bottom-4.5 sm:-bottom-6 left-1/2 -translate-x-1/2 w-6/12 h-10 rounded-full blur-[84px] pointer-events-none" />
-              <form
-                className="flex flex-col gap-5.5 relative flex-1"
-                onSubmit={resolveRobloxUser}
-              >
+              {showVerification && resolvedUser ? (
+                <VerificationPhrase user={resolvedUser} />
+              ) : (
+                <form
+                  className="flex flex-col gap-5.5 relative flex-1"
+                  onSubmit={resolveRobloxUser}
+                >
                 <div className="flex flex-col gap-2">
                   <h2
                     id="reka-dialog-title-v-12"
@@ -365,7 +485,8 @@ export default function SignInModal({ onClose }) {
                     </button>
                   ) : null}
                 </div>
-              </form>
+                </form>
+              )}
             </div>
             <div className="aspect-[740/304] relative sm:static sm:aspect-[216/452] shrink-0 sm:max-w-[238px] w-full">
               <div className="fixed aspect-[740/277] rounded-t-[11px] sm:aspect-[238/506] -left-4.5 -right-4.5 -top-4.5 sm:left-auto sm:right-0 sm:top-0 sm:bottom-0 sm:rounded-xl overflow-hidden bg-[#2d3965]">
