@@ -1,4 +1,9 @@
-export default function GamesDropdown({ style }) {
+export default function GamesDropdown({ style, selectedGame, onSelect }) {
+  const selectGame = (event, game) => {
+    event.preventDefault();
+    onSelect(game);
+  };
+
   return (
     <div data-reka-popper-content-wrapper="" style={style}>
       <div
@@ -26,11 +31,12 @@ export default function GamesDropdown({ style }) {
           href="/games/battles"
           className="h-9.5 relative group/button"
           type="button"
+          onClick={(event) => selectGame(event, "/games/battles")}
         >
           <div className="absolute top-1/3 left-0 right-0 bottom-0 bg-[#344986] rounded-lg" />
           <div
             className="group/dropdown-item h-[calc(100%-3px)] *:drop-shadow-[0_2px_0_#344986] flex items-center gap-2 select-none rounded-lg px-2.5 text-sm font-medium outline-none cursor-pointer relative hover:-translate-y-0.5 active:translate-y-0 transition-transform duration-125 bg-[#57689A]"
-            data-active="false"
+            data-active={selectedGame === "/games/battles"}
           >
             <div className="group-data-[active=true]/dropdown-item:opacity-100 opacity-0 transition-opacity absolute inset-0 p-0.5 rounded-lg bg-gradient-to-tr from-[#E5AD4E] via-[#E5AD4E]/11 to-[#E5AD4E]/45 !drop-shadow-none">
               <div className="size-full rounded-[6px] bg-linear-to-r from-[#36449E]/60 to-[#36449E] drop-shadow-none!" />
@@ -53,11 +59,12 @@ export default function GamesDropdown({ style }) {
           href="/games/cases"
           className="h-9.5 relative group/button"
           type="button"
+          onClick={(event) => selectGame(event, "/games/cases")}
         >
           <div className="absolute top-1/3 left-0 right-0 bottom-0 bg-[#344986] rounded-lg" />
           <div
             className="group/dropdown-item h-[calc(100%-3px)] *:drop-shadow-[0_2px_0_#344986] flex items-center gap-2 select-none rounded-lg px-2.5 text-sm font-medium outline-none cursor-pointer relative hover:-translate-y-0.5 active:translate-y-0 transition-transform duration-125 bg-[#57689A]"
-            data-active="false"
+            data-active={selectedGame === "/games/cases"}
           >
             <div className="group-data-[active=true]/dropdown-item:opacity-100 opacity-0 transition-opacity absolute inset-0 p-0.5 rounded-lg bg-gradient-to-tr from-[#E5AD4E] via-[#E5AD4E]/11 to-[#E5AD4E]/45 !drop-shadow-none">
               <div className="size-full rounded-[6px] bg-linear-to-r from-[#36449E]/60 to-[#36449E] drop-shadow-none!" />
@@ -84,11 +91,12 @@ export default function GamesDropdown({ style }) {
           href="/games/coinflip"
           className="h-9.5 relative group/button"
           type="button"
+          onClick={(event) => selectGame(event, "/games/coinflip")}
         >
           <div className="absolute top-1/3 left-0 right-0 bottom-0 bg-[#344986] rounded-lg" />
           <div
             className="group/dropdown-item h-[calc(100%-3px)] *:drop-shadow-[0_2px_0_#344986] flex items-center gap-2 select-none rounded-lg px-2.5 text-sm font-medium outline-none cursor-pointer relative hover:-translate-y-0.5 active:translate-y-0 transition-transform duration-125 bg-[#57689A]"
-            data-active="false"
+            data-active={selectedGame === "/games/coinflip"}
           >
             <div className="group-data-[active=true]/dropdown-item:opacity-100 opacity-0 transition-opacity absolute inset-0 p-0.5 rounded-lg bg-gradient-to-tr from-[#E5AD4E] via-[#E5AD4E]/11 to-[#E5AD4E]/45 !drop-shadow-none">
               <div className="size-full rounded-[6px] bg-linear-to-r from-[#36449E]/60 to-[#36449E] drop-shadow-none!" />
@@ -111,11 +119,12 @@ export default function GamesDropdown({ style }) {
           href="/games/roulette"
           className="h-9.5 relative group/button"
           type="button"
+          onClick={(event) => selectGame(event, "/games/roulette")}
         >
           <div className="absolute top-1/3 left-0 right-0 bottom-0 bg-[#344986] rounded-lg" />
           <div
             className="group/dropdown-item h-[calc(100%-3px)] *:drop-shadow-[0_2px_0_#344986] flex items-center gap-2 select-none rounded-lg px-2.5 text-sm font-medium outline-none cursor-pointer relative hover:-translate-y-0.5 active:translate-y-0 transition-transform duration-125 bg-[#57689A]"
-            data-active="false"
+            data-active={selectedGame === "/games/roulette"}
           >
             <div className="group-data-[active=true]/dropdown-item:opacity-100 opacity-0 transition-opacity absolute inset-0 p-0.5 rounded-lg bg-gradient-to-tr from-[#E5AD4E] via-[#E5AD4E]/11 to-[#E5AD4E]/45 !drop-shadow-none">
               <div className="size-full rounded-[6px] bg-linear-to-r from-[#36449E]/60 to-[#36449E] drop-shadow-none!" />
@@ -144,11 +153,12 @@ export default function GamesDropdown({ style }) {
           href="/games/upgrader"
           className="h-9.5 relative group/button"
           type="button"
+          onClick={(event) => selectGame(event, "/games/upgrader")}
         >
           <div className="absolute top-1/3 left-0 right-0 bottom-0 bg-[#344986] rounded-lg" />
           <div
             className="group/dropdown-item h-[calc(100%-3px)] *:drop-shadow-[0_2px_0_#344986] flex items-center gap-2 select-none rounded-lg px-2.5 text-sm font-medium outline-none cursor-pointer relative hover:-translate-y-0.5 active:translate-y-0 transition-transform duration-125 bg-[#57689A]"
-            data-active="false"
+            data-active={selectedGame === "/games/upgrader"}
           >
             <div className="group-data-[active=true]/dropdown-item:opacity-100 opacity-0 transition-opacity absolute inset-0 p-0.5 rounded-lg bg-gradient-to-tr from-[#E5AD4E] via-[#E5AD4E]/11 to-[#E5AD4E]/45 !drop-shadow-none">
               <div className="size-full rounded-[6px] bg-linear-to-r from-[#36449E]/60 to-[#36449E] drop-shadow-none!" />
@@ -171,11 +181,12 @@ export default function GamesDropdown({ style }) {
           href="/games/mines"
           className="h-9.5 relative group/button"
           type="button"
+          onClick={(event) => selectGame(event, "/games/mines")}
         >
           <div className="absolute top-1/3 left-0 right-0 bottom-0 bg-[#344986] rounded-lg" />
           <div
             className="group/dropdown-item h-[calc(100%-3px)] *:drop-shadow-[0_2px_0_#344986] flex items-center gap-2 select-none rounded-lg px-2.5 text-sm font-medium outline-none cursor-pointer relative hover:-translate-y-0.5 active:translate-y-0 transition-transform duration-125 bg-[#57689A]"
-            data-active="false"
+            data-active={selectedGame === "/games/mines"}
           >
             <div className="group-data-[active=true]/dropdown-item:opacity-100 opacity-0 transition-opacity absolute inset-0 p-0.5 rounded-lg bg-gradient-to-tr from-[#E5AD4E] via-[#E5AD4E]/11 to-[#E5AD4E]/45 !drop-shadow-none">
               <div className="size-full rounded-[6px] bg-linear-to-r from-[#36449E]/60 to-[#36449E] drop-shadow-none!" />
@@ -202,11 +213,12 @@ export default function GamesDropdown({ style }) {
           href="/games/plinko"
           className="h-9.5 relative group/button"
           type="button"
+          onClick={(event) => selectGame(event, "/games/plinko")}
         >
           <div className="absolute top-1/3 left-0 right-0 bottom-0 bg-[#344986] rounded-lg" />
           <div
             className="group/dropdown-item h-[calc(100%-3px)] *:drop-shadow-[0_2px_0_#344986] flex items-center gap-2 select-none rounded-lg px-2.5 text-sm font-medium outline-none cursor-pointer relative hover:-translate-y-0.5 active:translate-y-0 transition-transform duration-125 bg-[#57689A]"
-            data-active="false"
+            data-active={selectedGame === "/games/plinko"}
           >
             <div className="group-data-[active=true]/dropdown-item:opacity-100 opacity-0 transition-opacity absolute inset-0 p-0.5 rounded-lg bg-gradient-to-tr from-[#E5AD4E] via-[#E5AD4E]/11 to-[#E5AD4E]/45 !drop-shadow-none">
               <div className="size-full rounded-[6px] bg-linear-to-r from-[#36449E]/60 to-[#36449E] drop-shadow-none!" />

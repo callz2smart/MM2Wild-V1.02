@@ -10,6 +10,7 @@ import GamesDropdown from "./GamesDropdown";
 
 export default function Header() {
   const [isGamesOpen, setIsGamesOpen] = useState(false);
+  const [selectedGame, setSelectedGame] = useState("/games/battles");
   const [dropdownStyle, setDropdownStyle] = useState({});
   const gamesTriggerRef = useRef(null);
 
@@ -537,7 +538,14 @@ export default function Header() {
         </div>
       </div>
       {isGamesOpen &&
-        createPortal(<GamesDropdown style={dropdownStyle} />, document.body)}
+        createPortal(
+          <GamesDropdown
+            style={dropdownStyle}
+            selectedGame={selectedGame}
+            onSelect={setSelectedGame}
+          />,
+          document.body,
+        )}
     </>
   );
 }
