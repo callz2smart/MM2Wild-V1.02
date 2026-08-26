@@ -21,7 +21,9 @@ export default function SignInModal({ onClose }) {
   return (
     <div
       className="fixed inset-0 z-[9998] bg-[#0C1535]/80"
-      onPointerDown={onClose}
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <div
         data-v-8ead2f23=""

@@ -25,8 +25,8 @@
   --color-warning: #ffa553;
   --color-error: #fc5c5b;
   --color-info: #3b82f6;
-  --layout-top: 111px;
-  --layout-left: 285px;
+  --layout-top: 115px;
+  --layout-left: 320px;
   --layout-right: 0px;
   color: #fff;
   font-family: var(--font-sans);
