@@ -1,9 +1,11 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 :root {
   --font-sans: Rubik, Arial, Helvetica, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
   --color-primary: #f3b239;
   --color-surface-hover: #aeaeae;
   --color-accent: #a7bff5;
