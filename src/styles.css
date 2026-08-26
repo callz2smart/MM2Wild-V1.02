@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@theme inline {
+  --color-accent: #a7bff5;
+  --color-background: #0d1429;
+  --color-ring: #1475e1;
+}
+
 :root {
   --font-sans: Rubik, Arial, Helvetica, sans-serif;
   --font-mono:

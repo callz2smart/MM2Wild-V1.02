@@ -7,9 +7,11 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import GamesDropdown from "./GamesDropdown";
+import SignInModal from "./SignInModal";
 
 export default function Header() {
   const [isGamesOpen, setIsGamesOpen] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState("/games/battles");
   const [dropdownStyle, setDropdownStyle] = useState({});
   const gamesTriggerRef = useRef(null);
@@ -490,7 +492,11 @@ export default function Header() {
                     </p>
                   </div>
                 </div>
-                <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                <button
+                  type="button"
+                  className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5"
+                  onClick={() => setIsSignInOpen(true)}
+                >
                   <div
                     className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
                     style={{
@@ -547,6 +553,11 @@ export default function Header() {
               setIsGamesOpen(false);
             }}
           />,
+          document.body,
+        )}
+      {isSignInOpen &&
+        createPortal(
+          <SignInModal onClose={() => setIsSignInOpen(false)} />,
           document.body,
         )}
     </>
