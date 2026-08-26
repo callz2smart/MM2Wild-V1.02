@@ -1,117 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const verificationWords = [
-  "acorn",
-  "amber",
-  "anchor",
-  "apple",
-  "autumn",
-  "bamboo",
-  "beacon",
-  "berry",
-  "birch",
-  "blossom",
-  "breeze",
-  "brook",
-  "candle",
-  "canyon",
-  "cedar",
-  "cherry",
-  "cloud",
-  "clover",
-  "coral",
-  "cottage",
-  "creek",
-  "crystal",
-  "daisy",
-  "dawn",
-  "dolphin",
-  "dove",
-  "dream",
-  "drum",
-  "duck",
-  "eagle",
-  "elm",
-  "feather",
-  "fern",
-  "field",
-  "finch",
-  "flame",
-  "forest",
-  "garden",
-  "glow",
-  "grape",
-  "grove",
-  "harbor",
-  "harp",
-  "hazel",
-  "heron",
-  "hill",
-  "honey",
-  "horse",
-  "island",
-  "ivy",
-  "jade",
-  "lake",
-  "lantern",
-  "leaf",
-  "lemon",
-  "lily",
-  "loom",
-  "maple",
-  "meadow",
-  "melon",
-  "mint",
-  "moon",
-  "mountain",
-  "oak",
-  "ocean",
-  "olive",
-  "orchid",
-  "owl",
-  "pearl",
-  "pebble",
-  "pine",
-  "pond",
-  "rainbow",
-  "reed",
-  "river",
-  "robin",
-  "rose",
-  "sage",
-  "shell",
-  "sky",
-  "snow",
-  "sparrow",
-  "spring",
-  "stag",
-  "star",
-  "stone",
-  "stream",
-  "summer",
-  "sun",
-  "swan",
-  "tree",
-  "tulip",
-  "valley",
-  "violet",
-  "wave",
-  "willow",
-  "winter",
-  "wise",
-];
-
-function createVerificationPhrase() {
-  const words = [...verificationWords];
-
-  for (let index = words.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [words[index], words[randomIndex]] = [words[randomIndex], words[index]];
-  }
-
-  return words.slice(0, 50).join(", ");
-}
-
 function CopyIcon({ className }) {
   return (
     <svg
@@ -269,10 +157,43 @@ export default function SignInModal({ onClose }) {
 
     if (hasResolvedUser) {
       setIsContinuing(true);
-      await new Promise((resolve) => window.setTimeout(resolve, 650));
-      setIsContinuing(false);
-      setVerificationPhrase(createVerificationPhrase());
-      setShowVerification(true);
+      const loadingStartedAt = performance.now();
+      let generatedPhrase = "";
+
+      try {
+        const response = await fetch(
+          `/api/verification-phrase?userId=${encodeURIComponent(resolvedUser.id)}`,
+        );
+        const payload = await response.json();
+        if (
+          !response.ok ||
+          typeof payload.phrase !== "string" ||
+          payload.wordCount !== 50
+        ) {
+          throw new Error(payload.error || "Verification phrase could not be generated.");
+        }
+        generatedPhrase = payload.phrase;
+      } catch (error) {
+        setLookupError(
+          error.message || "Verification phrase could not be generated.",
+        );
+      } finally {
+        const remainingLoadingTime = Math.max(
+          0,
+          650 - (performance.now() - loadingStartedAt),
+        );
+        if (remainingLoadingTime > 0) {
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, remainingLoadingTime),
+          );
+        }
+        setIsContinuing(false);
+      }
+
+      if (generatedPhrase) {
+        setVerificationPhrase(generatedPhrase);
+        setShowVerification(true);
+      }
       return;
     }
 

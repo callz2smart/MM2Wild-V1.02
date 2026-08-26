@@ -9,7 +9,7 @@ function localBackend() {
     configureServer(devServer) {
       devServer.middlewares.use(async (request, response, next) => {
         const requestUrl = new URL(request.url, "http://localhost");
-        if (requestUrl.pathname !== "/api/roblox-user") return next();
+        if (!requestUrl.pathname.startsWith("/api/")) return next();
 
         try {
           const backendResponse = await robloxBackend.fetch(

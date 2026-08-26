@@ -7,6 +7,54 @@ const json = (body, status = 200) =>
     },
   });
 
+const verificationWords = [
+  "acorn", "amber", "anchor", "apple", "autumn", "bamboo", "beacon",
+  "berry", "birch", "blossom", "breeze", "brook", "candle", "canyon",
+  "cedar", "cherry", "cloud", "clover", "coral", "cottage", "creek",
+  "crystal", "daisy", "dawn", "dolphin", "dove", "dream", "drum",
+  "duck", "eagle", "elm", "feather", "fern", "field", "finch", "flame",
+  "forest", "garden", "glow", "grape", "grove", "harbor", "harp",
+  "hazel", "heron", "hill", "honey", "horse", "island", "ivy", "jade",
+  "lake", "lantern", "leaf", "lemon", "lily", "loom", "maple", "meadow",
+  "melon", "mint", "moon", "mountain", "oak", "ocean", "olive", "orchid",
+  "owl", "pearl", "pebble", "pine", "pond", "rainbow", "reed", "river",
+  "robin", "rose", "sage", "shell", "sky", "snow", "sparrow", "spring",
+  "stag", "star", "stone", "stream", "summer", "sun", "swan", "tree",
+  "tulip", "valley", "violet", "wave", "willow", "winter", "wise",
+];
+
+function secureRandomIndex(maximum) {
+  const value = new Uint32Array(1);
+  crypto.getRandomValues(value);
+  return Math.floor((value[0] / 4294967296) * maximum);
+}
+
+function createVerificationPhrase() {
+  const words = [...verificationWords];
+
+  for (let index = words.length - 1; index > 0; index -= 1) {
+    const randomIndex = secureRandomIndex(index + 1);
+    [words[index], words[randomIndex]] = [words[randomIndex], words[index]];
+  }
+
+  return words.slice(0, 50).join(", ");
+}
+
+function getVerificationPhrase(request) {
+  const url = new URL(request.url);
+  const userId = (url.searchParams.get("userId") || "").trim();
+
+  if (!/^\d+$/.test(userId)) {
+    return json({ error: "A valid Roblox user ID is required." }, 400);
+  }
+
+  return json({
+    userId,
+    phrase: createVerificationPhrase(),
+    wordCount: 50,
+  });
+}
+
 async function getRobloxUser(request) {
   const url = new URL(request.url);
   const username = (url.searchParams.get("username") || "").trim();
@@ -73,6 +121,17 @@ export default {
       } catch {
         return json({ error: "Roblox is unavailable right now." }, 502);
       }
+    }
+
+    if (
+      url.pathname === "/api/verification-phrase" &&
+      request.method === "GET"
+    ) {
+      return getVerificationPhrase(request);
+    }
+
+    if (url.pathname.startsWith("/api/")) {
+      return json({ error: "API route not found." }, 404);
     }
 
     return env.ASSETS.fetch(request);
