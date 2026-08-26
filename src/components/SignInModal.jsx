@@ -230,6 +230,7 @@ export default function SignInModal({ onClose }) {
   const [hasResolvedUser, setHasResolvedUser] = useState(false);
   const [resolvedUser, setResolvedUser] = useState(null);
   const [lookupError, setLookupError] = useState("");
+  const [usernameWasSubmitted, setUsernameWasSubmitted] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [isContinuing, setIsContinuing] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
@@ -275,8 +276,9 @@ export default function SignInModal({ onClose }) {
       return;
     }
 
+    setUsernameWasSubmitted(true);
     if (username.trim().length < 3) {
-      setLookupError("Minimum 3 characters.");
+      setLookupError("");
       return;
     }
 
@@ -314,6 +316,11 @@ export default function SignInModal({ onClose }) {
       setIsResolving(false);
     }
   };
+
+  const usernameError =
+    usernameWasSubmitted && username.trim().length < 3
+      ? "Minimum 3 characters."
+      : lookupError;
 
   return (
     <div
@@ -385,7 +392,7 @@ export default function SignInModal({ onClose }) {
                   <div className="w-full relative flex group rounded-lg items-center justify-center bg-[#0F1222]/55 h-11.5 px-2.25">
                     <div
                       className={`absolute inset-0.25 ring-2 rounded-lg transition-shadow pointer-events-none ${
-                        lookupError ? "ring-error/50" : "ring-transparent"
+                        usernameError ? "ring-error/50" : "ring-transparent"
                       }`}
                     />
                     <svg
@@ -415,9 +422,9 @@ export default function SignInModal({ onClose }) {
                       autoFocus
                     />
                   </div>
-                  {lookupError ? (
+                  {usernameError ? (
                     <p className="font-medium transition-colors duration-150 mt-1 text-[13px] text-error">
-                      {lookupError}
+                      {usernameError}
                     </p>
                   ) : null}
                 </div>
