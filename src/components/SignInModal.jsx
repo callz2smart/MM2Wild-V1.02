@@ -329,7 +329,7 @@ export default function SignInModal({ onClose }) {
                       </div>
                     </div>
                   </button>
-                  {hasResolvedUser ? (
+                  {hasResolvedUser && !isContinuing ? (
                     <button
                       type="button"
                       className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full"
