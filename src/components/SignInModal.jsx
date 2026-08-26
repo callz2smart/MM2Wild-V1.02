@@ -1,41 +1,54 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function SignInModal({ onClose }) {
   const [agreed, setAgreed] = useState(false);
+  const [dialogState, setDialogState] = useState("open");
+  const isClosingRef = useRef(false);
+  const closeTimerRef = useRef(null);
+
+  const requestClose = useCallback(() => {
+    if (isClosingRef.current) return;
+
+    isClosingRef.current = true;
+    setDialogState("closed");
+    closeTimerRef.current = window.setTimeout(onClose, 200);
+  }, [onClose]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     const closeOnEscape = (event) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") requestClose();
     };
 
     document.addEventListener("keydown", closeOnEscape);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
+      window.clearTimeout(closeTimerRef.current);
     };
-  }, [onClose]);
+  }, [requestClose]);
 
   return (
     <div
-      className="fixed inset-0 z-[9998] bg-[#0C1535]/80"
+      className="fixed inset-0 z-[9998] bg-[#0C1535]/80 transition-opacity duration-200 data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0"
+      data-state={dialogState}
       onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (event.target === event.currentTarget) requestClose();
       }}
     >
       <div
         data-v-8ead2f23=""
         data-dismissable-layer=""
         tabIndex={-1}
-        className="dialog-content fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full outline-none flex flex-col data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95"
+        className="dialog-content fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full outline-none flex flex-col duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95"
         id=""
         role="dialog"
         aria-modal="true"
         aria-describedby="reka-dialog-description-v-13"
         aria-labelledby="reka-dialog-title-v-12"
-        data-state="open"
+        data-state={dialogState}
         style={{
           maxWidth: "min(100dvw - 24px, 780px)",
           maxHeight: "calc(100% - 24px)",
