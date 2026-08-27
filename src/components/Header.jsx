@@ -279,12 +279,118 @@ function RewardsIcon({ className = "size-5" }) {
   );
 }
 
+function SignedInHeaderControls({ user }) {
+  const balance = Number(user.mm2_balance || 0).toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+  });
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="relative">
+        <div
+          aria-haspopup="dialog"
+          aria-expanded="false"
+          data-state="closed"
+          className="p-2 xs:p-2.5 bg-[#263457] rounded-2xl flex items-center gap-3 z-12 relative group"
+        >
+          <div className="flex gap-2 items-center w-full min-w-22">
+            <div className="flex items-center gap-0.5 cursor-pointer" data-currency-trigger="">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 19 21" className="size-5.5 xs:size-6">
+                <path fill="currentColor" fillRule="evenodd" d="m1.194 0 .597.107.163.86 5.212 2.9.434.215.706-.161 2.443 1.504.597-.108.76.43.217.376 2.117 1.181 1.086.108.325.322.055.537.38.215.434.161.109-.268.271-.054 1.737.913.163.698-.109.376-.597.43-1.248 2.148.054.483.271.269-.108.322-1.412-.752-.705.322-.543.484-.38 1.128v2.793l-.272 1.503-1.031 1.504-.597.054-4.017-1.772-.217-.591.922-1.934.978-2.9.38-.322.108-.645-.271-.537-1.846-.805-.76-.913-.054-1.02.163-.645-.543-.323-.435-.644-.162-.59v-.645l.542-1.02-.108-.484-5.429-3.062-.434-.053L.054 1.45 0 .967.326.322 1.194 0Zm6.677 9.614.055.913.705.806 1.358.537.38-.645-.218-.967-2.117-1.074-.163.43Z" clipRule="evenodd" opacity=".99" />
+              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4 transition-transform -rotate-180 group-data-[state=open]:rotate-0 ml-auto" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5">
+                <path fill="none" stroke="currentColor" d="m18 15-6-6-6 6" />
+              </svg>
+            </div>
+            <div className="w-0.5 h-6 bg-accent/12 rounded-full" />
+            <img src="/coin.webp" alt="" className="bg-cover bg-center size-5.5 xs:size-6" />
+            <div className="flex flex-col gap-0.5 font-medium text-sm leading-none">
+              <p className="text-primary text-xs hidden md:block">Balance</p>
+              <span>{balance}</span>
+            </div>
+          </div>
+          <button type="button" className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-8 w-7.25 shrink-0 lg:hidden">
+            <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} />
+            <div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}>
+              <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-3.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5">
+                  <path fill="none" stroke="currentColor" d="M5 12h14m-7-7v14" />
+                </svg>
+              </div>
+            </div>
+          </button>
+          <button type="button" className="relative cursor-pointer outline-none select-none transition-opacity group/button h-8 hidden lg:block">
+            <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} />
+            <div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-3.25" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}>
+              <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14" className="size-4.5 mr-1.5">
+                  <path fill="currentColor" d="M13.125 14H.875A.875.875 0 0 1 0 13.125v-3.063a.875.875 0 0 1 1.75 0v2.188h10.5v-2.188a.875.875 0 0 1 1.75 0v3.063a.875.875 0 0 1-.875.875Zm-7-13.125V7.94L4.481 6.296a.875.875 0 1 0-1.238 1.237l3.138 3.138a.875.875 0 0 0 1.238 0l3.138-3.138a.875.875 0 0 0-1.238-1.237L7.875 7.94V.875a.875.875 0 0 0-1.75 0Z" />
+                </svg>
+                <span>DEPOSIT</span>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <button type="button" className="relative cursor-pointer outline-none select-none text-accent hidden lg:flex px-3 py-2 hover:bg-accent/12 rounded-lg font-medium transition-colors">
+          <div className="transition-opacity flex items-center justify-center size-full">WITHDRAW</div>
+        </button>
+        <div aria-haspopup="dialog" aria-expanded="false" data-state="closed" className="h-12 relative group/button flex gap-2.5 items-center outline-none cursor-pointer">
+          <button type="button" className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-12">
+            <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(23, 36, 68)" }} />
+            <div className="font-bold size-full relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 rounded-lg px-1 flex items-center gap-2.5 !translate-y-0 !drop-shadow-none overflow-hidden" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(41, 59, 103)", color: "rgb(255, 255, 255)" }}>
+              <div className="transition-opacity flex items-center justify-center size-full">
+                <div className="absolute inset-0 size-full pointer-events-none flex items-center justify-center">
+                  <svg className="size-full opacity-90" viewBox="0 0 36 36" preserveAspectRatio="xMidYMid meet">
+                    <path d="M 18 2 L 29 2 A 5 5 0 0 1 34 7 L 34 29 A 5 5 0 0 1 29 34 L 7 34 A 5 5 0 0 1 2 29 L 2 7 A 5 5 0 0 1 7 2 L 18 2" fill="none" stroke="#F33939" strokeWidth="7" strokeDasharray="10.27401813331975 119.41592653589794" />
+                  </svg>
+                </div>
+                <div className="size-9.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-lg p-0.5" style={{ "--level-border-start": "#272539", "--level-border-end": "#F33939", "--level-text": "#F33939" }}>
+                  <div className="rounded-[6px] size-full flex items-center justify-center bg-[#1A2339]">
+                    <img src={user.avatar_headshot} className="size-9/12 object-contain object-center rounded-[5px] ease-in-out transition-opacity no-interaction" alt={`${user.username} avatar`} loading="lazy" />
+                  </div>
+                  <div className="bg-linear-to-b from-(--level-border-start) to-(--level-border-end) absolute bottom-0 right-0 p-0.5 rounded-md rounded-br-lg">
+                    <div className="rounded-sm size-full flex items-center justify-center px-1.25 py-0.5 text-[10px] font-medium leading-none text-(--level-text) bg-[#1A2339]">{user.level || 1}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </button>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4 text-accent" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3">
+            <path fill="none" stroke="currentColor" d="m18 15-6-6-6 6" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Header() {
   const [isGamesOpen, setIsGamesOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const [signedInUser, setSignedInUser] = useState(null);
   const [selectedGame, setSelectedGame] = useState(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const gamesTriggerRef = useRef(null);
+
+  const handleSignedIn = useCallback((user) => {
+    setSignedInUser(user);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/session", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((payload) => {
+        if (payload?.user) setSignedInUser(payload.user);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   const positionDropdown = useCallback(() => {
     const trigger = gamesTriggerRef.current;
@@ -756,6 +862,9 @@ export default function Header() {
                     </p>
                   </div>
                 </div>
+                {signedInUser ? (
+                  <SignedInHeaderControls user={signedInUser} />
+                ) : (
                 <button
                   type="button"
                   className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5"
@@ -802,6 +911,7 @@ export default function Header() {
                     </div>
                   </div>
                 </button>
+                )}
               </div>
             </div>
           </div>
@@ -821,7 +931,10 @@ export default function Header() {
         )}
       {isSignInOpen &&
         createPortal(
-          <SignInModal onClose={() => setIsSignInOpen(false)} />,
+          <SignInModal
+            onClose={() => setIsSignInOpen(false)}
+            onSignedIn={handleSignedIn}
+          />,
           document.body,
         )}
     </>

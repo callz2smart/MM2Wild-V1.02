@@ -22,7 +22,7 @@ function CopyIcon({ className }) {
 function Notification({ notification, onDismiss }) {
   return (
     <div
-      className={`fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] max-w-[calc(100vw-32px)] ${
+      className={`max-w-[calc(100vw-32px)] ${
         notification.state === "closing"
           ? "copied-notification-leave"
           : "copied-notification-enter"
@@ -95,7 +95,7 @@ function Notification({ notification, onDismiss }) {
   );
 }
 
-function VerificationPhrase({ phrase, user, onCopied, onVerificationError }) {
+function VerificationPhrase({ phrase, user, onCopied, onVerify, isVerifying }) {
   const copyPhrase = async () => {
     await navigator.clipboard.writeText(phrase);
     onCopied();
@@ -162,8 +162,12 @@ function VerificationPhrase({ phrase, user, onCopied, onVerificationError }) {
       </div>
       <button
         type="button"
-        className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full mt-auto"
-        onClick={onVerificationError}
+        disabled={isVerifying}
+        aria-busy={isVerifying}
+        className={`relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full mt-auto ${
+          isVerifying ? "opacity-40 pointer-events-none" : ""
+        }`}
+        onClick={onVerify}
       >
         <div
           className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
@@ -180,8 +184,35 @@ function VerificationPhrase({ phrase, user, onCopied, onVerificationError }) {
             color: "rgb(58, 56, 105)",
           }}
         >
+          {isVerifying ? (
+            <svg
+              className="ring-loader absolute top-1/2 left-1/2 -translate-1/2 size-5.5 [--uib-speed:1.5s]"
+              viewBox="0 0 40 40"
+              strokeWidth="5"
+              aria-hidden="true"
+            >
+              <circle
+                className="track"
+                cx="20"
+                cy="20"
+                r="17.5"
+                pathLength="100"
+                fill="none"
+              />
+              <circle
+                className="car"
+                cx="20"
+                cy="20"
+                r="17.5"
+                pathLength="100"
+                fill="none"
+              />
+            </svg>
+          ) : null}
           <div
-            className="transition-opacity flex items-center justify-center size-full"
+            className={`transition-opacity flex items-center justify-center size-full ${
+              isVerifying ? "opacity-0 pointer-events-none" : ""
+            }`}
             style={{ filter: "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)" }}
           >
             I&apos;ve entered the phrase
@@ -192,7 +223,7 @@ function VerificationPhrase({ phrase, user, onCopied, onVerificationError }) {
   );
 }
 
-export default function SignInModal({ onClose }) {
+export default function SignInModal({ onClose, onSignedIn }) {
   const [agreed, setAgreed] = useState(false);
   const [username, setUsername] = useState("");
   const [hasResolvedUser, setHasResolvedUser] = useState(false);
@@ -203,32 +234,46 @@ export default function SignInModal({ onClose }) {
   const [isContinuing, setIsContinuing] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [verificationPhrase, setVerificationPhrase] = useState("");
+  const [verificationChallenge, setVerificationChallenge] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
   const [dialogState, setDialogState] = useState("open");
-  const [notification, setNotification] = useState(null);
+  const [notifications, setNotifications] = useState([]);
   const isClosingRef = useRef(false);
   const closeTimerRef = useRef(null);
-  const notificationTimerRef = useRef(null);
-  const notificationCloseTimerRef = useRef(null);
+  const notificationTimersRef = useRef(new Map());
 
-  const dismissNotification = useCallback(() => {
-    window.clearTimeout(notificationTimerRef.current);
-    setNotification((current) =>
-      current ? { ...current, state: "closing" } : null,
+  const dismissNotification = useCallback((id) => {
+    const timers = notificationTimersRef.current;
+    window.clearTimeout(timers.get(id));
+    setNotifications((current) =>
+      current.map((notification) =>
+        notification.id === id
+          ? { ...notification, state: "closing" }
+          : notification,
+      ),
     );
-    window.clearTimeout(notificationCloseTimerRef.current);
-    notificationCloseTimerRef.current = window.setTimeout(
-      () => setNotification(null),
-      350,
+    window.clearTimeout(timers.get(`${id}:close`));
+    timers.set(
+      `${id}:close`,
+      window.setTimeout(() => {
+        setNotifications((current) =>
+          current.filter((notification) => notification.id !== id),
+        );
+        timers.delete(id);
+        timers.delete(`${id}:close`);
+      }, 350),
     );
   }, []);
 
   const showNotification = useCallback((details) => {
-    window.clearTimeout(notificationTimerRef.current);
-    window.clearTimeout(notificationCloseTimerRef.current);
-    setNotification({ id: performance.now(), state: "open", ...details });
-    notificationTimerRef.current = window.setTimeout(
-      dismissNotification,
-      4000,
+    const id = `${Date.now()}-${crypto.randomUUID()}`;
+    setNotifications((current) => [
+      ...current,
+      { id, state: "open", ...details },
+    ]);
+    notificationTimersRef.current.set(
+      id,
+      window.setTimeout(() => dismissNotification(id), 4000),
     );
   }, [dismissNotification]);
 
@@ -242,11 +287,12 @@ export default function SignInModal({ onClose }) {
     });
   }, [showNotification]);
 
-  const showVerificationError = useCallback(() => {
+  const showVerificationError = useCallback((message) => {
     showNotification({
       type: "error",
       title: "Uh-oh, Error!",
-      message: "Your Roblox bio doesn't match the verification phrase.",
+      message:
+        message || "Your Roblox bio doesn't match the verification phrase.",
       role: "alert",
       ariaLive: "assertive",
     });
@@ -273,8 +319,10 @@ export default function SignInModal({ onClose }) {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
       window.clearTimeout(closeTimerRef.current);
-      window.clearTimeout(notificationTimerRef.current);
-      window.clearTimeout(notificationCloseTimerRef.current);
+      notificationTimersRef.current.forEach((timer) =>
+        window.clearTimeout(timer),
+      );
+      notificationTimersRef.current.clear();
     };
   }, [requestClose]);
 
@@ -295,11 +343,13 @@ export default function SignInModal({ onClose }) {
         if (
           !response.ok ||
           typeof payload.phrase !== "string" ||
+          typeof payload.challenge !== "string" ||
           payload.wordCount !== 17
         ) {
           throw new Error(payload.error || "Verification phrase could not be generated.");
         }
         generatedPhrase = payload.phrase;
+        setVerificationChallenge(payload.challenge);
       } catch (error) {
         setLookupError(
           error.message || "Verification phrase could not be generated.",
@@ -365,6 +415,57 @@ export default function SignInModal({ onClose }) {
     }
   };
 
+  const verifyRobloxBio = async () => {
+    if (isVerifying || !resolvedUser || !verificationChallenge) return;
+
+    setIsVerifying(true);
+    const loadingStartedAt = performance.now();
+
+    try {
+      const response = await fetch("/api/verify-roblox-bio", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          userId: String(resolvedUser.id),
+          phrase: verificationPhrase,
+          challenge: verificationChallenge,
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok || payload.verified !== true || !payload.user) {
+        throw new Error(
+          payload.error || "Your Roblox bio doesn't match the verification phrase.",
+        );
+      }
+
+      const remainingLoadingTime = Math.max(
+        0,
+        650 - (performance.now() - loadingStartedAt),
+      );
+      if (remainingLoadingTime > 0) {
+        await new Promise((resolve) =>
+          window.setTimeout(resolve, remainingLoadingTime),
+        );
+      }
+
+      onSignedIn(payload.user);
+      requestClose();
+    } catch (error) {
+      const remainingLoadingTime = Math.max(
+        0,
+        650 - (performance.now() - loadingStartedAt),
+      );
+      if (remainingLoadingTime > 0) {
+        await new Promise((resolve) =>
+          window.setTimeout(resolve, remainingLoadingTime),
+        );
+      }
+      showVerificationError(error.message);
+      setIsVerifying(false);
+    }
+  };
+
   const usernameLength = username.trim().length;
   const usernameError =
     usernameLength < 3 && (username.length > 0 || usernameWasSubmitted)
@@ -410,7 +511,8 @@ export default function SignInModal({ onClose }) {
                   phrase={verificationPhrase}
                   user={resolvedUser}
                   onCopied={showCopiedNotification}
-                  onVerificationError={showVerificationError}
+                  onVerify={verifyRobloxBio}
+                  isVerifying={isVerifying}
                 />
               ) : (
                 <form
@@ -680,12 +782,16 @@ export default function SignInModal({ onClose }) {
           </div>
         </div>
       </div>
-      {notification ? (
-        <Notification
-          key={notification.id}
-          notification={notification}
-          onDismiss={dismissNotification}
-        />
+      {notifications.length > 0 ? (
+        <div className="fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] flex max-w-[calc(100vw-32px)] flex-col gap-3">
+          {notifications.map((notification) => (
+            <Notification
+              key={notification.id}
+              notification={notification}
+              onDismiss={() => dismissNotification(notification.id)}
+            />
+          ))}
+        </div>
       ) : null}
     </div>
   );
