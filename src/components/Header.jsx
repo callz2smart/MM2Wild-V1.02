@@ -282,7 +282,7 @@ function RewardsIcon({ className = "size-5" }) {
 export default function Header() {
   const [isGamesOpen, setIsGamesOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
-  const [selectedGame, setSelectedGame] = useState("/games/battles");
+  const [selectedGame, setSelectedGame] = useState(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const gamesTriggerRef = useRef(null);
 
