@@ -4,6 +4,7 @@
 @theme inline {
   --color-accent: #a7bff5;
   --color-background: #0d1429;
+  --color-error: #fc5c5b;
   --color-ring: #1475e1;
 }
 
