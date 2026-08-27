@@ -5,6 +5,7 @@
   --color-accent: #a7bff5;
   --color-background: #0d1429;
   --color-error: #fc5c5b;
+  --color-foreground: #fff;
   --color-ring: #1475e1;
 }
 
@@ -130,6 +131,73 @@ a {
   100% {
     stroke-dasharray: 75 100;
     stroke-dashoffset: -99;
+  }
+}
+
+.copied-notification-enter {
+  --notivue-ty: 200%;
+  animation: copied-notification-enter 0.35s cubic-bezier(0.5, 1, 0.25, 1);
+}
+
+.copied-notification-leave {
+  --notivue-ty: 200%;
+  animation: copied-notification-leave 0.35s ease forwards;
+}
+
+.copied-notification-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--toast-color);
+  opacity: 0.25;
+  transform-origin: left;
+  animation: copied-notification-progress var(--duration) linear forwards;
+}
+
+@keyframes copied-notification-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--notivue-ty), 0) scale(0.25);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+}
+
+@keyframes copied-notification-leave {
+  from {
+    opacity: 0.7;
+    transform: translateZ(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(0, var(--notivue-ty), 0) scale(0);
+  }
+}
+
+@keyframes copied-notification-progress {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copied-notification-enter,
+  .copied-notification-leave {
+    animation: none;
+  }
+
+  .copied-notification-progress {
+    display: none;
   }
 }
 

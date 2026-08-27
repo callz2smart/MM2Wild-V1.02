@@ -19,8 +19,89 @@ function CopyIcon({ className }) {
   );
 }
 
-function VerificationPhrase({ phrase, user }) {
-  const copyPhrase = () => navigator.clipboard.writeText(phrase);
+function CopiedNotification({ state, onDismiss }) {
+  return (
+    <div
+      className={`fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] max-w-[calc(100vw-32px)] ${
+        state === "closing"
+          ? "copied-notification-leave"
+          : "copied-notification-enter"
+      }`}
+      role="region"
+      aria-label="Clipboard notification"
+    >
+      <div
+        data-v-218eda1d=""
+        className="relative bg-[#243157] rounded-[9px] overflow-hidden w-[310px] max-w-full"
+        style={{ "--toast-color": "var(--color-success)" }}
+      >
+        <div className="w-1 absolute top-0 bottom-0 left-0 bg-(--toast-color)" />
+        <div className="w-14 h-7 absolute bottom-0 left-0 blur-2xl bg-(--toast-color)" />
+        <div
+          data-v-218eda1d=""
+          className="flex gap-3 p-5 relative z-10"
+        >
+          <div
+            data-v-218eda1d=""
+            className="flex flex-col gap-0.5 flex-1"
+          >
+            <p
+              data-v-218eda1d=""
+              className="font-medium leading-none text-foreground"
+            >
+              Nice, Copied!
+            </p>
+            <div
+              data-v-218eda1d=""
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              className="text-sm font-medium leading-none text-accent"
+            >
+              <span data-v-218eda1d="">
+                Successfully copied to clipboard.
+              </span>
+            </div>
+          </div>
+          <button
+            data-v-218eda1d=""
+            type="button"
+            className="bg-[#18213A] hover:bg-[#18213A]/75 rounded-[7px] size-6 flex items-center justify-center transition-colors cursor-pointer absolute right-2 top-2"
+            aria-label="Dismiss notification"
+            onClick={onDismiss}
+          >
+            <svg
+              data-v-218eda1d=""
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              className="size-3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2.75"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                d="M20 4 4 20M4 4l16 16"
+              />
+            </svg>
+          </button>
+        </div>
+        <div
+          data-v-218eda1d=""
+          className="copied-notification-progress"
+          style={{ "--duration": "4000ms" }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function VerificationPhrase({ phrase, user, onCopied }) {
+  const copyPhrase = async () => {
+    await navigator.clipboard.writeText(phrase);
+    onCopied();
+  };
 
   return (
     <div className="flex flex-col gap-5.5 h-full">
@@ -124,8 +205,33 @@ export default function SignInModal({ onClose }) {
   const [showVerification, setShowVerification] = useState(false);
   const [verificationPhrase, setVerificationPhrase] = useState("");
   const [dialogState, setDialogState] = useState("open");
+  const [copiedNotification, setCopiedNotification] = useState(null);
   const isClosingRef = useRef(false);
   const closeTimerRef = useRef(null);
+  const copiedNotificationTimerRef = useRef(null);
+  const copiedNotificationCloseTimerRef = useRef(null);
+
+  const dismissCopiedNotification = useCallback(() => {
+    window.clearTimeout(copiedNotificationTimerRef.current);
+    setCopiedNotification((current) =>
+      current ? { ...current, state: "closing" } : null,
+    );
+    window.clearTimeout(copiedNotificationCloseTimerRef.current);
+    copiedNotificationCloseTimerRef.current = window.setTimeout(
+      () => setCopiedNotification(null),
+      350,
+    );
+  }, []);
+
+  const showCopiedNotification = useCallback(() => {
+    window.clearTimeout(copiedNotificationTimerRef.current);
+    window.clearTimeout(copiedNotificationCloseTimerRef.current);
+    setCopiedNotification({ id: performance.now(), state: "open" });
+    copiedNotificationTimerRef.current = window.setTimeout(
+      dismissCopiedNotification,
+      4000,
+    );
+  }, [dismissCopiedNotification]);
 
   const requestClose = useCallback(() => {
     if (isClosingRef.current) return;
@@ -148,6 +254,8 @@ export default function SignInModal({ onClose }) {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
       window.clearTimeout(closeTimerRef.current);
+      window.clearTimeout(copiedNotificationTimerRef.current);
+      window.clearTimeout(copiedNotificationCloseTimerRef.current);
     };
   }, [requestClose]);
 
@@ -282,6 +390,7 @@ export default function SignInModal({ onClose }) {
                 <VerificationPhrase
                   phrase={verificationPhrase}
                   user={resolvedUser}
+                  onCopied={showCopiedNotification}
                 />
               ) : (
                 <form
@@ -551,6 +660,13 @@ export default function SignInModal({ onClose }) {
           </div>
         </div>
       </div>
+      {copiedNotification ? (
+        <CopiedNotification
+          key={copiedNotification.id}
+          state={copiedNotification.state}
+          onDismiss={dismissCopiedNotification}
+        />
+      ) : null}
     </div>
   );
 }
