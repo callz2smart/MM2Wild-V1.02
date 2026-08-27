@@ -113,6 +113,94 @@ function containsWordSequence(source, sequence) {
   return false;
 }
 
+function compactPhrase(value) {
+  return value
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function longestOrderedMatch(source, sequence) {
+  let previous = new Array(sequence.length + 1).fill(0);
+
+  for (const sourceWord of source) {
+    const current = new Array(sequence.length + 1).fill(0);
+    for (let index = 1; index <= sequence.length; index += 1) {
+      current[index] =
+        sourceWord === sequence[index - 1]
+          ? previous[index - 1] + 1
+          : Math.max(previous[index], current[index - 1]);
+    }
+    previous = current;
+  }
+
+  return previous[sequence.length];
+}
+
+function bioMatchesPhrase(description, phrase, words) {
+  const bioWords = phraseWords(description);
+
+  return (
+    containsWordSequence(bioWords, words) ||
+    compactPhrase(description).includes(compactPhrase(phrase)) ||
+    longestOrderedMatch(bioWords, words) >= words.length - 2
+  );
+}
+
+const wait = (milliseconds) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+async function getRobloxProfileForVerification(userId, phrase, words) {
+  let latestProfile = null;
+  let latestStatus = 502;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt > 0) await wait(attempt * 750);
+
+    const profileResponse = await fetch(
+      `https://users.roblox.com/v1/users/${encodeURIComponent(userId)}?verification=${Date.now()}-${attempt}`,
+      {
+        cache: "no-store",
+        headers: {
+          accept: "application/json",
+          "cache-control": "no-cache",
+          pragma: "no-cache",
+        },
+      },
+    );
+    latestStatus = profileResponse.status;
+
+    if (profileResponse.status === 404) {
+      return { error: "Roblox user not found.", status: 404 };
+    }
+
+    if (!profileResponse.ok) continue;
+
+    const profile = await profileResponse.json();
+    if (String(profile.id) !== userId) {
+      return { error: "Roblox returned an invalid profile.", status: 502 };
+    }
+
+    latestProfile = profile;
+    if (bioMatchesPhrase(profile.description || "", phrase, words)) {
+      return { profile };
+    }
+  }
+
+  if (!latestProfile) {
+    return {
+      error: "Roblox is unavailable right now.",
+      status: latestStatus >= 500 ? 502 : latestStatus,
+    };
+  }
+
+  return {
+    error: "Your Roblox bio doesn't match the verification phrase.",
+    status: 409,
+  };
+}
+
 async function getRobloxAvatar(userId) {
   const response = await fetch(
     "https://thumbnails.roblox.com/v1/users/avatar-headshot?" +
@@ -243,23 +331,15 @@ async function verifyRobloxBio(request, env) {
     return json({ error: "The verification phrase has expired. Please try again." }, 400);
   }
 
-  const profileResponse = await fetch(`https://users.roblox.com/v1/users/${encodeURIComponent(userId)}`, {
-    headers: { accept: "application/json" },
-  });
-  if (!profileResponse.ok) {
-    return json(
-      { error: profileResponse.status === 404 ? "Roblox user not found." : "Roblox is unavailable right now." },
-      profileResponse.status === 404 ? 404 : 502,
-    );
+  const profileResult = await getRobloxProfileForVerification(
+    userId,
+    phrase,
+    words,
+  );
+  if (!profileResult.profile) {
+    return json({ error: profileResult.error }, profileResult.status);
   }
-
-  const profile = await profileResponse.json();
-  if (String(profile.id) !== userId) {
-    return json({ error: "Roblox returned an invalid profile." }, 502);
-  }
-  if (!containsWordSequence(phraseWords(profile.description || ""), words)) {
-    return json({ error: "Your Roblox bio doesn't match the verification phrase." }, 409);
-  }
+  const profile = profileResult.profile;
 
   try {
     const account = await upsertMM2WildUser(env, profile, await getRobloxAvatar(profile.id));
