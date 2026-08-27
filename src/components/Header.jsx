@@ -279,6 +279,75 @@ function RewardsIcon({ className = "size-5" }) {
   );
 }
 
+function SessionErrorNotification({ state, onDismiss }) {
+  return (
+    <div
+      className={`fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] max-w-[calc(100vw-32px)] ${
+        state === "closing"
+          ? "copied-notification-leave"
+          : "copied-notification-enter"
+      }`}
+      role="region"
+      aria-label="error notification"
+    >
+      <div
+        data-v-218eda1d=""
+        className="relative bg-[#243157] rounded-[9px] overflow-hidden w-[310px]"
+        style={{ "--toast-color": "var(--color-error)" }}
+      >
+        <div
+          data-v-218eda1d=""
+          className="w-1 absolute top-0 bottom-0 left-0 bg-(--toast-color)"
+        />
+        <div
+          data-v-218eda1d=""
+          className="w-14 h-7 absolute bottom-0 left-0 blur-2xl bg-(--toast-color)"
+        />
+        <div data-v-218eda1d="" className="flex gap-3 p-5 relative z-10">
+          <div data-v-218eda1d="" className="flex flex-col gap-0.5 flex-1">
+            <p data-v-218eda1d="" className="font-medium leading-none text-foreground">
+              Uh-oh, Error!
+            </p>
+            <div
+              data-v-218eda1d=""
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+              className="text-sm font-medium leading-none text-accent"
+            >
+              <span data-v-218eda1d="">The login session could not be found</span>
+            </div>
+          </div>
+          <button
+            data-v-218eda1d=""
+            type="button"
+            className="bg-[#18213A] hover:bg-[#18213A]/75 rounded-[7px] size-6 flex items-center justify-center transition-colors cursor-pointer absolute right-2 top-2"
+            aria-label="Dismiss notification"
+            onClick={onDismiss}
+          >
+            <svg
+              data-v-218eda1d=""
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              className="size-3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2.75"
+            >
+              <path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" />
+            </svg>
+          </button>
+        </div>
+        <div
+          data-v-218eda1d=""
+          className="Progress"
+          style={{ animationPlayState: "running", "--duration": "6000ms" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function SignedInHeaderControls({ user }) {
   const balance = Number(user.mm2_balance || 0).toLocaleString("en-US", {
     maximumFractionDigits: 2,
@@ -370,9 +439,32 @@ export default function Header() {
   const [isGamesOpen, setIsGamesOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [signedInUser, setSignedInUser] = useState(null);
+  const [sessionNotification, setSessionNotification] = useState(null);
   const [selectedGame, setSelectedGame] = useState(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const gamesTriggerRef = useRef(null);
+  const sessionNotificationTimerRef = useRef(null);
+  const sessionNotificationCloseTimerRef = useRef(null);
+
+  const dismissSessionNotification = useCallback(() => {
+    window.clearTimeout(sessionNotificationTimerRef.current);
+    setSessionNotification((current) => (current ? "closing" : null));
+    window.clearTimeout(sessionNotificationCloseTimerRef.current);
+    sessionNotificationCloseTimerRef.current = window.setTimeout(
+      () => setSessionNotification(null),
+      350,
+    );
+  }, []);
+
+  const showSessionNotification = useCallback(() => {
+    window.clearTimeout(sessionNotificationTimerRef.current);
+    window.clearTimeout(sessionNotificationCloseTimerRef.current);
+    setSessionNotification("open");
+    sessionNotificationTimerRef.current = window.setTimeout(
+      dismissSessionNotification,
+      6000,
+    );
+  }, [dismissSessionNotification]);
 
   const handleSignedIn = useCallback((user) => {
     setSignedInUser(user);
@@ -382,15 +474,20 @@ export default function Header() {
     const controller = new AbortController();
     fetch("/api/session", { signal: controller.signal })
       .then(async (response) => {
-        if (!response.ok) return null;
-        return response.json();
+        const payload = await response.json().catch(() => null);
+        if (response.status === 401) showSessionNotification();
+        return response.ok ? payload : null;
       })
       .then((payload) => {
         if (payload?.user) setSignedInUser(payload.user);
       })
       .catch(() => {});
-    return () => controller.abort();
-  }, []);
+    return () => {
+      controller.abort();
+      window.clearTimeout(sessionNotificationTimerRef.current);
+      window.clearTimeout(sessionNotificationCloseTimerRef.current);
+    };
+  }, [showSessionNotification]);
 
   const positionDropdown = useCallback(() => {
     const trigger = gamesTriggerRef.current;
@@ -917,6 +1014,12 @@ export default function Header() {
           </div>
         </div>
       </div>
+      {sessionNotification ? (
+        <SessionErrorNotification
+          state={sessionNotification}
+          onDismiss={dismissSessionNotification}
+        />
+      ) : null}
       {isGamesOpen &&
         createPortal(
           <GamesDropdown

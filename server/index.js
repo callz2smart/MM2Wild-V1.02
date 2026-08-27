@@ -66,7 +66,7 @@ async function signingKey(secret) {
 }
 
 function authSecret(env) {
-  const secret = (env.AUTH_SECRET || "").trim();
+  const secret = (env.MM2WILD_USER_SECRET || "").trim();
   return secret.length >= 32 ? secret : null;
 }
 
@@ -290,21 +290,34 @@ function cookieValue(request, name) {
   return "";
 }
 
+function missingSession(request) {
+  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  return json(
+    { error: "The login session could not be found" },
+    401,
+    {
+      "set-cookie": `mm2wild_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${secure}`,
+    },
+  );
+}
+
 async function getSession(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  if (!sessionCookie) return json({ user: null });
   const secret = authSecret(env);
-  if (!secret) return json({ user: null }, 401);
-  const session = await verifySignedToken(cookieValue(request, "mm2wild_session"), secret);
-  if (session?.type !== "session" || !session.uuid) return json({ user: null }, 401);
+  if (!secret) return missingSession(request);
+  const session = await verifySignedToken(sessionCookie, secret);
+  if (session?.type !== "session" || !session.uuid) return missingSession(request);
 
   try {
     const query = new URLSearchParams({ uuid: `eq.${session.uuid}`, select: "*", limit: "1" });
     const response = await supabaseRequest(env, `mm2wild_users?${query}`);
     const rows = await response.json().catch(() => null);
-    if (!response.ok || !Array.isArray(rows) || !rows[0]) return json({ user: null }, 401);
-    if (String(rows[0].roblox_user_id) !== session.robloxUserId) return json({ user: null }, 401);
+    if (!response.ok || !Array.isArray(rows) || !rows[0]) return missingSession(request);
+    if (String(rows[0].roblox_user_id) !== session.robloxUserId) return missingSession(request);
     return json({ user: rows[0] });
   } catch {
-    return json({ user: null }, 401);
+    return missingSession(request);
   }
 }
 

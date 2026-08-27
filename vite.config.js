@@ -50,7 +50,7 @@ function localBackend(backendEnv) {
 export default defineConfig(({ mode }) => {
   const loadedEnv = loadEnv(mode, process.cwd(), "");
   const backendEnv = {
-    AUTH_SECRET: loadedEnv.AUTH_SECRET,
+    MM2WILD_USER_SECRET: loadedEnv.MM2WILD_USER_SECRET,
     SUPABASE_URL: loadedEnv.SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: loadedEnv.SUPABASE_SERVICE_ROLE_KEY,
   };
