@@ -238,8 +238,9 @@ export default function SignInModal({ onClose }) {
     }
   };
 
+  const usernameLength = username.trim().length;
   const usernameError =
-    usernameWasSubmitted && username.trim().length < 3
+    usernameLength < 3 && (username.length > 0 || usernameWasSubmitted)
       ? "Minimum 3 characters."
       : lookupError;
 

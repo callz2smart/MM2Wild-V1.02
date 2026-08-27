@@ -148,6 +148,16 @@ a {
   transition: padding-left 0.2s ease-in-out;
 }
 
+.game-card {
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(0);
+  transition:
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+  will-change: transform;
+}
+
 .game-card .glow {
   position: absolute;
   inset: auto 18% -18% 18%;
@@ -155,6 +165,11 @@ a {
   border-radius: 999px;
   background: rgba(var(--color), 0.55);
   filter: blur(30px);
+  opacity: 0;
+  transform: translateY(10px) scale(0.85);
+  transition:
+    opacity 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
 }
 
 .game-card .game-image {
@@ -167,7 +182,7 @@ a {
   object-fit: contain;
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 12px 12px rgba(0, 0, 0, 0.25));
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease-in-out;
 }
 
 .game-card .game-image-overlay {
@@ -176,15 +191,48 @@ a {
   object-fit: contain;
   opacity: 0.09;
   filter: blur(5px) saturate(0);
+  transition:
+    opacity 0.2s ease-in-out,
+    filter 0.2s ease-in-out;
 }
 
 .game-card .game-text {
   position: relative;
   z-index: 3;
+  transition: transform 0.2s ease-in-out;
+}
+
+.game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.18);
+}
+
+.game-card:hover .glow {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 .game-card:hover .game-image {
-  transform: translate(-50%, -54%) scale(1.04);
+  transform: translate(-50%, -54%) scale(1.06);
+}
+
+.game-card:hover .game-image-overlay {
+  opacity: 0.14;
+  filter: blur(4px) saturate(0.2);
+}
+
+.game-card:hover .game-text {
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card,
+  .game-card .glow,
+  .game-card .game-image,
+  .game-card .game-image-overlay,
+  .game-card .game-text {
+    transition: none;
+  }
 }
 
 @media (min-width: 1024px) {

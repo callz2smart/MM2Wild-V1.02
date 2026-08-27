@@ -2,18 +2,18 @@ import { useEffect, useRef, useState } from "react";
 
 const banners = [
   {
-    desktop: "/banner-release.webp",
-    mobile: "/banner-release.webp",
+    desktop: "/home/banner-release.webp",
+    mobile: "/home/banner-release.webp",
     alt: "Banner",
   },
   {
-    desktop: "/banner-discord.webp",
-    mobile: "/banner-discord.webp",
+    desktop: "/home/banner-discord.webp",
+    mobile: "/home/banner-discord.webp",
     alt: "Discord Banner",
   },
   {
-    desktop: "/banner-leaderboards.webp",
-    mobile: "/banner-leaderboards.webp",
+    desktop: "/home/banner-leaderboards.webp",
+    mobile: "/home/banner-leaderboards.webp",
     alt: "Leaderboards Banner",
   },
 ];
