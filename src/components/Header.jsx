@@ -352,10 +352,12 @@ function SignedInHeaderControls({ user }) {
   const balance = Number(user.mm2_balance || 0).toLocaleString("en-US", {
     maximumFractionDigits: 2,
   });
+  const isLevelOne = Number(user.level || 1) === 1;
+  const levelColor = isLevelOne ? "#FFFFFF" : "#F33939";
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="relative">
+    <div className="contents">
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div
           aria-haspopup="dialog"
           aria-expanded="false"
@@ -401,7 +403,7 @@ function SignedInHeaderControls({ user }) {
           </button>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
         <button type="button" className="relative cursor-pointer outline-none select-none text-accent hidden lg:flex px-3 py-2 hover:bg-accent/12 rounded-lg font-medium transition-colors">
           <div className="transition-opacity flex items-center justify-center size-full">WITHDRAW</div>
         </button>
@@ -412,10 +414,10 @@ function SignedInHeaderControls({ user }) {
               <div className="transition-opacity flex items-center justify-center size-full">
                 <div className="absolute inset-0 size-full pointer-events-none flex items-center justify-center">
                   <svg className="size-full opacity-90" viewBox="0 0 36 36" preserveAspectRatio="xMidYMid meet">
-                    <path d="M 18 2 L 29 2 A 5 5 0 0 1 34 7 L 34 29 A 5 5 0 0 1 29 34 L 7 34 A 5 5 0 0 1 2 29 L 2 7 A 5 5 0 0 1 7 2 L 18 2" fill="none" stroke="#F33939" strokeWidth="7" strokeDasharray="10.27401813331975 119.41592653589794" />
+                    <path d="M 18 2 L 29 2 A 5 5 0 0 1 34 7 L 34 29 A 5 5 0 0 1 29 34 L 7 34 A 5 5 0 0 1 2 29 L 2 7 A 5 5 0 0 1 7 2 L 18 2" fill="none" stroke={levelColor} strokeWidth="7" strokeDasharray="10.27401813331975 119.41592653589794" />
                   </svg>
                 </div>
-                <div className="size-9.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-lg p-0.5" style={{ "--level-border-start": "#272539", "--level-border-end": "#F33939", "--level-text": "#F33939" }}>
+                <div className="size-9.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-lg p-0.5" style={{ "--level-border-start": "#272539", "--level-border-end": levelColor, "--level-text": levelColor }}>
                   <div className="rounded-[6px] size-full flex items-center justify-center bg-[#1A2339]">
                     <img src={user.avatar_headshot} className="size-9/12 object-contain object-center rounded-[5px] ease-in-out transition-opacity no-interaction" alt={`${user.username} avatar`} loading="lazy" />
                   </div>
