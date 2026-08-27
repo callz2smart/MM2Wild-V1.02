@@ -150,12 +150,10 @@ a {
 
 .game-card {
   color: #fff;
+  cursor: pointer;
   text-decoration: none;
-  transform: translateY(0);
-  transition:
-    transform 0.2s ease-in-out,
-    box-shadow 0.2s ease-in-out;
-  will-change: transform;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-in-out;
 }
 
 .game-card .glow {
@@ -200,11 +198,6 @@ a {
   position: relative;
   z-index: 3;
   transition: transform 0.2s ease-in-out;
-}
-
-.game-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.18);
 }
 
 .game-card:hover .glow {
