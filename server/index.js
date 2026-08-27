@@ -10,17 +10,17 @@ const json = (body, status = 200) =>
 const verificationWords = [
   "acorn", "amber", "anchor", "apple", "autumn", "bamboo", "beacon",
   "berry", "birch", "blossom", "breeze", "brook", "candle", "canyon",
-  "cedar", "cherry", "cloud", "clover", "coral", "cottage", "creek",
+  "cabin", "care", "cedar", "chart", "cherry", "cloud", "clover", "coral", "cottage", "creek",
   "crystal", "daisy", "dawn", "dolphin", "dove", "dream", "drum",
-  "duck", "eagle", "elm", "feather", "fern", "field", "finch", "flame",
+  "duck", "eagle", "elm", "fair", "feather", "fern", "field", "finch", "flame",
   "forest", "garden", "glow", "grape", "grove", "harbor", "harp",
-  "hazel", "heron", "hill", "honey", "horse", "island", "ivy", "jade",
+  "hamster", "hazel", "helmet", "heron", "hill", "honey", "horse", "island", "ivy", "jade",
   "lake", "lantern", "leaf", "lemon", "lily", "loom", "maple", "meadow",
-  "melon", "mint", "moon", "mountain", "oak", "ocean", "olive", "orchid",
-  "owl", "pearl", "pebble", "pine", "pond", "rainbow", "reed", "river",
-  "robin", "rose", "sage", "shell", "sky", "snow", "sparrow", "spring",
-  "stag", "star", "stone", "stream", "summer", "sun", "swan", "tree",
-  "tulip", "valley", "violet", "wave", "willow", "winter", "wise",
+  "melon", "mint", "moon", "mountain", "oak", "ocean", "olive", "orbit", "orchid",
+  "owl", "pearl", "pebble", "pillar", "pine", "pond", "quick", "rainbow", "real", "reed", "river",
+  "robin", "rose", "sage", "shell", "signal", "sky", "snow", "sparrow", "spring",
+  "stag", "star", "stone", "stream", "summer", "summit", "sun", "swan", "tree",
+  "tulip", "valley", "violet", "wave", "whale", "willow", "winter", "wise",
 ];
 
 function secureRandomIndex(maximum) {
@@ -37,7 +37,7 @@ function createVerificationPhrase() {
     [words[index], words[randomIndex]] = [words[randomIndex], words[index]];
   }
 
-  return words.slice(0, 50).join(", ");
+  return words.slice(0, 17).join(", ");
 }
 
 function getVerificationPhrase(request) {
@@ -51,7 +51,7 @@ function getVerificationPhrase(request) {
   return json({
     userId,
     phrase: createVerificationPhrase(),
-    wordCount: 50,
+    wordCount: 17,
   });
 }
 

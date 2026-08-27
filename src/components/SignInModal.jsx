@@ -168,7 +168,7 @@ export default function SignInModal({ onClose }) {
         if (
           !response.ok ||
           typeof payload.phrase !== "string" ||
-          payload.wordCount !== 50
+          payload.wordCount !== 17
         ) {
           throw new Error(payload.error || "Verification phrase could not be generated.");
         }
@@ -492,9 +492,10 @@ export default function SignInModal({ onClose }) {
                       </div>
                     </div>
                   </button>
-                  {hasResolvedUser && !isContinuing ? (
+                  {hasResolvedUser ? (
                     <button
                       type="button"
+                      disabled={isResolving || isContinuing}
                       className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full"
                       onClick={() => {
                         setResolvedUser(null);
