@@ -19,21 +19,21 @@ function CopyIcon({ className }) {
   );
 }
 
-function CopiedNotification({ state, onDismiss }) {
+function Notification({ notification, onDismiss }) {
   return (
     <div
       className={`fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] max-w-[calc(100vw-32px)] ${
-        state === "closing"
+        notification.state === "closing"
           ? "copied-notification-leave"
           : "copied-notification-enter"
       }`}
       role="region"
-      aria-label="Clipboard notification"
+      aria-label={`${notification.type} notification`}
     >
       <div
         data-v-218eda1d=""
         className="relative bg-[#243157] rounded-[9px] overflow-hidden w-[310px] max-w-full"
-        style={{ "--toast-color": "var(--color-success)" }}
+        style={{ "--toast-color": `var(--color-${notification.type})` }}
       >
         <div className="w-1 absolute top-0 bottom-0 left-0 bg-(--toast-color)" />
         <div className="w-14 h-7 absolute bottom-0 left-0 blur-2xl bg-(--toast-color)" />
@@ -49,18 +49,16 @@ function CopiedNotification({ state, onDismiss }) {
               data-v-218eda1d=""
               className="font-medium leading-none text-foreground"
             >
-              Nice, Copied!
+              {notification.title}
             </p>
             <div
               data-v-218eda1d=""
-              role="status"
-              aria-live="polite"
+              role={notification.role}
+              aria-live={notification.ariaLive}
               aria-atomic="true"
               className="text-sm font-medium leading-none text-accent"
             >
-              <span data-v-218eda1d="">
-                Successfully copied to clipboard.
-              </span>
+              <span data-v-218eda1d="">{notification.message}</span>
             </div>
           </div>
           <button
@@ -97,7 +95,7 @@ function CopiedNotification({ state, onDismiss }) {
   );
 }
 
-function VerificationPhrase({ phrase, user, onCopied }) {
+function VerificationPhrase({ phrase, user, onCopied, onVerificationError }) {
   const copyPhrase = async () => {
     await navigator.clipboard.writeText(phrase);
     onCopied();
@@ -165,6 +163,7 @@ function VerificationPhrase({ phrase, user, onCopied }) {
       <button
         type="button"
         className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full mt-auto"
+        onClick={onVerificationError}
       >
         <div
           className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
@@ -205,33 +204,53 @@ export default function SignInModal({ onClose }) {
   const [showVerification, setShowVerification] = useState(false);
   const [verificationPhrase, setVerificationPhrase] = useState("");
   const [dialogState, setDialogState] = useState("open");
-  const [copiedNotification, setCopiedNotification] = useState(null);
+  const [notification, setNotification] = useState(null);
   const isClosingRef = useRef(false);
   const closeTimerRef = useRef(null);
-  const copiedNotificationTimerRef = useRef(null);
-  const copiedNotificationCloseTimerRef = useRef(null);
+  const notificationTimerRef = useRef(null);
+  const notificationCloseTimerRef = useRef(null);
 
-  const dismissCopiedNotification = useCallback(() => {
-    window.clearTimeout(copiedNotificationTimerRef.current);
-    setCopiedNotification((current) =>
+  const dismissNotification = useCallback(() => {
+    window.clearTimeout(notificationTimerRef.current);
+    setNotification((current) =>
       current ? { ...current, state: "closing" } : null,
     );
-    window.clearTimeout(copiedNotificationCloseTimerRef.current);
-    copiedNotificationCloseTimerRef.current = window.setTimeout(
-      () => setCopiedNotification(null),
+    window.clearTimeout(notificationCloseTimerRef.current);
+    notificationCloseTimerRef.current = window.setTimeout(
+      () => setNotification(null),
       350,
     );
   }, []);
 
-  const showCopiedNotification = useCallback(() => {
-    window.clearTimeout(copiedNotificationTimerRef.current);
-    window.clearTimeout(copiedNotificationCloseTimerRef.current);
-    setCopiedNotification({ id: performance.now(), state: "open" });
-    copiedNotificationTimerRef.current = window.setTimeout(
-      dismissCopiedNotification,
+  const showNotification = useCallback((details) => {
+    window.clearTimeout(notificationTimerRef.current);
+    window.clearTimeout(notificationCloseTimerRef.current);
+    setNotification({ id: performance.now(), state: "open", ...details });
+    notificationTimerRef.current = window.setTimeout(
+      dismissNotification,
       4000,
     );
-  }, [dismissCopiedNotification]);
+  }, [dismissNotification]);
+
+  const showCopiedNotification = useCallback(() => {
+    showNotification({
+      type: "success",
+      title: "Nice, Copied!",
+      message: "Successfully copied to clipboard.",
+      role: "status",
+      ariaLive: "polite",
+    });
+  }, [showNotification]);
+
+  const showVerificationError = useCallback(() => {
+    showNotification({
+      type: "error",
+      title: "Uh-oh, Error!",
+      message: "Your Roblox bio doesn't match the verification phrase.",
+      role: "alert",
+      ariaLive: "assertive",
+    });
+  }, [showNotification]);
 
   const requestClose = useCallback(() => {
     if (isClosingRef.current) return;
@@ -254,8 +273,8 @@ export default function SignInModal({ onClose }) {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
       window.clearTimeout(closeTimerRef.current);
-      window.clearTimeout(copiedNotificationTimerRef.current);
-      window.clearTimeout(copiedNotificationCloseTimerRef.current);
+      window.clearTimeout(notificationTimerRef.current);
+      window.clearTimeout(notificationCloseTimerRef.current);
     };
   }, [requestClose]);
 
@@ -391,6 +410,7 @@ export default function SignInModal({ onClose }) {
                   phrase={verificationPhrase}
                   user={resolvedUser}
                   onCopied={showCopiedNotification}
+                  onVerificationError={showVerificationError}
                 />
               ) : (
                 <form
@@ -660,11 +680,11 @@ export default function SignInModal({ onClose }) {
           </div>
         </div>
       </div>
-      {copiedNotification ? (
-        <CopiedNotification
-          key={copiedNotification.id}
-          state={copiedNotification.state}
-          onDismiss={dismissCopiedNotification}
+      {notification ? (
+        <Notification
+          key={notification.id}
+          notification={notification}
+          onDismiss={dismissNotification}
         />
       ) : null}
     </div>
