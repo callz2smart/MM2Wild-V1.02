@@ -149,25 +149,15 @@ a {
 }
 
 .game-card {
-  color: #fff;
+  color: inherit;
   cursor: pointer;
-  text-decoration: none;
+  text-decoration: inherit;
   transition-duration: 0.2s;
   transition-timing-function: ease-in-out;
 }
 
 .game-card .glow {
-  position: absolute;
-  inset: auto 18% -18% 18%;
-  height: 35%;
-  border-radius: 999px;
-  background: rgba(var(--color), 0.55);
-  filter: blur(30px);
-  opacity: 0;
-  transform: translateY(10px) scale(0.85);
-  transition:
-    opacity 0.2s ease-in-out,
-    transform 0.2s ease-in-out;
+  pointer-events: none;
 }
 
 .game-card .game-image {
@@ -189,41 +179,20 @@ a {
   object-fit: contain;
   opacity: 0.09;
   filter: blur(5px) saturate(0);
-  transition:
-    opacity 0.2s ease-in-out,
-    filter 0.2s ease-in-out;
 }
 
 .game-card .game-text {
   position: relative;
   z-index: 3;
-  transition: transform 0.2s ease-in-out;
-}
-
-.game-card:hover .glow {
-  opacity: 1;
-  transform: translateY(0) scale(1);
 }
 
 .game-card:hover .game-image {
-  transform: translate(-50%, -54%) scale(1.06);
-}
-
-.game-card:hover .game-image-overlay {
-  opacity: 0.14;
-  filter: blur(4px) saturate(0.2);
-}
-
-.game-card:hover .game-text {
-  transform: translateY(-1px);
+  transform: translate(-50%, -50%) scale(1.05);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .game-card,
-  .game-card .glow,
-  .game-card .game-image,
-  .game-card .game-image-overlay,
-  .game-card .game-text {
+  .game-card .game-image {
     transition: none;
   }
 }
