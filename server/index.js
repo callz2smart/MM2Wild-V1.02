@@ -461,7 +461,13 @@ export class ChatRoom {
 
       const now = Date.now();
       if (now - (attachment.lastMessageAt || 0) < 2000) {
-        server.send(JSON.stringify({ type: "error", error: "Slow down a moment." }));
+        server.send(
+          JSON.stringify({
+            type: "error",
+            error:
+              "Slow mode is enabled. Please wait before sending another message",
+          }),
+        );
         return;
       }
       server.serializeAttachment({ ...attachment, lastMessageAt: now });

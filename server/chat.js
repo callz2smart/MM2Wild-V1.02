@@ -138,7 +138,11 @@ export function attachChatServer(httpServer, options = {}) {
       const now = Date.now();
       if (now - lastMessageAt < RATE_LIMIT_WINDOW_MS) {
         socket.send(
-          JSON.stringify({ type: "error", error: "Slow down a moment." }),
+          JSON.stringify({
+            type: "error",
+            error:
+              "Slow mode is enabled. Please wait before sending another message",
+          }),
         );
         return;
       }

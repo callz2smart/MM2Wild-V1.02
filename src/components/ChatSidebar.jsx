@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 // Fallback profile used when a message arrives without user metadata. The
 // server normally sends a full profile with every chat message, but this keeps
@@ -10,12 +11,12 @@ const fallbackUser = {
     "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-9E12919EC1A578390B1018D597D9FC67-Png/180/180/AvatarHeadshot/Webp/noFilter",
 };
 
-function ChatIcon() {
+function ChatIcon({ className = "size-5" }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 12 12"
-      className="size-5"
+      className={className}
     >
       <path
         fill="currentColor"
@@ -25,7 +26,159 @@ function ChatIcon() {
   );
 }
 
-function RainPot() {
+function SlowModeNotification({ state, onDismiss }) {
+  return (
+    <div
+      className={`fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] max-w-[calc(100vw-32px)] ${
+        state === "closing"
+          ? "copied-notification-leave"
+          : "copied-notification-enter"
+      }`}
+      role="region"
+      aria-label="error notification"
+    >
+      <div
+        className="relative bg-[#243157] rounded-[9px] overflow-hidden w-[310px] max-w-full"
+        style={{ "--toast-color": "var(--color-error)" }}
+      >
+        <div className="w-1 absolute top-0 bottom-0 left-0 bg-(--toast-color)" />
+        <div className="w-14 h-7 absolute bottom-0 left-0 blur-2xl bg-(--toast-color)" />
+        <div data-v-218eda1d="" className="flex gap-3 p-5 relative z-10">
+          <div data-v-218eda1d="" className="flex flex-col gap-0.5 flex-1">
+            <p data-v-218eda1d="" className="font-medium leading-none text-foreground">
+              Uh-oh, Error!
+            </p>
+            <div
+              data-v-218eda1d=""
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+              className="text-sm font-medium leading-none text-accent"
+            >
+              <span data-v-218eda1d="">
+                Slow mode is enabled. Please wait before sending another message
+              </span>
+            </div>
+          </div>
+          <button
+            data-v-218eda1d=""
+            type="button"
+            className="bg-[#18213A] hover:bg-[#18213A]/75 rounded-[7px] size-6 flex items-center justify-center transition-colors cursor-pointer absolute right-2 top-2"
+            aria-label="Dismiss notification"
+            onClick={onDismiss}
+          >
+            <svg
+              data-v-218eda1d=""
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              className="size-3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2.75"
+            >
+              <path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" />
+            </svg>
+          </button>
+        </div>
+        <div className="Progress" style={{ animationPlayState: "running", "--duration": "6000ms" }} />
+      </div>
+    </div>
+  );
+}
+
+function TipRainModal({ onClose }) {
+  const [dialogState, setDialogState] = useState("open");
+  const [amount, setAmount] = useState("");
+  const closeTimerRef = useRef(null);
+
+  const requestClose = useCallback(() => {
+    if (dialogState === "closed") return;
+    setDialogState("closed");
+    closeTimerRef.current = window.setTimeout(onClose, 200);
+  }, [dialogState, onClose]);
+
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") requestClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [requestClose]);
+
+  useEffect(
+    () => () => {
+      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    },
+    [],
+  );
+
+  return (
+    <div
+      className="fixed inset-0 z-[9998] bg-[#0C1535]/65 transition-opacity duration-200 data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0"
+      data-state={dialogState}
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) requestClose();
+      }}
+    >
+      <div
+        data-dismissable-layer=""
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tip-rain-dialog-title"
+        data-state={dialogState}
+        className="dialog-content fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full outline-none flex flex-col duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95"
+        style={{
+          maxWidth: "min(100dvw - 24px, 480px)",
+          maxHeight: "calc(100% - 24px)",
+          zIndex: 9999,
+          pointerEvents: "auto",
+        }}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <div data-v-8ead2f23="" className="bg-[#1D284E] rounded-2xl shadow-lg flex flex-col gap-5.5 max-h-[calc(100vh-24px)] overflow-hidden relative">
+          <form
+            className="flex flex-col items-center gap-5.5 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <div className="absolute left-1/2 h-12 w-32 blur-3xl -translate-x-1/2 -top-3 rounded-lg bg-[#FFC055]/70" />
+            <div className="size-17 bg-[#FFC055]/10 text-[#FFC055] flex items-center justify-center rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-10 drop-shadow-[0_2px_0_#826432]">
+                <path fill="currentColor" d="M16 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5m5.45 5.6c-.39-.4-.88-.6-1.45-.6h-7l-2.08-.73.33-.94L13 16h2.8c.35 0 .63-.14.86-.37s.34-.51.34-.82c0-.54-.26-.91-.78-1.12L8.95 11H7v9l7 2 8.03-3c.01-.53-.19-1-.58-1.4M5 11H.984v11H5z" />
+              </svg>
+            </div>
+            <h2 id="tip-rain-dialog-title" className="text-xl font-bold">Tip Rain</h2>
+            <div className="w-full h-0.75 bg-[#445696]/35 rounded-full" />
+            <div className="w-full">
+              <label htmlFor="tip-rain-amount" className="text-sm font-semibold text-accent mb-1.75 block w-fit uppercase">AMOUNT</label>
+              <div className="w-full relative flex group rounded-lg items-center justify-center bg-[#0F1222]/55 h-11 px-3">
+                <div className="absolute inset-0.25 ring-2 ring-transparent rounded-lg transition-shadow pointer-events-none" />
+                <img src="/coin.webp" alt="" className="bg-cover bg-center size-5 shrink-0 my-auto" />
+                <input
+                  id="tip-rain-amount"
+                  type="text"
+                  value={amount}
+                  onChange={(event) => setAmount(event.target.value.replace(/[^0-9.]/g, ""))}
+                  placeholder="Enter amount..."
+                  className="bg-transparent outline-none size-full font-medium peer text-[15px] placeholder:text-accent pl-2"
+                  inputMode="decimal"
+                />
+              </div>
+            </div>
+            <button type="submit" className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full">
+              <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(211, 133, 2)" }} />
+              <div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(243, 178, 57)", color: "rgb(58, 56, 105)" }}>
+                <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)" }}>TIP RAIN</div>
+              </div>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RainPot({ onTip }) {
   return (
     <div
       className="flex flex-col top-0 left-3 right-3 rounded-xl absolute z-10 overflow-hidden p-3.5 shadow-xl min-h-[80px]"
@@ -82,8 +235,9 @@ function RainPot() {
           </div>
           <button
             type="button"
+            onClick={onTip}
             className="relative cursor-pointer outline-none flex select-none transition-opacity group/button w-7.75 h-8.5"
-            aria-label="Join rain pot"
+            aria-label="Tip rain"
           >
             <div
               className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
@@ -201,8 +355,54 @@ export default function ChatSidebar() {
   const [messages, setMessages] = useState([]);
   const [onlineCount, setOnlineCount] = useState(0);
   const [connected, setConnected] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [slowModeNotification, setSlowModeNotification] = useState(null);
+  const [isTipRainOpen, setIsTipRainOpen] = useState(false);
   const socketRef = useRef(null);
   const viewportRef = useRef(null);
+  const notificationTimerRef = useRef(null);
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+    const updateLayout = () => {
+      document.documentElement.style.setProperty(
+        "--layout-left",
+        desktopQuery.matches && isChatOpen ? "320px" : "0px",
+      );
+    };
+
+    updateLayout();
+    desktopQuery.addEventListener("change", updateLayout);
+    return () => {
+      desktopQuery.removeEventListener("change", updateLayout);
+      document.documentElement.style.removeProperty("--layout-left");
+    };
+  }, [isChatOpen]);
+
+  const dismissSlowModeNotification = useCallback(() => {
+    clearTimeout(notificationTimerRef.current);
+    setSlowModeNotification((current) =>
+      current ? { ...current, state: "closing" } : null,
+    );
+    notificationTimerRef.current = setTimeout(
+      () => setSlowModeNotification(null),
+      350,
+    );
+  }, []);
+
+  const showSlowModeNotification = useCallback(() => {
+    clearTimeout(notificationTimerRef.current);
+    setSlowModeNotification({ id: Date.now(), state: "open" });
+    notificationTimerRef.current = setTimeout(() => {
+      setSlowModeNotification((current) =>
+        current ? { ...current, state: "closing" } : null,
+      );
+      notificationTimerRef.current = setTimeout(
+        () => setSlowModeNotification(null),
+        350,
+      );
+    }, 6000);
+  }, []);
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -234,6 +434,14 @@ export default function ChatSidebar() {
         setOnlineCount(payload.online || 0);
       } else if (payload.type === "error") {
         setMessage("");
+        const errorMessage = (payload.error || "").toLowerCase();
+        if (
+          errorMessage.includes("slow mode") ||
+          errorMessage.includes("slow down")
+        ) {
+          showSlowModeNotification();
+          return;
+        }
         const input = document.activeElement;
         if (input && input.placeholder !== undefined) {
           const original = input.placeholder;
@@ -271,7 +479,12 @@ export default function ChatSidebar() {
       if (socket) socket.close();
       socketRef.current = null;
     };
-  }, []);
+  }, [showSlowModeNotification]);
+
+  useEffect(
+    () => () => clearTimeout(notificationTimerRef.current),
+    [],
+  );
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -290,7 +503,13 @@ export default function ChatSidebar() {
   };
 
   return (
-    <aside className="fixed bottom-0 left-0 top-20 z-110 hidden w-[var(--layout-left)] flex-col overflow-hidden bg-linear-to-r from-[#152340] to-[#212A53] lg:flex">
+    <>
+    <aside
+      aria-hidden={!isChatOpen}
+      className={`fixed bottom-0 left-0 top-20 z-110 hidden w-80 flex-col overflow-hidden bg-linear-to-r from-[#152340] to-[#212A53] lg:flex ease-in-out transition-transform duration-200 will-change-transform ${
+        isChatOpen ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
       <div className="flex flex-col flex-1 min-h-0 gap-3.5 pt-3.5 relative">
         <div className="flex gap-2 px-3.5">
           <div className="h-10.5 relative flex-1">
@@ -317,7 +536,7 @@ export default function ChatSidebar() {
         </div>
 
         <div className="flex relative flex-1 min-h-0">
-          <RainPot />
+          <RainPot onTip={() => setIsTipRainOpen(true)} />
           <div className="flex flex-col justify-end flex-1 relative min-h-0">
             <div
               className="z-2 absolute top-0 left-0 right-1 h-20 bg-linear-to-r from-[#152340] to-[#212A53] pointer-events-none"
@@ -404,5 +623,31 @@ export default function ChatSidebar() {
         </div>
       </div>
     </aside>
+    <button
+      type="button"
+      aria-label={isChatOpen ? "Close chat" : "Open chat"}
+      aria-expanded={isChatOpen}
+      onClick={() => setIsChatOpen((current) => !current)}
+      className="bg-[#202D57] hover:bg-[#273669] cursor-pointer z-40 flex items-center justify-center rounded-xl size-12 fixed bottom-[calc(var(--layout-bottom,0px)+16px)] left-[calc(var(--layout-left,0px)+16px)] ease-in-out transition-[background-color,left] duration-200"
+    >
+      <ChatIcon className="size-5.5 text-accent" />
+    </button>
+    {slowModeNotification
+      ? createPortal(
+          <SlowModeNotification
+            key={slowModeNotification.id}
+            state={slowModeNotification.state}
+            onDismiss={dismissSlowModeNotification}
+          />,
+          document.body,
+        )
+      : null}
+    {isTipRainOpen
+      ? createPortal(
+          <TipRainModal onClose={() => setIsTipRainOpen(false)} />,
+          document.body,
+        )
+      : null}
+    </>
   );
 }
