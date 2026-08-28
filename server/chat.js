@@ -4,6 +4,7 @@
 // in server/index.js so the client code is identical between environments.
 
 import { WebSocketServer } from "ws";
+import { createRainState, formatRainState } from "./rain.js";
 
 const HISTORY_LIMIT = 50;
 const MAX_BODY_LENGTH = 500;
@@ -74,6 +75,12 @@ export function attachChatServer(httpServer, options = {}) {
 
   const history = [];
   const clients = new Set();
+  const rain = createRainState();
+  let rainInterval = null;
+
+  function broadcastRain() {
+    broadcast(formatRainState(rain));
+  }
 
   function broadcast(payload) {
     const data = JSON.stringify(payload);
@@ -107,9 +114,22 @@ export function attachChatServer(httpServer, options = {}) {
         online: clients.size,
         messages: history,
         you: identity,
+        rain: rain.state(),
       }),
     );
     broadcastPresence();
+
+    // Start the rain broadcast interval once we have at least one client.
+    if (!rainInterval) {
+      rainInterval = setInterval(() => {
+        if (clients.size === 0) {
+          clearInterval(rainInterval);
+          rainInterval = null;
+          return;
+        }
+        broadcastRain();
+      }, 1000);
+    }
 
     let lastMessageAt = 0;
 
@@ -130,7 +150,30 @@ export function attachChatServer(httpServer, options = {}) {
       } catch {
         return;
       }
-      if (payload?.type !== "chat") return;
+      if (payload?.type !== "chat" && payload?.type !== "rain_tip") return;
+
+      if (payload.type === "rain_tip") {
+        if (identity.anonymous) {
+          socket.send(JSON.stringify({ type: "error", error: "Sign in to tip the rain." }));
+          return;
+        }
+        const result = rain.tip(payload.amount);
+        if (!result.ok) {
+          socket.send(JSON.stringify({ type: "error", error: result.error }));
+          return;
+        }
+        broadcastRain();
+        const tipMessage = {
+          type: "chat",
+          name: "Rain Bot",
+          body: `${identity.name} tipped ${payload.amount} coins to the rain pot!`,
+          time: nowTime(),
+          user: { level: 99, color: "#E5AD4E", avatar: guestProfile.avatar },
+        };
+        recordMessage(tipMessage);
+        broadcast(tipMessage);
+        return;
+      }
 
       const body = safeString(payload.body, MAX_BODY_LENGTH).trim();
       if (!body) return;
@@ -178,5 +221,5 @@ export function attachChatServer(httpServer, options = {}) {
     });
   });
 
-  return wss;
+  return { wss, rain };
 }

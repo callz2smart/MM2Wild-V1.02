@@ -1,3 +1,5 @@
+import { createRainState, formatRainState } from "./rain.js";
+
 const json = (body, status = 200, extraHeaders = {}) =>
   new Response(JSON.stringify(body), {
     status,
@@ -398,6 +400,24 @@ export class ChatRoom {
     this.env = env;
     this.history = [];
     this.sessions = new Set();
+    this.rain = createRainState();
+    this.rainInterval = null;
+  }
+
+  broadcastRain() {
+    this.broadcast(formatRainState(this.rain));
+  }
+
+  startRainInterval() {
+    if (this.rainInterval) return;
+    this.rainInterval = setInterval(() => {
+      if (this.sessions.size === 0) {
+        clearInterval(this.rainInterval);
+        this.rainInterval = null;
+        return;
+      }
+      this.broadcastRain();
+    }, 1000);
   }
 
   async fetch(request) {
@@ -430,9 +450,11 @@ export class ChatRoom {
         online: this.sessions.size,
         messages: this.history,
         you: { ...profile, anonymous: !account },
+        rain: this.rain.state(),
       }),
     );
     this.broadcastPresence();
+    this.startRainInterval();
 
     server.addEventListener("message", (event) => {
       const attachment = server.deserializeAttachment() || {};
@@ -454,7 +476,33 @@ export class ChatRoom {
       } catch {
         return;
       }
-      if (payload?.type !== "chat") return;
+      if (payload?.type !== "chat" && payload?.type !== "rain_tip") return;
+
+      if (payload.type === "rain_tip") {
+        if (!account) {
+          server.send(JSON.stringify({ type: "error", error: "Sign in to tip the rain." }));
+          return;
+        }
+        const result = this.rain.tip(payload.amount);
+        if (!result.ok) {
+          server.send(JSON.stringify({ type: "error", error: result.error }));
+          return;
+        }
+        this.broadcastRain();
+        const tipMessage = {
+          type: "chat",
+          name: "Rain Bot",
+          body: `${identity.name} tipped ${payload.amount} coins to the rain pot!`,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
+          user: { level: 99, color: "#E5AD4E", avatar: guestChatProfile.avatar },
+        };
+        this.history.push(tipMessage);
+        if (this.history.length > 50) this.history.shift();
+        for (const peer of this.sessions) {
+          if (peer.readyState === 1) peer.send(JSON.stringify(tipMessage));
+        }
+        return;
+      }
 
       const body = String(payload.body || "").slice(0, 500).trim();
       if (!body) return;

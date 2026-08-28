@@ -261,7 +261,7 @@ function SlowModeNotification({ state, onDismiss }) {
   );
 }
 
-function TipRainModal({ onClose }) {
+function TipRainModal({ onClose, onSubmit }) {
   const [dialogState, setDialogState] = useState("open");
   const [amount, setAmount] = useState("");
   const closeTimerRef = useRef(null);
@@ -271,6 +271,14 @@ function TipRainModal({ onClose }) {
     setDialogState("closed");
     closeTimerRef.current = window.setTimeout(onClose, 200);
   }, [dialogState, onClose]);
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const value = parseInt(amount, 10);
+    if (!value || value <= 0) return;
+    onSubmit(value);
+    requestClose();
+  };
 
   useEffect(() => {
     const closeOnEscape = (event) => {
@@ -314,7 +322,7 @@ function TipRainModal({ onClose }) {
         <div data-v-8ead2f23="" className="bg-[#1D284E] rounded-2xl shadow-lg flex flex-col gap-5.5 max-h-[calc(100vh-24px)] overflow-hidden relative">
           <form
             className="flex flex-col items-center gap-5.5 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
-            onSubmit={(event) => event.preventDefault()}
+            onSubmit={handleSubmit}
           >
             <div className="absolute left-1/2 h-12 w-32 blur-3xl -translate-x-1/2 -top-3 rounded-lg bg-[#FFC055]/70" />
             <div className="size-17 bg-[#FFC055]/10 text-[#FFC055] flex items-center justify-center rounded-full">
@@ -353,7 +361,7 @@ function TipRainModal({ onClose }) {
   );
 }
 
-function RainPot({ onTip }) {
+function RainPot({ onTip, rain }) {
   return (
     <div
       className="flex flex-col top-0 left-3 right-3 rounded-xl absolute z-10 overflow-hidden p-3.5 shadow-xl min-h-[80px]"
@@ -376,7 +384,7 @@ function RainPot({ onTip }) {
       <div className="left-0 right-0 absolute bottom-0 h-1 bg-[#667297] z-10">
         <div
           className="bg-[#E5AD4E] h-full transition-[width] duration-1000"
-          style={{ width: "74.7759%" }}
+          style={{ width: `${rain.progress}%` }}
         />
       </div>
       <div className="absolute top-2 right-2 flex items-center gap-2 z-20">
@@ -391,7 +399,7 @@ function RainPot({ onTip }) {
               d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2m4.2 14.2L11 13V7h1.5v5.2l4.5 2.7z"
             />
           </svg>
-          <p>43:44</p>
+          <p>{rain.countdown}</p>
         </div>
       </div>
       <div className="flex flex-col gap-3 relative z-10">
@@ -405,7 +413,7 @@ function RainPot({ onTip }) {
                 alt=""
                 className="bg-cover bg-center size-4.5"
               />
-              <span className="font-semibold">257</span>
+              <span className="font-semibold">{rain.pool}</span>
             </div>
           </div>
           <button
@@ -539,6 +547,7 @@ export default function ChatSidebar() {
   const [isTipRainOpen, setIsTipRainOpen] = useState(false);
   const [profileModal, setProfileModal] = useState(null);
   const [modalClosing, setModalClosing] = useState(false);
+  const [rainState, setRainState] = useState({ pool: 300, countdown: "05:00", progress: 0 });
   const socketRef = useRef(null);
   const viewportRef = useRef(null);
   const notificationTimerRef = useRef(null);
@@ -624,6 +633,9 @@ export default function ChatSidebar() {
       if (payload.type === "init") {
         setMessages(payload.messages || []);
         setOnlineCount(payload.online || 0);
+        if (payload.rain) setRainState(payload.rain);
+      } else if (payload.type === "rain") {
+        setRainState(payload);
       } else if (payload.type === "chat") {
         setMessages((current) => [
           ...current,
@@ -740,7 +752,7 @@ export default function ChatSidebar() {
         </div>
 
         <div className="flex relative flex-1 min-h-0">
-          <RainPot onTip={() => setIsTipRainOpen(true)} />
+          <RainPot onTip={() => setIsTipRainOpen(true)} rain={rainState} />
           <div className="flex flex-col justify-end flex-1 relative min-h-0">
             <div
               className="z-2 absolute top-0 left-0 right-1 h-20 bg-linear-to-r from-[#152340] to-[#212A53] pointer-events-none"
@@ -858,7 +870,15 @@ export default function ChatSidebar() {
       : null}
     {isTipRainOpen
       ? createPortal(
-          <TipRainModal onClose={() => setIsTipRainOpen(false)} />,
+          <TipRainModal
+            onClose={() => setIsTipRainOpen(false)}
+            onSubmit={(value) => {
+              const socket = socketRef.current;
+              if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: "rain_tip", amount: value }));
+              }
+            }}
+          />,
           document.body,
         )
       : null}
