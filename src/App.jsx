@@ -6,6 +6,7 @@ import ProfilePage from "./components/ProfilePage";
 import TermsPage from "./components/TermsPage";
 import LeaderboardPage from "./components/LeaderboardPage";
 import FairnessPage from "./components/FairnessPage";
+import RewardsPage from "./components/RewardsPage";
 
 export default function App() {
   const pathname = window.location.pathname;
@@ -14,6 +15,7 @@ export default function App() {
   const isTermsPage = pathname === "/terms";
   const isLeaderboardPage = pathname === "/leaderboard";
   const isFairnessPage = pathname === "/fairness";
+  const isRewardsPage = pathname === "/rewards";
 
   return (
     <>
@@ -30,6 +32,8 @@ export default function App() {
           <LeaderboardPage />
         ) : isFairnessPage ? (
           <FairnessPage />
+        ) : isRewardsPage ? (
+          <RewardsPage />
         ) : (
           <HomePage />
         )}

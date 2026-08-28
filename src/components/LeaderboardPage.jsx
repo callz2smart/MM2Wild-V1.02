@@ -36,6 +36,17 @@ const winnerData = Object.fromEntries(
 );
 const tableData = trailingPlayers.map((value) => playerFrom(value));
 
+const previousWinners = [
+  [45, "iampatricaa", "2,250", "B5C725BED133937107A366C959B22F32", "#222c3b", "#ABF339", "AUG 27 - AUG 28"],
+  [36, "ultrxt", "2,250", "56DEF1B2263E6F4AFFD939C5EA5A8BCA", "#272539", "#F33939", "AUG 26 - AUG 27"],
+  [99, "cairosync", "2,250", "784E5A3BAD3DB2D0FE95825CADF51C55", "#272b3a", "#FFE712", "AUG 25 - AUG 26"],
+  [62, "pleadformoney1", "2,250", "AE4D3210A421144A7C72E76D2B0E5861", "#252b3f", "#FFE4B5", "AUG 24 - AUG 25"],
+  [25, "SnowK_FD8", "2,250", "5FE0D780A0B2E9BC5F99263A5E70BB0E", "#27273a", "#F36D39", "AUG 23 - AUG 24"],
+].map(([level, name, prize, avatarId, borderStart, borderEnd, dateRange]) => ({
+  level, name, prize, dateRange, borderStart, borderEnd,
+  avatar: `https://tr.rbxcdn.com/30DAY-AvatarHeadshot-${avatarId}-Png/180/180/AvatarHeadshot/Webp/noFilter`,
+}));
+
 function Coin({ className = "size-4" }) {
   return <img src="/coin.webp" alt="" className={`bg-cover bg-center ${className}`} />;
 }
@@ -111,6 +122,38 @@ function MobileTrailingCard({ player }) {
   );
 }
 
+function PreviousWinnerCard({ winner }) {
+  return (
+    <button type="button" className="rounded-xl pt-7 px-4 flex flex-col items-center gap-8 backdrop-blur-sm bg-[#243157]/25 hover:bg-[#2F4277]/21 transition-colors relative overflow-hidden cursor-pointer">
+      <div className="absolute size-30 left-1/2 -translate-x-1/2 -top-16 bg-primary rounded-full blur-3xl" />
+      <div className="flex flex-col items-center gap-3 relative">
+        <div className="size-20 rounded-[18px] flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) p-0.5" style={{ "--level-border-start": winner.borderStart, "--level-border-end": winner.borderEnd, "--level-text": winner.borderEnd }}>
+          <div className="size-full flex items-center justify-center rounded-[16px] bg-[#1A2339]">
+            <img src={winner.avatar} alt={winner.name} loading="lazy" className="size-9/12 object-contain object-center rounded-[5px] leaderboard-loaded-image no-interaction" />
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex items-center gap-1.5">
+            <div className="bg-gradient-to-b from-(--level-border-start) to-(--level-border-end) p-0.5 rounded-[5px]" style={{ "--level-border-start": winner.borderStart, "--level-border-end": winner.borderEnd, "--level-text": winner.borderEnd }}>
+              <div className="size-full flex items-center justify-center font-medium !leading-none text-(--level-text) px-1.5 py-0.5 text-xs rounded bg-[#1A2339]">{winner.level}</div>
+            </div>
+            <p className="font-semibold text-base min-w-0 truncate">{winner.name}</p>
+          </div>
+          <span className="text-sm font-medium text-accent">DAILY WINNER</span>
+        </div>
+        <div className="px-3.5 py-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "radial-gradient(127.85% 125.64% at 50% 100.88%,rgba(243,178,57,.1),rgba(36,49,87,0) 100%),rgba(51,63,103,.48)" }}>
+          <Coin className="size-4.5" />
+          <span className="tabular-nums font-medium">{winner.prize}</span>
+        </div>
+      </div>
+      <div className="bg-[#26325A]/65 rounded-t-xl flex items-center gap-1.5 px-2.5 py-1.75 text-accent font-medium text-xs">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4"><path fill="currentColor" d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2m4.2 14.2L11 13V7h1.5v5.2l4.5 2.7z" /></svg>
+        <span>{winner.dateRange}</span>
+      </div>
+    </button>
+  );
+}
+
 export default function LeaderboardPage() {
   const [period, setPeriod] = useState("daily");
   const [visible, setVisible] = useState(true);
@@ -132,7 +175,31 @@ export default function LeaderboardPage() {
   return (
     <div className="site-content">
       <div className="max-w-[1296px] mx-auto flex flex-col @container/content px-4 md:px-12 min-h-[calc(100dvh-var(--layout-top))] relative">
-        <div className="page-content pt-6 sm:pt-18 pb-6 flex flex-col gap-8 relative">
+        <div className="h-140 bg-linear-to-b from-[#2551FF]/56 to-[#163199]/56 blur-[150px] absolute top-0 -translate-y-1/2 left-2/12 right-2/12 z-0 rounded-full" />
+        <div className="absolute left-0 right-0 top-0 h-60 md:h-110 z-0 pointer-events-none">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 100 100" className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-auto">
+            <g opacity=".45">
+              <path fill="url(#lb-bg-a)" d="M50 0C22.386 0 0 22.386 0 50s22.386 50 50 50 50-22.386 50-50S77.614 0 50 0Z" />
+              <path fill="url(#lb-bg-b)" d="M49.997 10.294C28.07 10.294 10.292 28.071 10.292 50c0 21.929 17.776 39.706 39.705 39.706 21.93 0 39.706-17.777 39.706-39.706 0-21.929-17.777-39.706-39.706-39.706Z" />
+              <path fill="url(#lb-bg-c)" d="M50 18.382c-17.462 0-31.618 14.156-31.618 31.618 0 17.462 14.156 31.618 31.617 31.618 17.462 0 31.618-14.156 31.618-31.618 0-17.462-14.156-31.618-31.618-31.618Z" />
+            </g>
+            <defs>
+              <linearGradient id="lb-bg-a" x1="50" x2="50" y1="69.864" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#0D1941" stopOpacity=".34" />
+                <stop offset="1" stopColor="#0A1026" stopOpacity=".66" />
+              </linearGradient>
+              <linearGradient id="lb-bg-b" x1="49.997" x2="49.997" y1="70.28" y2="89.706" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#1E3595" stopOpacity=".41" />
+                <stop offset="1" stopColor="#21347C" stopOpacity=".52" />
+              </linearGradient>
+              <linearGradient id="lb-bg-c" x1="49.999" x2="49.999" y1="69.953" y2="81.618" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#566ED0" stopOpacity=".31" />
+                <stop offset="1" stopColor="#415FD4" stopOpacity=".43" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div className="page-content pt-6 sm:pt-18 pb-6 flex flex-col gap-8 relative z-10">
           <div className="flex bg-[#2F3F71]/75 p-1.5 rounded-[10px] relative mx-auto sm:absolute sm:top-8 sm:right-8 w-44 z-20">
             <div className="absolute top-1.5 bottom-1.5 bg-[#D38502] rounded-lg transition-all duration-300 ease-out will-change-transform" style={{ width: "calc(50% - 6px)", left: period === "daily" ? "calc(0% + 6px)" : "50%" }}><div className="absolute inset-0 bottom-0.5 bg-primary rounded-lg" /></div>
             {["daily", "weekly"].map((item) => <button key={item} type="button" data-active={period === item} onClick={() => changePeriod(item)} className="relative z-10 flex-1 py-2 text-sm font-semibold transition-all duration-275 cursor-pointer text-white drop-shadow-[0_2px_0_#18213E] data-[active=true]:text-[#3A3869] data-[active=true]:drop-shadow-[0_2px_0_#D38502]">{item.toUpperCase()}</button>)}
@@ -165,6 +232,16 @@ export default function LeaderboardPage() {
           <div className="rounded-2xl relative flex" style={{ background: "radial-gradient(55.98% 233.26% at 100% 100%,rgba(20,117,225,.45),rgba(36,49,87,0) 100%),rgba(36,49,87,.25)" }}>
             <div className="flex flex-col items-start gap-3 p-6 md:pr-0 relative z-10"><div className="flex md:items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-5.5 text-primary"><path fill="currentColor" d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 1 0 22 12 10 10 0 0 0 12 2" /></svg><h4 className="text-xl font-semibold uppercase leading-none">How do I earn leaderboard points?</h4></div><p className="text-sm text-accent font-medium">Games contribute to Leaderboard points at different rates depending on the game type, multiplier, and format. Some modes require higher multipliers to earn full credit, and group games contribute less based on team size. To keep Leaderboards fair, non-genuine or low-risk point-farming play may result in reduced or removed Leaderboards contributions. Click to view full Race rules.</p><button type="button" className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5"><div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none bg-[#223364]" style={{ top: "var(--sb-shadow-size,3px)" }} /><div className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-6 rounded-lg bg-[#57689A] text-white" style={{ height: "calc(100% - var(--sb-shadow-size,3px))" }}><div className="flex items-center justify-center size-full drop-shadow-[0_2px_0_#223364]">LEADERBOARD RULES</div></div></button></div>
             <div className="w-80 shrink-0 relative hidden md:block"><div className="absolute w-88 h-80 overflow-hidden bottom-0"><img src="/leaderboard/character-4.webp" alt="Character" className="size-100 object-contain max-w-none rotate-7 absolute right-0" onError={(event) => { event.currentTarget.style.display = "none"; }} /></div></div>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <h5 className="text-lg font-semibold">PREVIOUS LEADERBOARDS</h5>
+              <div className="h-0.5 flex-1 bg-linear-to-r from-accent/25 to-[#E5AD4E]/0" />
+            </div>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+              {previousWinners.map((winner) => <PreviousWinnerCard key={winner.dateRange} winner={winner} />)}
+            </div>
           </div>
         </div>
       </div>

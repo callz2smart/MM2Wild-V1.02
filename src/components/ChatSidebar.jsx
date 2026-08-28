@@ -11,6 +11,181 @@ const fallbackUser = {
     "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-9E12919EC1A578390B1018D597D9FC67-Png/180/180/AvatarHeadshot/Webp/noFilter",
 };
 
+function CloseIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3">
+      <path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" />
+    </svg>
+  );
+}
+
+function TipIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5 mr-1.5">
+      <path fill="currentColor" d="M16 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5m5.45 5.6c-.39-.4-.88-.6-1.45-.6h-7l-2.08-.73.33-.94L13 16h2.8c.35 0 .63-.14.86-.37s.34-.51.34-.82c0-.54-.26-.91-.78-1.12L8.95 11H7v9l7 2 8.03-3c.01-.53-.19-1-.58-1.4M5 11H.984v11H5z" />
+    </svg>
+  );
+}
+
+function ProfileModal({ user, name, onClose, closing }) {
+  if (!user) return null;
+  const profile = user;
+
+  const backdropClass = closing
+    ? "fixed inset-0 bg-[#151D3E]/70 flex items-center justify-center [animation:fadeOut_0.1s_ease_forwards]"
+    : "fixed inset-0 bg-[#151D3E]/70 flex items-center justify-center [animation:fadeIn_0.1s_ease_forwards]";
+
+  const dialogClass = closing
+    ? "fixed left-1/2 top-1/2 w-full outline-none flex flex-col [animation:zoomOut_0.1s_ease_forwards]"
+    : "fixed left-1/2 top-1/2 w-full outline-none flex flex-col [animation:zoomIn_0.1s_ease_forwards]";
+
+  return createPortal(
+    <>
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes zoomIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+        @keyframes zoomOut { from { opacity: 1; transform: translate(-50%, -50%) scale(1); } to { opacity: 0; transform: translate(-50%, -50%) scale(0.95); } }
+        .profile-dialog { transform: translate(-50%, -50%); }
+      `}</style>
+      <div
+        className={backdropClass}
+        style={{ zIndex: 9998, pointerEvents: "auto" }}
+        onClick={onClose}
+      />
+      <div
+        className={`${dialogClass} profile-dialog`}
+        style={{
+          maxWidth: "min(100dvw - 24px, 560px)",
+          maxHeight: "calc(100% - 24px)",
+          zIndex: 9999,
+          pointerEvents: "auto",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bg-[#1D284E] rounded-2xl shadow-lg flex flex-col gap-5.5 max-h-[calc(100vh-24px)] overflow-hidden">
+          <div className="relative flex flex-col gap-5.5 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-xl font-bold flex items-center gap-2">USER PROFILE</h2>
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-accent ml-auto cursor-pointer hover:text-white transition-colors"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="w-full h-0.5 bg-[#2F3C68] rounded-full shrink-0" />
+
+            {/* Avatar + name + tip button */}
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div
+                className="size-27 p-0.75 rounded-3xl flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end)"
+                style={{
+                  "--level-border-start": "#27243c",
+                  "--level-border-end": profile.color || "#F33939",
+                  "--level-text": profile.color || "#F33939",
+                }}
+              >
+                <div
+                  className="size-full flex items-center justify-center rounded-[21px]"
+                  style={{ backgroundColor: "rgb(26, 34, 60)" }}
+                >
+                  <img
+                    src={profile.avatar}
+                    className="size-9/12 object-contain object-center no-interaction rounded-xl"
+                    alt=""
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col flex-1 justify-center gap-3 w-full sm:w-auto">
+                <div className="flex flex-col gap-0.5 items-center sm:items-start">
+                  <p className="text-sm font-medium text-accent leading-none">Profile Of</p>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="bg-gradient-to-b from-(--level-border-start) to-(--level-border-end) p-0.5 rounded-lg"
+                      style={{
+                        "--level-border-start": "#343656",
+                        "--level-border-end": profile.color || "#F33939",
+                        "--level-text": profile.color || "#F33939",
+                      }}
+                    >
+                      <div
+                        className="size-full flex items-center justify-center font-medium !leading-none text-(--level-text) px-1.25 py-0.75 text-sm rounded-md"
+                        style={{ backgroundColor: "rgb(38, 52, 87)" }}
+                      >
+                        {profile.level}
+                      </div>
+                    </div>
+                    <h2 className="text-xl font-semibold leading-none">{name}</h2>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 flex-1">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(211, 133, 2)" }}
+                    />
+                    <div
+                      className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(243, 178, 57)",
+                        color: "rgb(58, 56, 105)",
+                      }}
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{ filter: "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)" }}
+                      >
+                        <TipIcon />
+                        <span>TIP USER</span>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-[#283562] rounded-xl p-4 px-5 flex flex-col gap-0.5 shadow-[0_6px_0_#1B2440]">
+                <p className="text-sm font-medium text-accent">Total Bets</p>
+                <p className="text-lg font-semibold leading-none">0</p>
+              </div>
+              <div className="bg-[#283562] rounded-xl p-4 px-5 flex flex-col gap-0.5 shadow-[0_6px_0_#1B2440]">
+                <p className="text-sm font-medium text-accent">Games Won</p>
+                <p className="text-lg font-semibold leading-none">0</p>
+              </div>
+              <div className="bg-[#283562] rounded-xl p-4 px-5 flex flex-col gap-0.5 shadow-[0_6px_0_#1B2440]">
+                <p className="text-sm font-medium text-accent">Total Deposited</p>
+                <div className="flex items-center gap-1.5">
+                  <img src="/coin.webp" className="bg-cover bg-center size-4.5" />
+                  <span className="tabular-nums text-lg font-semibold leading-none">0</span>
+                </div>
+              </div>
+              <div className="bg-[#283562] rounded-xl p-4 px-5 flex flex-col gap-0.5 shadow-[0_6px_0_#1B2440]">
+                <p className="text-sm font-medium text-accent">Total Wagered</p>
+                <div className="flex items-center gap-1.5">
+                  <img src="/coin.webp" className="bg-cover bg-center size-4.5" />
+                  <span className="tabular-nums text-lg font-semibold leading-none">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>,
+    document.body,
+  );
+}
+
 function ChatIcon({ className = "size-5" }) {
   return (
     <svg
@@ -277,7 +452,7 @@ function RainPot({ onTip }) {
   );
 }
 
-function ChatMessage({ name, body, time, user }) {
+function ChatMessage({ name, body, time, user, onProfileClick }) {
   const profile = user ?? fallbackUser;
   return (
     <div
@@ -288,6 +463,7 @@ function ChatMessage({ name, body, time, user }) {
         <div
           className="size-10 rounded-[9px] cursor-pointer flex shrink-0 flex-col items-center relative bg-linear-to-b from-[#1D2A53] from-5% p-0.5"
           style={{ "--tw-gradient-to": profile.color }}
+          onClick={() => onProfileClick?.(name, user)}
         >
           <div className="size-full flex items-center justify-center rounded-[7px] bg-[#1A2339]">
             <img
@@ -313,7 +489,10 @@ function ChatMessage({ name, body, time, user }) {
                 {profile.level}
               </div>
             </div>
-            <span className="font-semibold text-[13px] ml-1 cursor-pointer truncate">
+            <span
+              className="font-semibold text-[13px] ml-1 cursor-pointer truncate hover:text-primary transition-colors"
+              onClick={() => onProfileClick?.(name, user)}
+            >
               {name}
             </span>
             <p className="text-[13px] font-semibold ml-auto pl-1 text-accent">
@@ -358,6 +537,8 @@ export default function ChatSidebar() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [slowModeNotification, setSlowModeNotification] = useState(null);
   const [isTipRainOpen, setIsTipRainOpen] = useState(false);
+  const [profileModal, setProfileModal] = useState(null);
+  const [modalClosing, setModalClosing] = useState(false);
   const socketRef = useRef(null);
   const viewportRef = useRef(null);
   const notificationTimerRef = useRef(null);
@@ -403,6 +584,29 @@ export default function ChatSidebar() {
       );
     }, 6000);
   }, []);
+
+  const openProfile = (name, user) => {
+    setModalClosing(false);
+    setProfileModal({ name, user: user ?? fallbackUser });
+  };
+
+  const closeProfile = () => {
+    if (!profileModal || modalClosing) return;
+    setModalClosing(true);
+    setTimeout(() => {
+      setProfileModal(null);
+      setModalClosing(false);
+    }, 100);
+  };
+
+  useEffect(() => {
+    if (!profileModal) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") closeProfile();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [profileModal, modalClosing]);
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -557,6 +761,7 @@ export default function ChatSidebar() {
                     body={entry.body}
                     time={entry.time}
                     user={entry.user}
+                    onProfileClick={openProfile}
                   />
                 ))}
               </div>
@@ -622,6 +827,15 @@ export default function ChatSidebar() {
           </form>
         </div>
       </div>
+
+      {profileModal && (
+        <ProfileModal
+          user={profileModal.user}
+          name={profileModal.name}
+          onClose={closeProfile}
+          closing={modalClosing}
+        />
+      )}
     </aside>
     <button
       type="button"
