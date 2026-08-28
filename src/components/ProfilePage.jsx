@@ -113,11 +113,38 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
   const [gameDropdownStyle, setGameDropdownStyle] = useState({});
   const gameTriggerRef = useRef(null);
+  const tabButtonRefs = useRef([]);
+  const [tabIndicatorStyle, setTabIndicatorStyle] = useState({ opacity: 0 });
 
   const activeTabIndex = Math.max(
     0,
     accountTabs.findIndex(([, key]) => key === activeTab),
   );
+
+  const positionTabIndicator = useCallback(() => {
+    const activeButton = tabButtonRefs.current[activeTabIndex];
+    if (!activeButton) return;
+
+    setTabIndicatorStyle({
+      width: `${activeButton.offsetWidth}px`,
+      height: `${activeButton.offsetHeight}px`,
+      transform: `translate3d(${activeButton.offsetLeft}px, ${activeButton.offsetTop}px, 0)`,
+      opacity: 1,
+    });
+  }, [activeTabIndex]);
+
+  useLayoutEffect(() => {
+    positionTabIndicator();
+  }, [isLoading, positionTabIndicator]);
+
+  useEffect(() => {
+    window.addEventListener("resize", positionTabIndicator);
+    return () => window.removeEventListener("resize", positionTabIndicator);
+  }, [positionTabIndicator]);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const switchTab = useCallback((tabKey) => {
     const tab = accountTabs.find(([, key]) => key === tabKey);
@@ -323,14 +350,22 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
             <div
               className="relative grid grid-cols-2 md:flex bg-[#2F3F71] p-1.5 rounded-[10px] w-full md:w-max gap-1.5 md:gap-0"
             >
+              <div
+                aria-hidden="true"
+                className="absolute left-0 top-0 z-0 rounded-lg bg-primary shadow-[0_3px_0_#D38502] transition-[transform,width,height,opacity] duration-300 ease-in-out will-change-transform pointer-events-none"
+                style={tabIndicatorStyle}
+              />
               {accountTabs.map(([label, key, href], index) => (
                 <button
                   key={href}
+                  ref={(node) => {
+                    tabButtonRefs.current[index] = node;
+                  }}
                   type="button"
                   onClick={() => switchTab(key)}
                   className={`relative z-10 px-4 py-2 text-sm font-semibold text-center whitespace-nowrap rounded-lg transition-colors duration-200 cursor-pointer ${
                     index === activeTabIndex
-                      ? "bg-primary text-[#3A3869] shadow-[0_3px_0_#D38502]"
+                      ? "text-[#3A3869]"
                       : "text-white hover:text-accent"
                   }`}
                   data-active={index === activeTabIndex}
