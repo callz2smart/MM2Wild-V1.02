@@ -3,11 +3,15 @@ import Subheader from "./components/Subheader";
 import ChatSidebar from "./components/ChatSidebar";
 import HomePage from "./components/HomePage";
 import ProfilePage from "./components/ProfilePage";
+import TermsPage from "./components/TermsPage";
+import LeaderboardPage from "./components/LeaderboardPage";
 
 export default function App() {
   const pathname = window.location.pathname;
   const isAccountPage = pathname.startsWith("/account/");
   const activeTab = pathname.replace("/account/", "");
+  const isTermsPage = pathname === "/terms";
+  const isLeaderboardPage = pathname === "/leaderboard";
 
   return (
     <>
@@ -16,7 +20,15 @@ export default function App() {
         <Header />
         <Subheader />
         <ChatSidebar />
-        {isAccountPage ? <ProfilePage activeTab={activeTab} /> : <HomePage />}
+        {isAccountPage ? (
+          <ProfilePage activeTab={activeTab} />
+        ) : isTermsPage ? (
+          <TermsPage />
+        ) : isLeaderboardPage ? (
+          <LeaderboardPage />
+        ) : (
+          <HomePage />
+        )}
       </main>
     </>
   );
