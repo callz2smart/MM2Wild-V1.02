@@ -2,8 +2,12 @@
 @import "tw-animate-css";
 
 @theme inline {
+  --breakpoint-xs: 20rem;
+  --color-primary: #f3b239;
   --color-accent: #a7bff5;
+  --color-accent-light: #d9e5ff;
   --color-background: #0d1429;
+  --color-success: #5bffa8;
   --color-error: #fc5c5b;
   --color-foreground: #fff;
   --color-ring: #1475e1;
@@ -68,6 +72,201 @@ body::-webkit-scrollbar {
 body {
   margin: 0;
   background: #0d1429;
+}
+
+.line-wobble-loader {
+  align-items: center;
+  border-radius: calc(var(--uib-stroke) / 2);
+  display: flex;
+  height: var(--uib-stroke);
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+  position: relative;
+  transform: translateZ(0);
+}
+
+.line-wobble-loader::before {
+  background-color: currentColor;
+  border-radius: inherit;
+  content: "";
+  height: 100%;
+  opacity: 0.1;
+  position: absolute;
+  inset: 0;
+}
+
+.line-wobble-loader::after {
+  animation: line-wobble var(--uib-speed) ease-in-out infinite;
+  background-color: currentColor;
+  border-radius: inherit;
+  content: "";
+  height: 100%;
+  position: absolute;
+  transform: translateX(-90%);
+  width: 100%;
+}
+
+@keyframes line-wobble {
+  0%,
+  100% {
+    transform: translateX(-90%);
+  }
+
+  50% {
+    transform: translateX(90%);
+  }
+}
+
+.squircle-loader {
+  display: block;
+  overflow: visible;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.squircle-loader .track {
+  stroke: currentColor;
+  stroke-width: var(--uib-stroke, 6px);
+  opacity: var(--uib-bg-opacity, 0.1);
+}
+
+.squircle-loader .car {
+  animation: squircle-travel var(--uib-speed, 0.5s) linear infinite;
+  stroke: currentColor;
+  stroke-width: var(--uib-stroke, 6px);
+  stroke-dasharray: 15 85;
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+  will-change: stroke-dashoffset;
+}
+
+@keyframes squircle-travel {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -6px;
+  }
+}
+
+.float-anim {
+  animation: float 6s ease-in-out infinite;
+  will-change: translate;
+}
+
+.float-anim.rotate-anim {
+  animation: wallet-penguin-motion 4s ease-in-out infinite;
+  will-change: translate, rotate;
+}
+
+@keyframes wallet-penguin-motion {
+  0%,
+  100% {
+    translate: 0 0;
+    rotate: -2deg;
+  }
+
+  50% {
+    translate: 0 -5px;
+    rotate: 2deg;
+  }
+}
+
+.wallet-tab-leaving {
+  animation: wallet-tab-out 0.15s ease-in forwards;
+  pointer-events: none;
+}
+
+.wallet-tab-entering {
+  animation: wallet-tab-in 0.15s ease-out both;
+  pointer-events: none;
+}
+
+@keyframes wallet-tab-out {
+  to {
+    opacity: 0;
+    scale: 0.95;
+  }
+}
+
+@keyframes wallet-tab-in {
+  from {
+    opacity: 0;
+    scale: 0.95;
+  }
+}
+
+.no-interaction {
+  pointer-events: none;
+  user-select: none;
+}
+
+[data-reka-select-viewport] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-reka-select-viewport]::-webkit-scrollbar {
+  display: none;
+}
+
+[data-reka-scroll-area-viewport] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-reka-scroll-area-viewport]::-webkit-scrollbar {
+  display: none;
+}
+
+@property --profile-game-color {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: rgb(243 57 57);
+}
+
+.profile-game-panel {
+  background:
+    radial-gradient(
+      93% 100% at 100% 100%,
+      color-mix(in srgb, var(--profile-game-color) 55%, transparent) 0%,
+      rgba(40, 53, 98, 0) 100%
+    ),
+    radial-gradient(
+      100% 291.84% at 0% 100%,
+      color-mix(in srgb, var(--profile-game-color) 10%, transparent) 0%,
+      rgba(40, 53, 98, 0) 100%
+    ),
+    #283562;
+  transition: --profile-game-color 300ms ease-in-out;
+}
+
+@media (min-width: 48rem) {
+  .profile-game-panel {
+    background:
+      radial-gradient(
+        53.36% 324.92% at 100% 100%,
+        color-mix(in srgb, var(--profile-game-color) 55%, transparent) 0%,
+        rgba(40, 53, 98, 0) 100%
+      ),
+      radial-gradient(
+        100% 291.84% at 0% 100%,
+        color-mix(in srgb, var(--profile-game-color) 10%, transparent) 0%,
+        rgba(40, 53, 98, 0) 100%
+      ),
+      #283562;
+  }
 }
 
 .app-background {

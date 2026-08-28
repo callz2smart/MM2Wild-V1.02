@@ -7,6 +7,9 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import SignInModal from "./SignInModal";
+import WhatIsThisModal from "./WhatIsThisModal";
+import ProfileDropdown from "./ProfileDropdown";
+import WalletModal from "./WalletModal";
 
 function GamesDropdown({ style, selectedGame, onSelect }) {
   const selectGame = (event, game) => {
@@ -348,39 +351,301 @@ function SessionErrorNotification({ state, onDismiss }) {
   );
 }
 
-function SignedInHeaderControls({ user }) {
-  const balance = Number(user.mm2_balance || 0).toLocaleString("en-US", {
+function CurrencyDropdown({
+  style,
+  mm2Balance,
+  cryptoBalance,
+  selectedCurrency,
+  onSelect,
+  onExplain,
+}) {
+  const options = [
+    {
+      id: "mm2",
+      label: "MM2 ITEMS",
+      balance: mm2Balance,
+      glow:
+        "radial-gradient(101.8% 100% at 48.73% 100%, rgba(59, 252, 255, 0.25) 0%, rgba(32, 48, 89, 0) 100%), rgb(50, 68, 113)",
+      viewBox: "0 0 19 21",
+      path: "m1.194 0 .597.107.163.86 5.212 2.9.434.215.706-.161 2.443 1.504.597-.108.76.43.217.376 2.117 1.181 1.086.108.325.322.055.537.38.215.434.161.109-.268.271-.054 1.737.913.163.698-.109.376-.597.43-1.248 2.148.054.483.271.269-.108.322-1.412-.752-.705.322-.543.484-.38 1.128v2.793l-.272 1.503-1.031 1.504-.597.054-4.017-1.772-.217-.591.922-1.934.978-2.9.38-.322.108-.645-.271-.537-1.846-.805-.76-.913-.054-1.02.163-.645-.543-.323-.435-.644-.162-.59v-.645l.542-1.02-.108-.484-5.429-3.062-.434-.053L.054 1.45 0 .967.326.322 1.194 0Zm6.677 9.614.055.913.705.806 1.358.537.38-.645-.218-.967-2.117-1.074-.163.43Z",
+      rule: true,
+    },
+    {
+      id: "crypto",
+      label: "CRYPTO",
+      balance: cryptoBalance,
+      glow:
+        "radial-gradient(101.8% 100% at 48.73% 100%, rgba(255, 134, 59, 0.25) 0%, rgba(32, 48, 89, 0) 100%), rgb(50, 68, 113)",
+      viewBox: "0 0 9 12",
+      path: "M8.262 5.142c.167-1.137-.693-1.743-1.879-2.155l.384-1.532-.936-.233-.374 1.494-.747-.178.379-1.505L4.153.8l-.385 1.537-.595-.14V2.19l-1.294-.324-.25 1s.694.164.683.169c.379.097.444.346.433.541l-.434 1.754.098.033-.102-.022-.612 2.452c-.044.114-.162.287-.428.216.011.017-.676-.162-.676-.162L.125 8.915l1.218.303.666.173-.39 1.554.936.233.38-1.538.752.195-.384 1.532.936.233.384-1.554c1.597.303 2.8.184 3.303-1.261.406-1.164-.022-1.83-.86-2.274.611-.135 1.07-.541 1.19-1.37h.006ZM6.123 8.14c-.287 1.164-2.247.53-2.88.378l.514-2.062c.633.162 2.67.47 2.366 1.678v.006Zm.287-3.016c-.26 1.056-1.895.52-2.42.39l.465-1.867c.531.13 2.231.379 1.955 1.477Z",
+    },
+  ];
+
+  return (
+    <div data-reka-popper-content-wrapper="" data-currency-dropdown="" style={style}>
+      <div
+        data-dismissable-layer=""
+        tabIndex={-1}
+        className="shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-100 flex flex-col gap-2 bg-[#263457] rounded-xl min-w-(--reka-popover-trigger-width) p-2"
+        id="reka-popover-content-v-0-146"
+        data-state="open"
+        aria-labelledby="reka-popover-trigger-v-0-142"
+        role="dialog"
+        data-side="bottom"
+        data-align="center"
+        style={{
+          "--reka-popover-content-transform-origin":
+            "var(--reka-popper-transform-origin)",
+          "--reka-popover-content-available-width":
+            "var(--reka-popper-available-width)",
+          "--reka-popover-content-available-height":
+            "var(--reka-popper-available-height)",
+          "--reka-popover-trigger-width": "var(--reka-popper-anchor-width)",
+          "--reka-popover-trigger-height": "var(--reka-popper-anchor-height)",
+        }}
+      >
+        {options.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            className="p-2.5 font-medium text-sm relative outline-none cursor-pointer group"
+            data-active={selectedCurrency === option.id}
+            onClick={() => onSelect(option.id)}
+          >
+            <div className="flex items-center relative z-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox={option.viewBox}
+                className="size-5 mr-1.5"
+              >
+                <path
+                  fill="currentColor"
+                  d={option.path}
+                  {...(option.rule
+                    ? {
+                        fillRule: "evenodd",
+                        clipRule: "evenodd",
+                        opacity: ".99",
+                      }
+                    : {})}
+                />
+              </svg>
+              <p className="mr-1.5">{option.label}</p>
+              <img
+                src="/coin.webp"
+                alt=""
+                className="bg-cover bg-center size-5 ml-auto mr-1.5"
+              />
+              <span className="tabular-nums">{option.balance}</span>
+            </div>
+            <div
+              className="absolute inset-0 rounded-[10px] opacity-0 group-data-[active=true]:opacity-100 group-hover:opacity-100 transition-opacity"
+              style={{ background: option.glow }}
+            />
+          </button>
+        ))}
+        <button
+          type="button"
+          className="relative cursor-pointer outline-none flex select-none transition-opacity bg-[#324471]/80 rounded-[10px] text-accent font-medium py-2"
+          onClick={onExplain}
+        >
+          <div className="transition-opacity flex items-center justify-center size-full">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              className="size-5 mr-1.5"
+            >
+              <path
+                fill="currentColor"
+                d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2"
+              />
+            </svg>
+            What is this?
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SignedInHeaderControls({ user, onLogout }) {
+  const mm2Balance = Number(user.mm2_balance || 0).toLocaleString("en-US", {
     maximumFractionDigits: 2,
   });
+  const cryptoBalance = Number(user.crypto_balance || 0).toLocaleString(
+    "en-US",
+    { maximumFractionDigits: 8 },
+  );
   const isLevelOne = Number(user.level || 1) === 1;
   const levelColor = isLevelOne ? "#FFFFFF" : "#F33939";
+  const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
+  const [isWhatModalOpen, setIsWhatModalOpen] = useState(false);
+  const [isWalletOpen, setIsWalletOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState("mm2");
+  const [currencyDropdownStyle, setCurrencyDropdownStyle] = useState({});
+  const balanceTriggerRef = useRef(null);
+  const profileTriggerRef = useRef(null);
+  const [profileDropdownStyle, setProfileDropdownStyle] = useState({});
+  const selectedBalance =
+    selectedCurrency === "crypto" ? cryptoBalance : mm2Balance;
+
+  const positionCurrencyDropdown = useCallback(() => {
+    const rect = balanceTriggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    setCurrencyDropdownStyle({
+      position: "fixed",
+      left: 0,
+      top: 0,
+      transform: `translate(${rect.left}px, ${rect.bottom + 12}px)`,
+      width: `${rect.width}px`,
+      "--reka-popper-transform-origin": "50% 0px",
+      "--reka-popper-available-width": `${window.innerWidth - rect.left}px`,
+      "--reka-popper-available-height": `${window.innerHeight - rect.bottom - 12}px`,
+      "--reka-popper-anchor-width": `${rect.width}px`,
+      "--reka-popper-anchor-height": `${rect.height}px`,
+      zIndex: 100,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isCurrencyOpen) return;
+    positionCurrencyDropdown();
+
+    window.addEventListener("resize", positionCurrencyDropdown);
+    window.addEventListener("scroll", positionCurrencyDropdown, true);
+    return () => {
+      window.removeEventListener("resize", positionCurrencyDropdown);
+      window.removeEventListener("scroll", positionCurrencyDropdown, true);
+    };
+  }, [isCurrencyOpen, positionCurrencyDropdown]);
+
+  useEffect(() => {
+    if (!isCurrencyOpen) return;
+
+    const closeOnOutsidePress = (event) => {
+      if (
+        balanceTriggerRef.current?.contains(event.target) ||
+        event.target.closest?.("[data-currency-dropdown]")
+      ) {
+        return;
+      }
+      setIsCurrencyOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      setIsCurrencyOpen(false);
+      balanceTriggerRef.current
+        ?.querySelector("[data-currency-trigger]")
+        ?.focus();
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isCurrencyOpen]);
+
+  const positionProfileDropdown = useCallback(() => {
+    const rect = profileTriggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    setProfileDropdownStyle({
+      position: "fixed",
+      right: `${window.innerWidth - rect.right}px`,
+      top: `${rect.bottom + 12}px`,
+      "--reka-popper-transform-origin": "100% 0px",
+      "--reka-popper-available-width": `${rect.right}px`,
+      "--reka-popper-available-height": `${window.innerHeight - rect.bottom - 12}px`,
+      "--reka-popper-anchor-width": `${rect.width}px`,
+      "--reka-popper-anchor-height": `${rect.height}px`,
+      zIndex: 100,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isProfileOpen) return;
+    positionProfileDropdown();
+    window.addEventListener("resize", positionProfileDropdown);
+    window.addEventListener("scroll", positionProfileDropdown, true);
+    return () => {
+      window.removeEventListener("resize", positionProfileDropdown);
+      window.removeEventListener("scroll", positionProfileDropdown, true);
+    };
+  }, [isProfileOpen, positionProfileDropdown]);
+
+  useEffect(() => {
+    if (!isProfileOpen) return;
+    const closeOnOutsidePress = (event) => {
+      if (
+        profileTriggerRef.current?.contains(event.target) ||
+        event.target.closest?.("[data-profile-dropdown]")
+      ) {
+        return;
+      }
+      setIsProfileOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      setIsProfileOpen(false);
+      profileTriggerRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isProfileOpen]);
 
   return (
     <div className="contents">
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <div className="absolute left-1/2 xl:left-[calc(50%+3.5rem)] top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div
+          ref={balanceTriggerRef}
+          id="reka-popover-trigger-v-0-142"
+          type="button"
           aria-haspopup="dialog"
-          aria-expanded="false"
-          data-state="closed"
-          className="p-2 xs:p-2.5 bg-[#263457] rounded-2xl flex items-center gap-3 z-12 relative group"
+          aria-expanded={isCurrencyOpen}
+          aria-controls="reka-popover-content-v-0-146"
+          data-state={isCurrencyOpen ? "open" : "closed"}
+          className="p-2 xs:p-2 bg-[#263457] rounded-2xl flex items-center gap-3 z-12 relative group"
         >
           <div className="flex gap-2 items-center w-full min-w-22">
-            <div className="flex items-center gap-0.5 cursor-pointer" data-currency-trigger="">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 19 21" className="size-5.5 xs:size-6">
-                <path fill="currentColor" fillRule="evenodd" d="m1.194 0 .597.107.163.86 5.212 2.9.434.215.706-.161 2.443 1.504.597-.108.76.43.217.376 2.117 1.181 1.086.108.325.322.055.537.38.215.434.161.109-.268.271-.054 1.737.913.163.698-.109.376-.597.43-1.248 2.148.054.483.271.269-.108.322-1.412-.752-.705.322-.543.484-.38 1.128v2.793l-.272 1.503-1.031 1.504-.597.054-4.017-1.772-.217-.591.922-1.934.978-2.9.38-.322.108-.645-.271-.537-1.846-.805-.76-.913-.054-1.02.163-.645-.543-.323-.435-.644-.162-.59v-.645l.542-1.02-.108-.484-5.429-3.062-.434-.053L.054 1.45 0 .967.326.322 1.194 0Zm6.677 9.614.055.913.705.806 1.358.537.38-.645-.218-.967-2.117-1.074-.163.43Z" clipRule="evenodd" opacity=".99" />
-              </svg>
+            <button
+              type="button"
+              className="flex items-center gap-0.5 cursor-pointer outline-none"
+              data-currency-trigger=""
+              aria-haspopup="dialog"
+              aria-expanded={isCurrencyOpen}
+              aria-controls="reka-popover-content-v-0-146"
+              onClick={() => setIsCurrencyOpen((open) => !open)}
+            >
+              {selectedCurrency === "crypto" ? (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 9 12" className="size-5.5 xs:size-5.5">
+                  <path fill="currentColor" d="M8.262 5.142c.167-1.137-.693-1.743-1.879-2.155l.384-1.532-.936-.233-.374 1.494-.747-.178.379-1.505L4.153.8l-.385 1.537-.595-.14V2.19l-1.294-.324-.25 1s.694.164.683.169c.379.097.444.346.433.541l-.434 1.754.098.033-.102-.022-.612 2.452c-.044.114-.162.287-.428.216.011.017-.676-.162-.676-.162L.125 8.915l1.218.303.666.173-.39 1.554.936.233.38-1.538.752.195-.384 1.532.936.233.384-1.554c1.597.303 2.8.184 3.303-1.261.406-1.164-.022-1.83-.86-2.274.611-.135 1.07-.541 1.19-1.37h.006ZM6.123 8.14c-.287 1.164-2.247.53-2.88.378l.514-2.062c.633.162 2.67.47 2.366 1.678v.006Zm.287-3.016c-.26 1.056-1.895.52-2.42.39l.465-1.867c.531.13 2.231.379 1.955 1.477Z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 19 21" className="size-5.5 xs:size-5.5">
+                  <path fill="currentColor" fillRule="evenodd" d="m1.194 0 .597.107.163.86 5.212 2.9.434.215.706-.161 2.443 1.504.597-.108.76.43.217.376 2.117 1.181 1.086.108.325.322.055.537.38.215.434.161.109-.268.271-.054 1.737.913.163.698-.109.376-.597.43-1.248 2.148.054.483.271.269-.108.322-1.412-.752-.705.322-.543.484-.38 1.128v2.793l-.272 1.503-1.031 1.504-.597.054-4.017-1.772-.217-.591.922-1.934.978-2.9.38-.322.108-.645-.271-.537-1.846-.805-.76-.913-.054-1.02.163-.645-.543-.323-.435-.644-.162-.59v-.645l.542-1.02-.108-.484-5.429-3.062-.434-.053L.054 1.45 0 .967.326.322 1.194 0Zm6.677 9.614.055.913.705.806 1.358.537.38-.645-.218-.967-2.117-1.074-.163.43Z" clipRule="evenodd" opacity=".99" />
+                </svg>
+              )}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4 transition-transform -rotate-180 group-data-[state=open]:rotate-0 ml-auto" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5">
                 <path fill="none" stroke="currentColor" d="m18 15-6-6-6 6" />
               </svg>
-            </div>
+            </button>
             <div className="w-0.5 h-6 bg-accent/12 rounded-full" />
-            <img src="/coin.webp" alt="" className="bg-cover bg-center size-5.5 xs:size-6" />
+            <img src="/coin.webp" alt="" className="bg-cover bg-center size-5.5 xs:size-5.5" />
             <div className="flex flex-col gap-0.5 font-medium text-sm leading-none">
               <p className="text-primary text-xs hidden md:block">Balance</p>
-              <span>{balance}</span>
+              <span>{selectedBalance}</span>
             </div>
           </div>
-          <button type="button" className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-8 w-7.25 shrink-0 lg:hidden">
+          <button type="button" onClick={() => { setIsCurrencyOpen(false); setIsProfileOpen(false); setIsWalletOpen(true); }} className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-8 w-7.25 shrink-0 lg:hidden">
             <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} />
             <div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}>
               <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>
@@ -390,7 +655,7 @@ function SignedInHeaderControls({ user }) {
               </div>
             </div>
           </button>
-          <button type="button" className="relative cursor-pointer outline-none select-none transition-opacity group/button h-8 hidden lg:block">
+          <button type="button" onClick={() => { setIsCurrencyOpen(false); setIsProfileOpen(false); setIsWalletOpen(true); }} className="relative cursor-pointer outline-none select-none transition-opacity group/button h-8 hidden lg:block">
             <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} />
             <div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-3.25" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}>
               <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>
@@ -407,16 +672,38 @@ function SignedInHeaderControls({ user }) {
         <button type="button" className="relative cursor-pointer outline-none select-none text-accent hidden lg:flex px-3 py-2 hover:bg-accent/12 rounded-lg font-medium transition-colors">
           <div className="transition-opacity flex items-center justify-center size-full">WITHDRAW</div>
         </button>
-        <div aria-haspopup="dialog" aria-expanded="false" data-state="closed" className="h-12 relative group/button flex gap-2.5 items-center outline-none cursor-pointer">
+        <div
+          ref={profileTriggerRef}
+          id="reka-popover-trigger-v-0-144"
+          role="button"
+          tabIndex={0}
+          aria-haspopup="dialog"
+          aria-expanded={isProfileOpen}
+          aria-controls="reka-popover-content-v-0-147"
+          data-state={isProfileOpen ? "open" : "closed"}
+          className="h-12 relative group/button flex gap-2.5 items-center outline-none cursor-pointer"
+          onClick={() => {
+            setIsCurrencyOpen(false);
+            setIsProfileOpen((open) => !open);
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            setIsCurrencyOpen(false);
+            setIsProfileOpen((open) => !open);
+          }}
+        >
           <button type="button" className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-12">
             <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(23, 36, 68)" }} />
             <div className="font-bold size-full relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 rounded-lg px-1 flex items-center gap-2.5 !translate-y-0 !drop-shadow-none overflow-hidden" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(41, 59, 103)", color: "rgb(255, 255, 255)" }}>
               <div className="transition-opacity flex items-center justify-center size-full">
-                <div className="absolute inset-0 size-full pointer-events-none flex items-center justify-center">
-                  <svg className="size-full opacity-90" viewBox="0 0 36 36" preserveAspectRatio="xMidYMid meet">
-                    <path d="M 18 2 L 29 2 A 5 5 0 0 1 34 7 L 34 29 A 5 5 0 0 1 29 34 L 7 34 A 5 5 0 0 1 2 29 L 2 7 A 5 5 0 0 1 7 2 L 18 2" fill="none" stroke={levelColor} strokeWidth="7" strokeDasharray="10.27401813331975 119.41592653589794" />
-                  </svg>
-                </div>
+                {!isLevelOne && (
+                  <div className="absolute inset-0 size-full pointer-events-none flex items-center justify-center">
+                    <svg className="size-full opacity-90" viewBox="0 0 36 36" preserveAspectRatio="xMidYMid meet">
+                      <path d="M 18 2 L 29 2 A 5 5 0 0 1 34 7 L 34 29 A 5 5 0 0 1 29 34 L 7 34 A 5 5 0 0 1 2 29 L 2 7 A 5 5 0 0 1 7 2 L 18 2" fill="none" stroke={levelColor} strokeWidth="7" strokeDasharray="10.27401813331975 119.41592653589794" />
+                    </svg>
+                  </div>
+                )}
                 <div className="size-9.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-lg p-0.5" style={{ "--level-border-start": "#272539", "--level-border-end": levelColor, "--level-text": levelColor }}>
                   <div className="rounded-[6px] size-full flex items-center justify-center bg-[#1A2339]">
                     <img src={user.avatar_headshot} className="size-9/12 object-contain object-center rounded-[5px] ease-in-out transition-opacity no-interaction" alt={`${user.username} avatar`} loading="lazy" />
@@ -433,6 +720,43 @@ function SignedInHeaderControls({ user }) {
           </svg>
         </div>
       </div>
+      {isCurrencyOpen &&
+        createPortal(
+          <CurrencyDropdown
+            style={currencyDropdownStyle}
+            mm2Balance={mm2Balance}
+            cryptoBalance={cryptoBalance}
+            selectedCurrency={selectedCurrency}
+            onSelect={(currency) => {
+              setSelectedCurrency(currency);
+              setIsCurrencyOpen(false);
+            }}
+            onExplain={() => {
+              setIsCurrencyOpen(false);
+              setIsWhatModalOpen(true);
+            }}
+          />,
+          document.body,
+        )}
+      {isWhatModalOpen &&
+        createPortal(
+          <WhatIsThisModal onClose={() => setIsWhatModalOpen(false)} />,
+          document.body,
+        )}
+      {isWalletOpen &&
+        createPortal(
+          <WalletModal onClose={() => setIsWalletOpen(false)} />,
+          document.body,
+        )}
+      {isProfileOpen &&
+        createPortal(
+          <ProfileDropdown
+            style={profileDropdownStyle}
+            user={user}
+            onLogout={onLogout}
+          />,
+          document.body,
+        )}
     </div>
   );
 }
@@ -962,7 +1286,10 @@ export default function Header() {
                   </div>
                 </div>
                 {signedInUser ? (
-                  <SignedInHeaderControls user={signedInUser} />
+                  <SignedInHeaderControls
+                    user={signedInUser}
+                    onLogout={() => setSignedInUser(null)}
+                  />
                 ) : (
                 <button
                   type="button"

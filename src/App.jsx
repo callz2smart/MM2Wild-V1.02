@@ -2,9 +2,11 @@ import Header from "./components/Header";
 import Subheader from "./components/Subheader";
 import ChatSidebar from "./components/ChatSidebar";
 import HomePage from "./components/HomePage";
-import LoadingScreen from "./components/LoadingScreen";
+import ProfilePage from "./components/ProfilePage";
 
 export default function App() {
+  const isProfilePage = window.location.pathname === "/account/profile";
+
   return (
     <>
       <div className="app-background fixed inset-0 size-full bg-linear-to-br from-[#131C2F] to-[#212A53] z-0" />
@@ -12,9 +14,8 @@ export default function App() {
         <Header />
         <Subheader />
         <ChatSidebar />
-        <HomePage />
+        {isProfilePage ? <ProfilePage /> : <HomePage />}
       </main>
-      <LoadingScreen />
     </>
   );
 }

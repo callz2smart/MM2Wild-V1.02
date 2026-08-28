@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import LineWobbleLoader from "./LineWobbleLoader";
 
 const minimumVisibleTime = 900;
 const fadeDuration = 300;
@@ -50,24 +51,7 @@ export default function LoadingScreen() {
       aria-label="Loading MM2Wild"
       aria-busy={!isClosing}
     >
-      <img
-        src="/landscape.avif"
-        alt="Background"
-        className="absolute inset-0 w-full h-full opacity-50 object-cover select-none pointer-events-none transition-opacity duration-300"
-      />
-      <video
-        loop
-        playsInline
-        autoPlay
-        muted
-        preload="auto"
-        className="w-[180px] md:w-[320px] z-1"
-      >
-        <source
-          src="/loading-logo.webm"
-          type='video/webm; codecs="vp8, vorbis"'
-        />
-      </video>
+      <LineWobbleLoader />
     </div>
   );
 }
