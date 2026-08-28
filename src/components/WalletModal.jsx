@@ -138,10 +138,10 @@ function Mm2DepositView({ onBack, onClose }) {
   </div>;
 }
 
-export default function WalletModal({ onClose }) {
+export default function WalletModal({ onClose, initialTab = "deposit" }) {
   const [dialogState, setDialogState] = useState("open");
   const [walletView, setWalletView] = useState("wallet");
-  const [activeTab, setActiveTab] = useState("deposit");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [tabTransition, setTabTransition] = useState("idle");
   const [promo, setPromo] = useState("");
   const [coins, setCoins] = useState("1,000");

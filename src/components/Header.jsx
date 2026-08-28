@@ -482,6 +482,7 @@ function SignedInHeaderControls({ user, onLogout }) {
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [isWhatModalOpen, setIsWhatModalOpen] = useState(false);
   const [isWalletOpen, setIsWalletOpen] = useState(false);
+  const [walletInitialTab, setWalletInitialTab] = useState("deposit");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState("mm2");
   const [currencyDropdownStyle, setCurrencyDropdownStyle] = useState({});
@@ -490,6 +491,13 @@ function SignedInHeaderControls({ user, onLogout }) {
   const [profileDropdownStyle, setProfileDropdownStyle] = useState({});
   const selectedBalance =
     selectedCurrency === "crypto" ? cryptoBalance : mm2Balance;
+
+  const openWallet = (tab) => {
+    setIsCurrencyOpen(false);
+    setIsProfileOpen(false);
+    setWalletInitialTab(tab);
+    setIsWalletOpen(true);
+  };
 
   const positionCurrencyDropdown = useCallback(() => {
     const rect = balanceTriggerRef.current?.getBoundingClientRect();
@@ -645,7 +653,7 @@ function SignedInHeaderControls({ user, onLogout }) {
               <span>{selectedBalance}</span>
             </div>
           </div>
-          <button type="button" onClick={() => { setIsCurrencyOpen(false); setIsProfileOpen(false); setIsWalletOpen(true); }} className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-8 w-7.25 shrink-0 lg:hidden">
+          <button type="button" onClick={() => openWallet("deposit")} className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-8 w-7.25 shrink-0 lg:hidden">
             <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} />
             <div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}>
               <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>
@@ -655,7 +663,7 @@ function SignedInHeaderControls({ user, onLogout }) {
               </div>
             </div>
           </button>
-          <button type="button" onClick={() => { setIsCurrencyOpen(false); setIsProfileOpen(false); setIsWalletOpen(true); }} className="relative cursor-pointer outline-none select-none transition-opacity group/button h-8 hidden lg:block">
+          <button type="button" onClick={() => openWallet("deposit")} className="relative cursor-pointer outline-none select-none transition-opacity group/button h-8 hidden lg:block">
             <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} />
             <div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-3.25" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}>
               <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>
@@ -669,7 +677,7 @@ function SignedInHeaderControls({ user, onLogout }) {
         </div>
       </div>
       <div className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
-        <button type="button" className="relative cursor-pointer outline-none select-none text-accent hidden lg:flex px-3 py-2 hover:bg-accent/12 rounded-lg font-medium transition-colors">
+        <button type="button" onClick={() => openWallet("withdraw")} className="relative cursor-pointer outline-none select-none text-accent hidden lg:flex px-3 py-2 hover:bg-accent/12 rounded-lg font-medium transition-colors">
           <div className="transition-opacity flex items-center justify-center size-full">WITHDRAW</div>
         </button>
         <div
@@ -745,7 +753,7 @@ function SignedInHeaderControls({ user, onLogout }) {
         )}
       {isWalletOpen &&
         createPortal(
-          <WalletModal onClose={() => setIsWalletOpen(false)} />,
+          <WalletModal initialTab={walletInitialTab} onClose={() => setIsWalletOpen(false)} />,
           document.body,
         )}
       {isProfileOpen &&
