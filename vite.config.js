@@ -1,12 +1,19 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import robloxBackend from "./server/index.js";
+import robloxBackend, { resolveSessionUser } from "./server/index.js";
+import { attachChatServer } from "./server/chat.js";
 
 function localBackend(backendEnv) {
   return {
     name: "local-backend",
     configureServer(devServer) {
+      // Attach the real-time chat WebSocket server to the dev HTTP server so
+      // /api/chat upgrades are handled alongside the REST API below.
+      attachChatServer(devServer.httpServer, {
+        verifySession: (token) => resolveSessionUser(token, backendEnv),
+      });
+
       devServer.middlewares.use(async (request, response, next) => {
         const requestUrl = new URL(request.url, "http://localhost");
         if (!requestUrl.pathname.startsWith("/api/")) return next();

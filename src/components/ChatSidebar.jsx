@@ -1,59 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 
-const users = {
-  Itz_NinjaPlayzz: {
-    level: 1,
-    color: "#BEBEBE",
-    avatar:
-      "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-9E12919EC1A578390B1018D597D9FC67-Png/180/180/AvatarHeadshot/Webp/noFilter",
-  },
-  "31K_BakonQ": {
-    level: 26,
-    color: "#F36D39",
-    avatar:
-      "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-8BAFC2064D05A2CD35FEE4D3E3AE37AE-Png/180/180/AvatarHeadshot/Webp/noFilter",
-  },
-  PROSERMKAN: {
-    level: 8,
-    color: "#BEBEBE",
-    avatar:
-      "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-4547327319F0885FB946AEB58B6B2F27-Png/180/180/AvatarHeadshot/Webp/noFilter",
-  },
-  DSDARK45: {
-    level: 28,
-    color: "#F36D39",
-    avatar:
-      "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-DE28DD0B1AF3A8C9EF3D80F3C80C121F-Png/180/180/AvatarHeadshot/Webp/noFilter",
-  },
-  MM2_DBA: {
-    level: 28,
-    color: "#F36D39",
-    avatar:
-      "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-E325AAD5E16DED0DE78FA96EBF5F0972-Png/180/180/AvatarHeadshot/Webp/noFilter",
-  },
-  Berkeoyundaaaaa: {
-    level: 31,
-    color: "#F33972",
-    avatar:
-      "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-4143BBD1EACAA16430FB70781F890029-Png/180/180/AvatarHeadshot/Webp/noFilter",
-  },
+// Fallback profile used when a message arrives without user metadata. The
+// server normally sends a full profile with every chat message, but this keeps
+// the UI resilient if an older message format slips through.
+const fallbackUser = {
+  level: 1,
+  color: "#BEBEBE",
+  avatar:
+    "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-9E12919EC1A578390B1018D597D9FC67-Png/180/180/AvatarHeadshot/Webp/noFilter",
 };
-
-const initialMessages = [
-  ["Itz_NinjaPlayzz", "some1 please tip me man", "21:09"],
-  ["31K_BakonQ", "Sa", "21:09"],
-  ["PROSERMKAN", "gel dark", "21:09"],
-  ["Itz_NinjaPlayzz", "i rlly want to get started", "21:09"],
-  ["DSDARK45", "helal sermkan", "21:09"],
-  ["MM2_DBA", "As", "21:09"],
-  ["PROSERMKAN", "yaz dark", "21:09"],
-  ["Berkeoyundaaaaa", "Bako", "21:09"],
-  ["PROSERMKAN", "dark sarı bas", "21:10"],
-  ["DSDARK45", "Hw", "21:10"],
-  ["Itz_NinjaPlayzz", "please tip me", "21:10"],
-  ["MM2_DBA", "Benim monthly geliyor", "21:10"],
-  ["MM2_DBA", "77 gelcek", "21:10"],
-];
 
 function ChatIcon() {
   return (
@@ -168,8 +123,8 @@ function RainPot() {
   );
 }
 
-function ChatMessage({ name, body, time }) {
-  const user = users[name] ?? users.Itz_NinjaPlayzz;
+function ChatMessage({ name, body, time, user }) {
+  const profile = user ?? fallbackUser;
   return (
     <div
       className="relative flex flex-col group/message"
@@ -178,11 +133,11 @@ function ChatMessage({ name, body, time }) {
       <div className="flex gap-1.75 relative group z-1">
         <div
           className="size-10 rounded-[9px] cursor-pointer flex shrink-0 flex-col items-center relative bg-linear-to-b from-[#1D2A53] from-5% p-0.5"
-          style={{ "--tw-gradient-to": user.color }}
+          style={{ "--tw-gradient-to": profile.color }}
         >
           <div className="size-full flex items-center justify-center rounded-[7px] bg-[#1A2339]">
             <img
-              src={user.avatar}
+              src={profile.avatar}
               className="size-9/12 object-contain object-center no-interaction rounded"
               alt=""
               loading="lazy"
@@ -194,14 +149,14 @@ function ChatMessage({ name, body, time }) {
             <div
               className="p-0.5 rounded-[5px]"
               style={{
-                background: `linear-gradient(${user.color}55, ${user.color})`,
+                background: `linear-gradient(${profile.color}55, ${profile.color})`,
               }}
             >
               <div
                 className="flex items-center justify-center font-medium !leading-none px-1 py-0.25 text-[11px] rounded-[3px] bg-[#263457]"
-                style={{ color: user.color }}
+                style={{ color: profile.color }}
               >
-                {user.level}
+                {profile.level}
               </div>
             </div>
             <span className="font-semibold text-[13px] ml-1 cursor-pointer truncate">
@@ -243,8 +198,80 @@ function ChatMessage({ name, body, time }) {
 
 export default function ChatSidebar() {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState([]);
+  const [onlineCount, setOnlineCount] = useState(0);
+  const [connected, setConnected] = useState(false);
+  const socketRef = useRef(null);
   const viewportRef = useRef(null);
+
+  useEffect(() => {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const socketUrl = `${protocol}//${window.location.host}/api/chat`;
+    let disposed = false;
+    let reconnectTimer = null;
+
+    const handleMessage = (event) => {
+      let payload;
+      try {
+        payload = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      if (payload.type === "init") {
+        setMessages(payload.messages || []);
+        setOnlineCount(payload.online || 0);
+      } else if (payload.type === "chat") {
+        setMessages((current) => [
+          ...current,
+          {
+            name: payload.name,
+            body: payload.body,
+            time: payload.time,
+            user: payload.user,
+          },
+        ]);
+      } else if (payload.type === "presence") {
+        setOnlineCount(payload.online || 0);
+      } else if (payload.type === "error") {
+        setMessage("");
+        const input = document.activeElement;
+        if (input && input.placeholder !== undefined) {
+          const original = input.placeholder;
+          input.placeholder = payload.error || "Something went wrong.";
+          setTimeout(() => {
+            if (input) input.placeholder = original;
+          }, 2500);
+        }
+      }
+    };
+
+    const connect = () => {
+      if (disposed) return;
+      const socket = new WebSocket(socketUrl);
+      socketRef.current = socket;
+
+      socket.addEventListener("open", () => setConnected(true));
+      socket.addEventListener("message", handleMessage);
+      socket.addEventListener("close", () => {
+        setConnected(false);
+        if (socketRef.current === socket) socketRef.current = null;
+        if (!disposed) reconnectTimer = setTimeout(connect, 1500);
+      });
+      socket.addEventListener("error", () => {
+        // The close event always fires after an error, which handles cleanup.
+      });
+    };
+
+    connect();
+
+    return () => {
+      disposed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      const socket = socketRef.current;
+      if (socket) socket.close();
+      socketRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -255,7 +282,10 @@ export default function ChatSidebar() {
     event.preventDefault();
     const body = message.trim();
     if (!body) return;
-    setMessages((current) => [...current, ["Itz_NinjaPlayzz", body, "NOW"]]);
+    const socket = socketRef.current;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "chat", body }));
+    }
     setMessage("");
   };
 
@@ -275,9 +305,13 @@ export default function ChatSidebar() {
             <div className="h-[calc(100%-3px)] bg-[#27376A] px-3.5 rounded-lg flex items-center relative">
               <span className="relative flex size-2.5">
                 <span className="animate-ping absolute inline-flex size-full rounded bg-[#5CDF9A]/75" />
-                <span className="relative inline-flex rounded size-full bg-[#5CDF9A]" />
+                <span
+                  className={`relative inline-flex rounded size-full ${
+                    connected ? "bg-[#5CDF9A]" : "bg-[#F36D39]"
+                  }`}
+                />
               </span>
-              <p className="text-sm font-semibold ml-2">55</p>
+              <p className="text-sm font-semibold ml-2">{onlineCount}</p>
             </div>
           </div>
         </div>
@@ -297,12 +331,13 @@ export default function ChatSidebar() {
               tabIndex={0}
             >
               <div className="flex-1 flex flex-col gap-5 px-3.5">
-                {messages.map(([name, body, time], index) => (
+                {messages.map((entry, index) => (
                   <ChatMessage
-                    key={`${name}-${index}-${body}`}
-                    name={name}
-                    body={body}
-                    time={time}
+                    key={`${entry.name}-${index}-${entry.body}`}
+                    name={entry.name}
+                    body={entry.body}
+                    time={entry.time}
+                    user={entry.user}
                   />
                 ))}
               </div>
@@ -318,8 +353,9 @@ export default function ChatSidebar() {
             <input
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              className="flex-1 min-w-0 bg-transparent outline-none border-none font-medium text-sm text-white placeholder:text-accent"
-              placeholder="Enter a message.."
+              disabled={!connected}
+              className="flex-1 min-w-0 bg-transparent outline-none border-none font-medium text-sm text-white placeholder:text-accent disabled:opacity-60"
+              placeholder={connected ? "Enter a message.." : "Connecting…"}
             />
             <button
               type="button"

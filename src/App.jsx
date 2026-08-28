@@ -5,7 +5,9 @@ import HomePage from "./components/HomePage";
 import ProfilePage from "./components/ProfilePage";
 
 export default function App() {
-  const isProfilePage = window.location.pathname === "/account/profile";
+  const pathname = window.location.pathname;
+  const isAccountPage = pathname.startsWith("/account/");
+  const activeTab = pathname.replace("/account/", "");
 
   return (
     <>
@@ -14,7 +16,7 @@ export default function App() {
         <Header />
         <Subheader />
         <ChatSidebar />
-        {isProfilePage ? <ProfilePage /> : <HomePage />}
+        {isAccountPage ? <ProfilePage activeTab={activeTab} /> : <HomePage />}
       </main>
     </>
   );

@@ -11,6 +11,10 @@ import ProfileGameDropdown, {
   ProfileGameIcon,
   profileGames,
 } from "./ProfileGameDropdown";
+import FairnessPanel from "./FairnessPanel";
+import GameHistoryPanel from "./GameHistoryPanel";
+import TransactionsPanel from "./TransactionsPanel";
+import SecurityPanel from "./SecurityPanel";
 
 const formatNumber = (value, maximumFractionDigits = 2) =>
   Number(value || 0).toLocaleString("en-US", { maximumFractionDigits });
@@ -91,15 +95,36 @@ function LinkedAccountCard({ type }) {
   );
 }
 
-export default function ProfilePage() {
+const accountTabs = [
+  ["Profile", "profile", "/account/profile"],
+  ["Fairness", "fairness", "/account/fairness"],
+  ["Game History", "bets", "/account/bets"],
+  ["Transactions", "transactions", "/account/transactions"],
+  ["Security", "security", "/account/security"],
+];
+
+export default function ProfilePage({ activeTab: initialTab = "profile" }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedGameId, setSelectedGameId] = useState("battles");
   const [displayedGameId, setDisplayedGameId] = useState("battles");
   const [gameImagePhase, setGameImagePhase] = useState("visible");
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
   const [gameDropdownStyle, setGameDropdownStyle] = useState({});
   const gameTriggerRef = useRef(null);
+
+  const activeTabIndex = Math.max(
+    0,
+    accountTabs.findIndex(([, key]) => key === activeTab),
+  );
+
+  const switchTab = useCallback((tabKey) => {
+    const tab = accountTabs.find(([, key]) => key === tabKey);
+    if (!tab) return;
+    setActiveTab(tabKey);
+    window.history.pushState({}, "", tab[2]);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -112,6 +137,16 @@ export default function ProfilePage() {
       .catch(() => {})
       .finally(() => setIsLoading(false));
     return () => controller.abort();
+  }, []);
+
+  // Sync active tab with browser back/forward navigation.
+  useEffect(() => {
+    const onPopState = () => {
+      const path = window.location.pathname.replace("/account/", "");
+      setActiveTab(path || "profile");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   const positionGameDropdown = useCallback(() => {
@@ -285,37 +320,36 @@ export default function ProfilePage() {
           </div>
 
           <div className="bg-[#202D57]/45 rounded-[20px] p-5 flex flex-col gap-4">
-            <div className="relative grid grid-cols-2 md:flex bg-[#2F3F71] p-1.5 rounded-[10px] w-full md:w-max gap-1.5 md:gap-0">
-              <div
-                className="absolute top-0 left-0 rounded-lg bg-[#D38502] pointer-events-none will-change-transform transition-[transform,width,height,opacity] duration-300 ease-out"
-                style={{
-                  transform: "translateX(6px) translateY(6px)",
-                  width: "77px",
-                  height: "36px",
-                  opacity: 1,
-                }}
-              >
-                <div className="absolute inset-0 bottom-0.5 bg-primary rounded-lg" />
-              </div>
-              {[
-                ["Profile", "/account/profile"],
-                ["Fairness", "/account/fairness"],
-                ["Game History", "/account/bets"],
-                ["Transactions", "/account/transactions"],
-                ["Security", "/account/security"],
-              ].map(([label, href], index) => (
-                <a
+            <div
+              className="relative grid grid-cols-2 md:flex bg-[#2F3F71] p-1.5 rounded-[10px] w-full md:w-max gap-1.5 md:gap-0"
+            >
+              {accountTabs.map(([label, key, href], index) => (
+                <button
                   key={href}
-                  aria-current={index === 0 ? "page" : undefined}
-                  href={href}
-                  className={`${index === 0 ? "router-link-active router-link-exact-active " : ""}relative z-10 px-4 py-2 text-sm font-semibold text-white text-center whitespace-nowrap data-[active=true]:text-[#3A3869]`}
-                  data-active={index === 0}
+                  type="button"
+                  onClick={() => switchTab(key)}
+                  className={`relative z-10 px-4 py-2 text-sm font-semibold text-center whitespace-nowrap rounded-lg transition-colors duration-200 cursor-pointer ${
+                    index === activeTabIndex
+                      ? "bg-primary text-[#3A3869] shadow-[0_3px_0_#D38502]"
+                      : "text-white hover:text-accent"
+                  }`}
+                  data-active={index === activeTabIndex}
                 >
                   {label}
-                </a>
+                </button>
               ))}
             </div>
 
+            {activeTab === "fairness" ? (
+              <FairnessPanel />
+            ) : activeTab === "bets" ? (
+              <GameHistoryPanel />
+            ) : activeTab === "transactions" ? (
+              <TransactionsPanel />
+            ) : activeTab === "security" ? (
+              <SecurityPanel />
+            ) : activeTab === "profile" ? (
+              <>
             <div className="relative">
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -378,6 +412,14 @@ export default function ProfilePage() {
               <LinkedAccountCard type="discord" />
               <LinkedAccountCard type="email" />
             </div>
+              </>
+            ) : (
+              <div className="bg-[#283562]/65 rounded-xl p-5 flex flex-col gap-4">
+                <p className="text-sm font-medium text-accent">
+                  This section is not available yet.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

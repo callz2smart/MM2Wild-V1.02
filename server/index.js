@@ -361,29 +361,510 @@ function missingSession(request) {
   );
 }
 
-async function getSession(request, env) {
-  const sessionCookie = cookieValue(request, "mm2wild_session");
-  if (!sessionCookie) return json({ user: null });
+async function resolveSessionUser(sessionCookie, env) {
+  if (!sessionCookie) return null;
   const secret = authSecret(env);
-  if (!secret) return missingSession(request);
+  if (!secret) return null;
   const session = await verifySignedToken(sessionCookie, secret);
-  if (session?.type !== "session" || !session.uuid) return missingSession(request);
+  if (session?.type !== "session" || !session.uuid) return null;
 
   try {
     const query = new URLSearchParams({ uuid: `eq.${session.uuid}`, select: "*", limit: "1" });
     const response = await supabaseRequest(env, `mm2wild_users?${query}`);
     const rows = await response.json().catch(() => null);
-    if (!response.ok || !Array.isArray(rows) || !rows[0]) return missingSession(request);
-    if (String(rows[0].roblox_user_id) !== session.robloxUserId) return missingSession(request);
-    return json({ user: rows[0] });
+    if (!response.ok || !Array.isArray(rows) || !rows[0]) return null;
+    if (String(rows[0].roblox_user_id) !== session.robloxUserId) return null;
+    return rows[0];
   } catch {
-    return missingSession(request);
+    return null;
   }
+}
+
+async function getSession(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  const user = await resolveSessionUser(sessionCookie, env);
+  if (!user) return missingSession(request);
+  return json({ user });
+}
+
+export { resolveSessionUser };
+
+// Cloudflare Durable Object that powers the live chat in production.
+// The local Vite dev server mirrors the same protocol in server/chat.js so
+// the client code is identical between environments.
+export class ChatRoom {
+  constructor(state, env) {
+    this.state = state;
+    this.env = env;
+    this.history = [];
+    this.sessions = new Set();
+  }
+
+  async fetch(request) {
+    if (request.headers.get("upgrade") !== "websocket") {
+      return json({ error: "This route requires a WebSocket connection." }, 426);
+    }
+
+    const cookieHeader = request.headers.get("cookie") || "";
+    const sessionCookie = (cookieHeader.match(/mm2wild_session=([^;]+)/) || [])[1] || "";
+    const account = await resolveSessionUser(sessionCookie, this.env);
+    const profile = account
+      ? {
+          name: account.username,
+          level: account.level ?? 1,
+          color: chatColorForLevel(account.level ?? 1),
+          avatar: account.avatar_headshot || guestChatProfile.avatar,
+        }
+      : { ...guestChatProfile, name: "Guest" };
+
+    const pair = new WebSocketPair();
+    const [client, server] = Object.values(pair);
+
+    this.sessions.add(server);
+
+    server.serializeAttachment({ profile, lastMessageAt: 0 });
+
+    server.send(
+      JSON.stringify({
+        type: "init",
+        online: this.sessions.size,
+        messages: this.history,
+        you: { ...profile, anonymous: !account },
+      }),
+    );
+    this.broadcastPresence();
+
+    server.addEventListener("message", (event) => {
+      const attachment = server.deserializeAttachment() || {};
+      const identity = attachment.profile || profile;
+
+      if (!account) {
+        server.send(
+          JSON.stringify({
+            type: "error",
+            error: "Sign in to send messages to the chat.",
+          }),
+        );
+        return;
+      }
+
+      let payload;
+      try {
+        payload = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      if (payload?.type !== "chat") return;
+
+      const body = String(payload.body || "").slice(0, 500).trim();
+      if (!body) return;
+
+      const now = Date.now();
+      if (now - (attachment.lastMessageAt || 0) < 2000) {
+        server.send(JSON.stringify({ type: "error", error: "Slow down a moment." }));
+        return;
+      }
+      server.serializeAttachment({ ...attachment, lastMessageAt: now });
+
+      const message = {
+        type: "chat",
+        name: identity.name,
+        body,
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }),
+        user: identity,
+      };
+      this.history.push(message);
+      if (this.history.length > 50) this.history.shift();
+      for (const peer of this.sessions) {
+        if (peer.readyState === 1) peer.send(JSON.stringify(message));
+      }
+    });
+
+    server.addEventListener("close", () => {
+      this.sessions.delete(server);
+      this.broadcastPresence();
+    });
+
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  broadcastPresence() {
+    const data = JSON.stringify({ type: "presence", online: this.sessions.size });
+    for (const peer of this.sessions) {
+      if (peer.readyState === 1) peer.send(data);
+    }
+  }
+}
+
+const guestChatProfile = {
+  level: 1,
+  color: "#BEBEBE",
+  avatar:
+    "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-9E12919EC1A578390B1018D597D9FC67-Png/180/180/AvatarHeadshot/Webp/noFilter",
+};
+
+function chatColorForLevel(level) {
+  if (level >= 30) return "#F33972";
+  if (level >= 20) return "#F36D39";
+  return "#BEBEBE";
+}
+
+// ── Provably-fair seed management ───────────────────────────────────────────
+
+function generateServerSeed() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256Hex(input) {
+  const data = encoder.encode(input);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function getActiveFairnessSeed(env, userUuid) {
+  const query = new URLSearchParams({
+    user_uuid: `eq.${userUuid}`,
+    active: "eq.true",
+    select: "*",
+    limit: "1",
+    order: "created_at.desc",
+  });
+  const response = await supabaseRequest(env, `mm2wild_fairness?${query}`);
+  const rows = await response.json().catch(() => null);
+  if (!response.ok || !Array.isArray(rows)) {
+    throw new Error("Could not load fairness data.");
+  }
+  return rows[0] || null;
+}
+
+async function createFairnessSeed(env, userUuid, clientSeed = "") {
+  const serverSeed = generateServerSeed();
+  const serverSeedHash = await sha256Hex(serverSeed);
+  const response = await supabaseRequest(
+    env,
+    "mm2wild_fairness",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({
+        user_uuid: userUuid,
+        server_seed: serverSeed,
+        server_seed_hash: serverSeedHash,
+        client_seed: clientSeed,
+      }),
+    },
+  );
+  const rows = await response.json().catch(() => null);
+  if (!response.ok || !Array.isArray(rows) || !rows[0]) {
+    throw new Error("Could not create a new fairness seed.");
+  }
+  return rows[0];
+}
+
+async function getFairness(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  const user = await resolveSessionUser(sessionCookie, env);
+  if (!user) return missingSession(request);
+
+  try {
+    let seed = await getActiveFairnessSeed(env, user.uuid);
+    if (!seed) seed = await createFairnessSeed(env, user.uuid);
+
+    // Fetch the most recently rotated seed so the user can verify it.
+    const prevQuery = new URLSearchParams({
+      user_uuid: `eq.${user.uuid}`,
+      active: "eq.false",
+      select: "server_seed,server_seed_hash,client_seed,games_played,rotated_at",
+      limit: "1",
+      order: "rotated_at.desc",
+    });
+    const prevResponse = await supabaseRequest(env, `mm2wild_fairness?${prevQuery}`);
+    const prevRows = await prevResponse.json().catch(() => null);
+    const previousSeed = prevRows?.[0] || null;
+
+    return json({
+      serverSeedHash: seed.server_seed_hash,
+      clientSeed: seed.client_seed,
+      gamesPlayed: seed.games_played,
+      previousSeed: previousSeed
+        ? {
+            serverSeed: previousSeed.server_seed,
+            serverSeedHash: previousSeed.server_seed_hash,
+            clientSeed: previousSeed.client_seed,
+            gamesPlayed: previousSeed.games_played,
+          }
+        : null,
+    });
+  } catch (error) {
+    return json({ error: error.message }, 503);
+  }
+}
+
+async function updateClientSeed(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  const user = await resolveSessionUser(sessionCookie, env);
+  if (!user) return missingSession(request);
+
+  const body = await request.json().catch(() => null);
+  const clientSeed = String(body?.clientSeed || "").trim();
+  if (clientSeed.length < 4 || clientSeed.length > 64) {
+    return json({ error: "Client seed must be 4-64 characters." }, 400);
+  }
+  if (!/^[A-Za-z0-9_-]+$/.test(clientSeed)) {
+    return json({ error: "Client seed may only contain letters, numbers, hyphens and underscores." }, 400);
+  }
+
+  try {
+    let seed = await getActiveFairnessSeed(env, user.uuid);
+    if (!seed) seed = await createFairnessSeed(env, user.uuid, clientSeed);
+
+    const patchQuery = new URLSearchParams({ id: `eq.${seed.id}`, select: "*" });
+    const response = await supabaseRequest(
+      env,
+      `mm2wild_fairness?${patchQuery}`,
+      {
+        method: "PATCH",
+        headers: { "content-type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify({ client_seed: clientSeed }),
+      },
+    );
+    const rows = await response.json().catch(() => null);
+    if (!response.ok || !Array.isArray(rows) || !rows[0]) {
+      throw new Error("Could not update the client seed.");
+    }
+    return json({
+      serverSeedHash: rows[0].server_seed_hash,
+      clientSeed: rows[0].client_seed,
+      gamesPlayed: rows[0].games_played,
+    });
+  } catch (error) {
+    return json({ error: error.message }, 503);
+  }
+}
+
+async function rotateServerSeed(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  const user = await resolveSessionUser(sessionCookie, env);
+  if (!user) return missingSession(request);
+
+  try {
+    let current = await getActiveFairnessSeed(env, user.uuid);
+    if (!current) current = await createFairnessSeed(env, user.uuid);
+
+    // Deactivate the current seed and stamp the rotation time.
+    const deactivateQuery = new URLSearchParams({ id: `eq.${current.id}` });
+    await supabaseRequest(
+      env,
+      `mm2wild_fairness?${deactivateQuery}`,
+      {
+        method: "PATCH",
+        headers: { "content-type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ active: false, rotated_at: new Date().toISOString() }),
+      },
+    );
+
+    // Create a fresh active seed, carrying over the client seed.
+    const newSeed = await createFairnessSeed(env, user.uuid, current.client_seed);
+
+    return json({
+      previousSeed: {
+        serverSeed: current.server_seed,
+        serverSeedHash: current.server_seed_hash,
+        clientSeed: current.client_seed,
+        gamesPlayed: current.games_played,
+      },
+      serverSeedHash: newSeed.server_seed_hash,
+      clientSeed: newSeed.client_seed,
+      gamesPlayed: newSeed.games_played,
+    });
+  } catch (error) {
+    return json({ error: error.message }, 503);
+  }
+}
+
+// ── Bet history ─────────────────────────────────────────────────────────────
+
+const VALID_GAME_FILTERS = ["all", "mines", "plinko", "battles", "coinflip", "roulette", "cases", "upgrader"];
+
+// ── Transaction history ─────────────────────────────────────────────────────
+
+const VALID_METHOD_FILTERS = ["all", "rakeback", "mm2_deposit", "mm2_withdraw", "crypto_deposit", "crypto_withdraw", "tip_sent", "tip_received", "affiliate"];
+
+// ── Security / Sessions ─────────────────────────────────────────────────────
+
+async function getSessions(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  const user = await resolveSessionUser(sessionCookie, env);
+  if (!user) return missingSession(request);
+
+  const url = new URL(request.url);
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1);
+  const perPage = Math.min(50, Math.max(1, parseInt(url.searchParams.get("perPage") || "10", 10) || 10));
+  const offset = (page - 1) * perPage;
+
+  const filterStr = `user_uuid=eq.${user.uuid}`;
+  const dataQuery = `${filterStr}&select=id,browser,os,ip_address,country_code,country_name,is_current,last_active&order=last_active.desc&limit=${perPage}&offset=${offset}`;
+  const countQuery = `${filterStr}&select=id`;
+
+  const [dataResponse, countResponse] = await Promise.all([
+    supabaseRequest(env, `mm2wild_sessions?${dataQuery}`),
+    supabaseRequest(env, `mm2wild_sessions?${countQuery}`, {
+      headers: { Prefer: "count=exact", Range: "0-0" },
+    }),
+  ]);
+
+  const rows = await dataResponse.json().catch(() => null);
+  if (!dataResponse.ok || !Array.isArray(rows)) {
+    return json({ error: "Could not load sessions." }, 503);
+  }
+
+  const total = parseInt(countResponse.headers.get("content-range")?.split("/")[1] || "0", 10) || 0;
+
+  return json({
+    sessions: rows.map((row) => ({
+      id: row.id,
+      browser: row.browser,
+      os: row.os,
+      ipAddress: row.ip_address,
+      countryCode: row.country_code,
+      countryName: row.country_name,
+      isCurrent: row.is_current,
+      lastActive: row.last_active,
+    })),
+    total,
+    page,
+    perPage,
+    totalPages: Math.max(1, Math.ceil(total / perPage)),
+  });
+}
+
+async function getTransactionHistory(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  const user = await resolveSessionUser(sessionCookie, env);
+  if (!user) return missingSession(request);
+
+  const url = new URL(request.url);
+  const method = (url.searchParams.get("method") || "all").trim();
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1);
+  const perPage = Math.min(50, Math.max(1, parseInt(url.searchParams.get("perPage") || "10", 10) || 10));
+  const offset = (page - 1) * perPage;
+
+  const filters = [`user_uuid=eq.${user.uuid}`];
+  if (method !== "all" && VALID_METHOD_FILTERS.includes(method)) {
+    filters.push(`method=eq.${method}`);
+  }
+
+  const filterStr = filters.join("&");
+  const dataQuery = `${filterStr}&select=id,method,status,amount,created_at&order=created_at.desc&limit=${perPage}&offset=${offset}`;
+  const countQuery = `${filterStr}&select=id`;
+
+  const [dataResponse, countResponse] = await Promise.all([
+    supabaseRequest(env, `mm2wild_transactions?${dataQuery}`),
+    supabaseRequest(env, `mm2wild_transactions?${countQuery}`, {
+      headers: { Prefer: "count=exact", Range: "0-0" },
+    }),
+  ]);
+
+  const rows = await dataResponse.json().catch(() => null);
+  if (!dataResponse.ok || !Array.isArray(rows)) {
+    return json({ error: "Could not load transaction history." }, 503);
+  }
+
+  const total = parseInt(countResponse.headers.get("content-range")?.split("/")[1] || "0", 10) || 0;
+
+  return json({
+    transactions: rows.map((row) => ({
+      id: row.id,
+      method: row.method,
+      status: row.status,
+      amount: Number(row.amount || 0),
+      date: row.created_at,
+    })),
+    total,
+    page,
+    perPage,
+    totalPages: Math.max(1, Math.ceil(total / perPage)),
+  });
+}
+
+async function getBetHistory(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  const user = await resolveSessionUser(sessionCookie, env);
+  if (!user) return missingSession(request);
+
+  const url = new URL(request.url);
+  const game = (url.searchParams.get("game") || "all").trim();
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1);
+  const perPage = Math.min(50, Math.max(1, parseInt(url.searchParams.get("perPage") || "10", 10) || 10));
+  const offset = (page - 1) * perPage;
+
+  const filters = [`user_uuid=eq.${user.uuid}`];
+  if (game !== "all" && VALID_GAME_FILTERS.includes(game)) {
+    filters.push(`game=eq.${game}`);
+  }
+
+  const query = new URLSearchParams({
+    [filters.join("&")]: "",
+    select: "id,game,status,amount,profit,multiplier,created_at",
+    order: "created_at.desc",
+    limit: String(perPage),
+    offset: String(offset),
+  });
+
+  // Supabase REST API uses filter params directly, so build the query manually.
+  const filterStr = filters.join("&");
+  const dataQuery = `${filterStr}&select=id,game,status,amount,profit,multiplier,created_at&order=created_at.desc&limit=${perPage}&offset=${offset}`;
+  const countQuery = `${filterStr}&select=id`;
+
+  const [dataResponse, countResponse] = await Promise.all([
+    supabaseRequest(env, `mm2wild_bets?${dataQuery}`),
+    supabaseRequest(env, `mm2wild_bets?${countQuery}`, {
+      headers: { Prefer: "count=exact", Range: "0-0" },
+    }),
+  ]);
+
+  const rows = await dataResponse.json().catch(() => null);
+  if (!dataResponse.ok || !Array.isArray(rows)) {
+    return json({ error: "Could not load bet history." }, 503);
+  }
+
+  const total = parseInt(countResponse.headers.get("content-range")?.split("/")[1] || "0", 10) || 0;
+
+  return json({
+    bets: rows.map((row) => ({
+      id: row.id,
+      game: row.game,
+      status: row.status,
+      amount: Number(row.amount || 0),
+      profit: Number(row.profit || 0),
+      multiplier: Number(row.multiplier || 0),
+      date: row.created_at,
+    })),
+    total,
+    page,
+    perPage,
+    totalPages: Math.max(1, Math.ceil(total / perPage)),
+  });
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/chat") {
+      const id = env.CHAT_ROOM.idFromName("global");
+      return env.CHAT_ROOM.get(id).fetch(request);
+    }
+
     if (url.pathname === "/api/roblox-user" && request.method === "GET") {
       try {
         return await getRobloxUser(request);
@@ -403,6 +884,32 @@ export default {
     }
     if (url.pathname === "/api/session" && request.method === "GET") {
       return getSession(request, env);
+    }
+    if (url.pathname === "/api/fairness" && request.method === "GET") {
+      return getFairness(request, env);
+    }
+    if (url.pathname === "/api/fairness/client-seed" && request.method === "POST") {
+      try {
+        return await updateClientSeed(request, env);
+      } catch {
+        return json({ error: "The client seed could not be updated." }, 500);
+      }
+    }
+    if (url.pathname === "/api/fairness/rotate" && request.method === "POST") {
+      try {
+        return await rotateServerSeed(request, env);
+      } catch {
+        return json({ error: "The server seed could not be rotated." }, 500);
+      }
+    }
+    if (url.pathname === "/api/bets" && request.method === "GET") {
+      return getBetHistory(request, env);
+    }
+    if (url.pathname === "/api/transactions" && request.method === "GET") {
+      return getTransactionHistory(request, env);
+    }
+    if (url.pathname === "/api/sessions" && request.method === "GET") {
+      return getSessions(request, env);
     }
     if (url.pathname.startsWith("/api/")) return json({ error: "API route not found." }, 404);
     return env.ASSETS.fetch(request);
