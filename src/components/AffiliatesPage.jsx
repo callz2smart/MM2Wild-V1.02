@@ -147,16 +147,16 @@ function AffiliateSetup({ onSubmit }) {
   );
 }
 
-function SuccessNotification({ state, onDismiss }) {
+function SuccessNotification({ notification, onDismiss }) {
   return (
-    <div className={`fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] max-w-[calc(100vw-32px)] ${state === "closing" ? "copied-notification-leave" : "copied-notification-enter"}`} role="region" aria-label="Success notification">
+    <div className={`fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] max-w-[calc(100vw-32px)] ${notification.state === "closing" ? "copied-notification-leave" : "copied-notification-enter"}`} role="region" aria-label="Success notification">
       <div className="relative bg-[#243157] rounded-[9px] overflow-hidden w-[310px] max-w-full" style={{ "--toast-color": "var(--color-success)" }}>
         <div className="w-1 absolute top-0 bottom-0 left-0 bg-(--toast-color)" />
         <div className="w-14 h-7 absolute bottom-0 left-0 blur-2xl bg-(--toast-color)" />
         <div className="flex gap-3 p-5 relative z-10">
           <div className="flex flex-col gap-0.5 flex-1">
-            <p className="font-medium leading-none text-foreground">Well done!</p>
-            <div role="status" aria-live="polite" className="text-sm font-medium leading-none text-accent">Affiliate code set successfully!</div>
+            <p className="font-medium leading-none text-foreground">{notification.title}</p>
+            <div role="status" aria-live="polite" className="text-sm font-medium leading-none text-accent">{notification.message}</div>
           </div>
           <button type="button" className="bg-[#18213A] hover:bg-[#18213A]/75 rounded-[7px] size-6 flex items-center justify-center transition-colors cursor-pointer absolute right-2 top-2" aria-label="Dismiss notification" onClick={onDismiss}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.75"><path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" /></svg>
@@ -199,15 +199,36 @@ export default function AffiliatesPage() {
   useEffect(() => {
     if (!notification) return undefined;
     const timer = window.setTimeout(
-      () => setNotification(notification === "closing" ? null : "closing"),
-      notification === "closing" ? 350 : 4000,
+      () => setNotification((current) => current && (
+        current.state === "closing" ? null : { ...current, state: "closing" }
+      )),
+      notification.state === "closing" ? 350 : 4000,
     );
     return () => window.clearTimeout(timer);
   }, [notification]);
 
   const handleAffiliateCreated = (createdAffiliate) => {
     setAffiliate(createdAffiliate);
-    setNotification("open");
+    setNotification({
+      id: Date.now(),
+      state: "open",
+      title: "Well done!",
+      message: "Affiliate code set successfully!",
+    });
+  };
+
+  const copyReferralLink = async () => {
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      setNotification({
+        id: Date.now(),
+        state: "open",
+        title: "Nice, Copied!",
+        message: "Successfully copied to clipboard.",
+      });
+    } catch {
+      // Clipboard access can be blocked by browser permissions.
+    }
   };
 
   if (!user || affiliate === undefined) {
@@ -266,7 +287,7 @@ export default function AffiliatesPage() {
                         aria-label="Copy referral link"
                         className="text-accent hover:text-accent-light transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
                         disabled={!affiliateCode}
-                        onClick={() => navigator.clipboard?.writeText(referralLink)}
+                        onClick={copyReferralLink}
                       ><CopyIcon /></button>
                       <p className="text-accent font-medium text-sm truncate">{referralLink}</p>
                     </div>
@@ -326,7 +347,13 @@ export default function AffiliatesPage() {
         </div>
         {affiliate === null && <AffiliateSetup onSubmit={handleAffiliateCreated} />}
       </div>
-      {notification && <SuccessNotification state={notification} onDismiss={() => setNotification("closing")} />}
+      {notification && (
+        <SuccessNotification
+          key={notification.id}
+          notification={notification}
+          onDismiss={() => setNotification((current) => current ? { ...current, state: "closing" } : null)}
+        />
+      )}
       <Footer />
     </div>
   );
