@@ -14,6 +14,33 @@ const chatRanks = {
   whale: { label: "Whale", image: "/ranks/Whale.webp", color: "#43B6EF", priority: 2 },
 };
 
+const chatEmojis = [
+  ["giga.webp", "GIGACHAD"], ["speed.avif", "speedLaugh"], ["stfu.webp", "STFU"],
+  ["richy.webp", "richy"], ["cantprove.webp", "cantprove"], ["nooo.webp", "NOOO"],
+  ["catkiss.gif", "kiss"], ["icant.webp", "icant"], ["nerd.webp", "nerd"],
+  ["amogus.webp", "amogus"], ["cinema.webp", "cinema"], ["depressed.webp", "cry"],
+  ["sussy.webp", "sussy"], ["prayge.webp", "prayge"], ["pog.webp", "pog"],
+  ["bruh.webp", "bruh"], ["flushed.webp", "flushed"], ["wajaja.webp", "wajaja"],
+  ["BoneZone-1x.webp", "bonezone"], ["peepoFAT-1x.webp", "peepoFAT"],
+  ["WHAT-1x.webp", "WHAT"], ["RIPBOZO-1x.webp", "RIPBOZO"],
+  ["RAGEY-1x.webp", "RAGEY"], ["POLICE-1x.webp", "POLICE"],
+  ["!gamble-1x.webp", "gamble"], ["Jerry-1x.webp", "Jerry"],
+  ["Nerdge-1x.webp", "Nerdge"], ["PeepoFinger-1x.webp", "PeepoFinger"],
+  ["SAJ-1x.webp", "SAJ"], ["gg-1x.webp", "gg"], ["ohno-1x.webp", "ohno"],
+  ["peepoClap-1x.webp", "peepoClap"], ["peepoGiggles-1x.webp", "peepoGiggles"],
+  ["peepoLove-1x.webp", "peepoLove"], ["BASED-1x.webp", "BASED"],
+  ["BUSSERS-1x.webp", "BUSSERS"], ["Chadge-1x.webp", "Chadge"],
+  ["Cheergi-1x.webp", "Cheergi"], ["NOPERS-1x.webp", "NOPERS"],
+  ["NoThanks-1x.webp", "NoThanks"], ["Offline-1x.webp", "Offline"],
+  ["PausersHype-1x.webp", "PausersHype"], ["PepeHands-1x.webp", "PepeHands"],
+  ["PepegaCard-1x.webp", "PepegaCard"],
+].map(([file, name]) => ({
+  name,
+  src: `/emojis/${file}`,
+}));
+
+const chatEmojiByName = new Map(chatEmojis.map((emoji) => [emoji.name.toLowerCase(), emoji]));
+
 function rankValues(value) {
   if (Array.isArray(value)) return value;
 
@@ -132,6 +159,85 @@ function RankBadges({ ranks }) {
       {details.map((rank) => <RankBadge key={rank.label} rank={rank} />)}
     </span>
   );
+}
+
+function EmojiPicker({ activeEmoji, onActiveEmoji, onSelectEmoji, popupRef, state, style }) {
+  const contentId = useId();
+
+  return createPortal(
+    <div data-reka-popper-content-wrapper="" ref={popupRef} style={style}>
+      <div
+        data-dismissable-layer=""
+        tabIndex={-1}
+        className="shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-100 bg-[#202D5B] w-(--reka-popper-anchor-width) rounded-lg font-medium flex flex-col gap-2 mb-[8px] p-0"
+        id={contentId}
+        data-state={state}
+        aria-labelledby=""
+        role="dialog"
+        data-side="top"
+        data-align="center"
+        style={{
+          "--reka-popover-content-transform-origin": "var(--reka-popper-transform-origin)",
+          "--reka-popover-content-available-width": "var(--reka-popper-available-width)",
+          "--reka-popover-content-available-height": "var(--reka-popper-available-height)",
+          "--reka-popover-trigger-width": "var(--reka-popper-anchor-width)",
+          "--reka-popover-trigger-height": "var(--reka-popper-anchor-height)",
+        }}
+      >
+        <div className="overflow-hidden rounded-lg p-2.5">
+          <div className="grid grid-cols-6 max-h-[200px] overflow-y-auto scrollbar-hide">
+            {chatEmojis.map((emoji) => (
+              <button
+                key={emoji.name}
+                type="button"
+                className="rounded-lg aspect-square hover:opacity-60 transition-opacity cursor-pointer p-1"
+                onMouseEnter={() => onActiveEmoji(emoji)}
+                onFocus={() => onActiveEmoji(emoji)}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => onSelectEmoji(emoji)}
+              >
+                <img
+                  src={emoji.src}
+                  className="inline align-middle object-contain object-center opacity-0 transition-opacity w-9 h-9"
+                  alt={emoji.name}
+                  style={{ opacity: 1 }}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center px-4 py-2 bg-[#2A3C74] rounded-b-lg gap-2.5">
+          <div className="size-8 relative">
+            <img
+              className="relative object-contain object-center opacity-0 transition-opacity w-full h-full"
+              src={activeEmoji.src}
+              alt={activeEmoji.name}
+              style={{ opacity: 1 }}
+            />
+          </div>
+          <p className="text-white font-semibold">:{activeEmoji.name}:</p>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function ChatMessageBody({ body }) {
+  return String(body || "").split(/(:[A-Za-z0-9!_-]+:)/g).map((part, index) => {
+    const match = part.match(/^:([A-Za-z0-9!_-]+):$/);
+    const emoji = match ? chatEmojiByName.get(match[1].toLowerCase()) : null;
+    if (!emoji) return <span key={`${part}-${index}`}>{part}</span>;
+    return (
+      <img
+        key={`${emoji.name}-${index}`}
+        src={emoji.src}
+        alt={`:${emoji.name}:`}
+        title={`:${emoji.name}:`}
+        className="inline size-7 object-contain object-center align-middle"
+      />
+    );
+  });
 }
 
 function loadTurnstile() {
@@ -551,9 +657,26 @@ function RainVerificationModal({ onClose, onVerified }) {
 
 function RainPot({ onTip, onJoin, rain }) {
   const isJoining = rain.phase === "joining";
+  const [displayedPool, setDisplayedPool] = useState(0);
+
+  useEffect(() => {
+    const targetPool = Math.max(0, Number(rain.pool) || 0);
+    const startingPool = displayedPool;
+    const startedAt = performance.now();
+    let animationFrame;
+    const animatePool = (timestamp) => {
+      const progress = Math.min(1, (timestamp - startedAt) / 750);
+      const easedProgress = 1 - ((1 - progress) ** 3);
+      setDisplayedPool(Math.round(startingPool + ((targetPool - startingPool) * easedProgress)));
+      if (progress < 1) animationFrame = requestAnimationFrame(animatePool);
+    };
+    animationFrame = requestAnimationFrame(animatePool);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [rain.pool, rain.rainId]);
+
   return (
     <div
-      className="flex flex-col top-0 left-3 right-3 rounded-xl absolute z-10 overflow-hidden p-3.5 shadow-xl min-h-[80px]"
+      className="flex flex-col top-0 left-3 right-3 rounded-xl absolute z-10 overflow-hidden p-3.5 shadow-xl min-h-[80px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
       style={{
         background:
           "radial-gradient(84% 582% at 100% 50%, rgba(229,173,78,.45) 0%, rgba(54,70,119,0) 100%), rgb(54,70,119)",
@@ -610,7 +733,7 @@ function RainPot({ onTip, onJoin, rain }) {
                 alt=""
                 className="bg-cover bg-center size-4.5"
               />
-              <span className="font-semibold">{rain.pool}</span>
+              <span className="font-semibold">{displayedPool}</span>
             </div>
           </div>
           <button
@@ -707,7 +830,7 @@ function ChatMessage({
   const usernameColor = usernameRank?.color || "#FFFFFF";
   return (
     <div
-      className={`relative flex flex-col group/message ${
+      className={`relative flex flex-col group/message hover:z-50 focus-within:z-50 ${
         animate ? "chat-message-enter" : ""
       }`}
       data-highlight="false"
@@ -777,7 +900,7 @@ function ChatMessage({
               </div>
             )}
             <div className="text-sm font-medium text-accent [word-break:break-word]">
-              <span>{body}</span>
+              <ChatMessageBody body={body} />
             </div>
           </div>
         </div>
@@ -817,17 +940,110 @@ export default function ChatSidebar() {
   const [isRainVerificationOpen, setIsRainVerificationOpen] = useState(false);
   const [profileModal, setProfileModal] = useState(null);
   const [modalClosing, setModalClosing] = useState(false);
+  const [emojiPopupState, setEmojiPopupState] = useState(null);
+  const [activeEmoji, setActiveEmoji] = useState(chatEmojis[5]);
+  const [emojiPopupStyle, setEmojiPopupStyle] = useState({});
   const [rainState, setRainState] = useState({
-    pool: 300,
+    pool: 250,
     countdown: "58:30",
     progress: 100,
     phase: "active",
+    visible: true,
     participantCount: 0,
     joined: false,
   });
   const socketRef = useRef(null);
   const viewportRef = useRef(null);
   const inputRef = useRef(null);
+  const chatFormRef = useRef(null);
+  const emojiPopupRef = useRef(null);
+  const emojiPopupStateRef = useRef(null);
+  const emojiCloseTimerRef = useRef(null);
+
+  const positionEmojiPopup = useCallback(() => {
+    const anchor = chatFormRef.current;
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    const popupHeight = emojiPopupRef.current?.offsetHeight || 284;
+    // The popup's 8px bottom margin creates the visible gap above the form.
+    const popupTop = Math.max(8, rect.top - popupHeight);
+    setEmojiPopupStyle({
+      position: "fixed",
+      left: "0px",
+      top: "0px",
+      transform: `translate(${rect.left}px, ${popupTop}px)`,
+      minWidth: "max-content",
+      "--reka-popper-transform-origin": `${rect.width / 2}px ${popupHeight}px`,
+      zIndex: 100,
+      "--reka-popper-available-width": `${window.innerWidth - rect.left}px`,
+      "--reka-popper-available-height": `${rect.top}px`,
+      "--reka-popper-anchor-width": `${rect.width}px`,
+      "--reka-popper-anchor-height": `${rect.height}px`,
+    });
+  }, []);
+
+  const closeEmojiPopup = useCallback(() => {
+    if (emojiPopupStateRef.current !== "open") return;
+    clearTimeout(emojiCloseTimerRef.current);
+    emojiPopupStateRef.current = "closed";
+    setEmojiPopupState("closed");
+    emojiCloseTimerRef.current = setTimeout(() => {
+      if (emojiPopupStateRef.current !== "closed") return;
+      emojiPopupStateRef.current = null;
+      setEmojiPopupState(null);
+    }, 150);
+  }, []);
+
+  const toggleEmojiPopup = () => {
+    if (emojiPopupStateRef.current === "open") {
+      closeEmojiPopup();
+      return;
+    }
+    clearTimeout(emojiCloseTimerRef.current);
+    emojiPopupStateRef.current = "open";
+    setActiveEmoji(chatEmojis[5]);
+    positionEmojiPopup();
+    setEmojiPopupState("open");
+  };
+
+  useLayoutEffect(() => {
+    if (!emojiPopupState) return undefined;
+    positionEmojiPopup();
+    const animationFrame = requestAnimationFrame(positionEmojiPopup);
+    window.addEventListener("resize", positionEmojiPopup);
+    window.addEventListener("scroll", positionEmojiPopup, true);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      window.removeEventListener("resize", positionEmojiPopup);
+      window.removeEventListener("scroll", positionEmojiPopup, true);
+    };
+  }, [emojiPopupState, positionEmojiPopup]);
+
+  useEffect(() => {
+    if (emojiPopupState !== "open") return undefined;
+    const closeOnOutsidePress = (event) => {
+      if (emojiPopupRef.current?.contains(event.target) || chatFormRef.current?.contains(event.target)) return;
+      closeEmojiPopup();
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") closeEmojiPopup();
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [closeEmojiPopup, emojiPopupState]);
+
+  useEffect(() => () => {
+    clearTimeout(emojiCloseTimerRef.current);
+    emojiPopupStateRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (!isChatOpen) closeEmojiPopup();
+  }, [closeEmojiPopup, isChatOpen]);
 
   useLayoutEffect(() => {
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
@@ -1006,6 +1222,21 @@ export default function ChatSidebar() {
       setReplyingTo(null);
     }
     setMessage("");
+    closeEmojiPopup();
+  };
+
+  const insertEmoji = (emoji) => {
+    const input = inputRef.current;
+    const selectionStart = input?.selectionStart ?? message.length;
+    const selectionEnd = input?.selectionEnd ?? selectionStart;
+    const token = `:${emoji.name}:`;
+    const nextMessage = `${message.slice(0, selectionStart)}${token}${message.slice(selectionEnd)}`;
+    const nextCursor = selectionStart + token.length;
+    setMessage(nextMessage);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.setSelectionRange(nextCursor, nextCursor);
+    });
   };
 
   const startReply = (reply) => {
@@ -1059,11 +1290,13 @@ export default function ChatSidebar() {
         </div>
 
         <div className="flex relative flex-1 min-h-0">
-          <RainPot
-            onTip={() => setIsTipRainOpen(true)}
-            onJoin={() => setIsRainVerificationOpen(true)}
-            rain={rainState}
-          />
+          {rainState.visible !== false && (
+            <RainPot
+              onTip={() => setIsTipRainOpen(true)}
+              onJoin={() => setIsRainVerificationOpen(true)}
+              rain={rainState}
+            />
+          )}
           <div className="flex flex-col justify-end flex-1 relative min-h-0">
             <div
               className="z-2 absolute top-0 left-0 right-1 h-20 bg-linear-to-r from-[#152340] to-[#212A53] pointer-events-none"
@@ -1073,7 +1306,7 @@ export default function ChatSidebar() {
             />
             <div
               ref={viewportRef}
-              className="chat-scrollbar size-full overflow-y-auto outline-none pt-[108px] pb-3"
+              className={`chat-scrollbar size-full overflow-y-auto outline-none pb-3 transition-[padding] duration-200 ${rainState.visible === false ? "pt-3" : "pt-[108px]"}`}
               tabIndex={0}
             >
               <div className="flex-1 flex flex-col gap-5 px-3.5">
@@ -1137,6 +1370,7 @@ export default function ChatSidebar() {
             </div>
           )}
           <form
+            ref={chatFormRef}
             onSubmit={sendMessage}
             className="bg-[#1D2A53] flex items-center py-2.5 pl-3.5 pr-2 gap-2.25 rounded-xl relative"
           >
@@ -1155,6 +1389,10 @@ export default function ChatSidebar() {
               type="button"
               className="shrink-0 cursor-pointer text-accent hover:text-accent-light transition-colors"
               aria-label="Choose emoji"
+              aria-haspopup="dialog"
+              aria-expanded={emojiPopupState === "open"}
+              disabled={!connected}
+              onClick={toggleEmojiPopup}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -1198,6 +1436,14 @@ export default function ChatSidebar() {
         </div>
       </div>
 
+      {emojiPopupState && (
+        <div
+          aria-hidden="true"
+          data-state={emojiPopupState}
+          className="absolute inset-0 z-90 bg-[#0D1429]/50 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0"
+        />
+      )}
+
       {profileModal && (
         <ProfileModal
           user={profileModal.user}
@@ -1207,6 +1453,16 @@ export default function ChatSidebar() {
         />
       )}
     </aside>
+    {emojiPopupState && (
+      <EmojiPicker
+        activeEmoji={activeEmoji}
+        onActiveEmoji={setActiveEmoji}
+        onSelectEmoji={insertEmoji}
+        popupRef={emojiPopupRef}
+        state={emojiPopupState}
+        style={emojiPopupStyle}
+      />
+    )}
     <button
       type="button"
       aria-label={isChatOpen ? "Close chat" : "Open chat"}
