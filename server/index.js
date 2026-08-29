@@ -389,6 +389,81 @@ async function getSession(request, env) {
   return json({ user });
 }
 
+function formatAffiliate(row) {
+  return {
+    id: row.id,
+    code: row.code,
+    commissionRate: Number(row.commission_rate || 0),
+    availableEarnings: Number(row.available_earnings || 0),
+    totalEarned: Number(row.total_earned || 0),
+    totalWagered: Number(row.total_wagered || 0),
+    activeUsers: Number(row.active_users || 0),
+    totalUsers: Number(row.total_users || 0),
+    createdAt: row.created_at,
+  };
+}
+
+async function getAffiliate(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  const user = await resolveSessionUser(sessionCookie, env);
+  if (!user) return missingSession(request);
+
+  const query = new URLSearchParams({
+    user_uuid: `eq.${user.uuid}`,
+    select: "id,code,commission_rate,available_earnings,total_earned,total_wagered,active_users,total_users,created_at",
+    limit: "1",
+  });
+  const response = await supabaseRequest(env, `mm2wild_affiliates?${query}`);
+  const rows = await response.json().catch(() => null);
+  if (!response.ok || !Array.isArray(rows)) {
+    return json({ error: "Could not load your affiliate account." }, 503);
+  }
+
+  return json({ affiliate: rows[0] ? formatAffiliate(rows[0]) : null });
+}
+
+async function createAffiliate(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  const user = await resolveSessionUser(sessionCookie, env);
+  if (!user) return missingSession(request);
+
+  const body = await request.json().catch(() => null);
+  const code = String(body?.code || "").trim().toLowerCase();
+  if (!/^[a-z0-9_-]{3,24}$/.test(code)) {
+    return json({ error: "Use 3 to 24 letters, numbers, underscores, or hyphens." }, 400);
+  }
+
+  const existingQuery = new URLSearchParams({
+    user_uuid: `eq.${user.uuid}`,
+    select: "id,code,commission_rate,available_earnings,total_earned,total_wagered,active_users,total_users,created_at",
+    limit: "1",
+  });
+  const existingResponse = await supabaseRequest(env, `mm2wild_affiliates?${existingQuery}`);
+  const existingRows = await existingResponse.json().catch(() => null);
+  if (!existingResponse.ok || !Array.isArray(existingRows)) {
+    return json({ error: "Could not check your affiliate account." }, 503);
+  }
+  if (existingRows[0]) return json({ affiliate: formatAffiliate(existingRows[0]) });
+
+  const response = await supabaseRequest(env, "mm2wild_affiliates", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify({ user_uuid: user.uuid, code }),
+  });
+  const rows = await response.json().catch(() => null);
+  if (!response.ok || !Array.isArray(rows) || !rows[0]) {
+    if (response.status === 409 || rows?.code === "23505") {
+      return json({ error: "That affiliate code is already taken." }, 409);
+    }
+    return json({ error: rows?.message || "Your affiliate code could not be saved." }, 503);
+  }
+
+  return json({ affiliate: formatAffiliate(rows[0]) }, 201);
+}
+
 export { resolveSessionUser };
 
 // Cloudflare Durable Object that powers the live chat in production.
@@ -956,6 +1031,20 @@ export default {
     }
     if (url.pathname === "/api/session" && request.method === "GET") {
       return getSession(request, env);
+    }
+    if (url.pathname === "/api/affiliates" && request.method === "GET") {
+      try {
+        return await getAffiliate(request, env);
+      } catch (error) {
+        return json({ error: error.message || "Could not load your affiliate account." }, 503);
+      }
+    }
+    if (url.pathname === "/api/affiliates" && request.method === "POST") {
+      try {
+        return await createAffiliate(request, env);
+      } catch (error) {
+        return json({ error: error.message || "Your affiliate code could not be saved." }, 503);
+      }
     }
     if (url.pathname === "/api/fairness" && request.method === "GET") {
       return getFairness(request, env);
