@@ -400,6 +400,7 @@ export class ChatRoom {
     this.env = env;
     this.history = [];
     this.sessions = new Set();
+    this.clientSockets = new Map();
     this.rain = createRainState();
     this.rainInterval = null;
   }
@@ -440,6 +441,14 @@ export class ChatRoom {
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
 
+    const requestUrl = new URL(request.url);
+    const clientId = requestUrl.searchParams.get("clientId")?.slice(0, 128) || crypto.randomUUID();
+    const previousSocket = this.clientSockets.get(clientId);
+    if (previousSocket && previousSocket !== server) {
+      this.sessions.delete(previousSocket);
+      previousSocket.close(1000, "Replaced by a refreshed connection");
+    }
+    this.clientSockets.set(clientId, server);
     this.sessions.add(server);
 
     server.serializeAttachment({ profile, lastMessageAt: 0 });
@@ -506,6 +515,10 @@ export class ChatRoom {
 
       const body = String(payload.body || "").slice(0, 500).trim();
       if (!body) return;
+      const replyName = String(payload.reply?.name || "").slice(0, 64).trim();
+      const replyBody = String(payload.reply?.body || "").slice(0, 500).trim();
+      const reply =
+        replyName && replyBody ? { name: replyName, body: replyBody } : null;
 
       const now = Date.now();
       if (now - (attachment.lastMessageAt || 0) < 2000) {
@@ -530,6 +543,7 @@ export class ChatRoom {
           hour12: false,
         }),
         user: identity,
+        ...(reply ? { reply } : {}),
       };
       this.history.push(message);
       if (this.history.length > 50) this.history.shift();
@@ -539,8 +553,12 @@ export class ChatRoom {
     });
 
     server.addEventListener("close", () => {
-      this.sessions.delete(server);
-      this.broadcastPresence();
+      if (this.clientSockets.get(clientId) === server) this.clientSockets.delete(clientId);
+      if (this.sessions.delete(server)) this.broadcastPresence();
+    });
+    server.addEventListener("error", () => {
+      if (this.clientSockets.get(clientId) === server) this.clientSockets.delete(clientId);
+      if (this.sessions.delete(server)) this.broadcastPresence();
     });
 
     return new Response(null, { status: 101, webSocket: client });

@@ -423,6 +423,37 @@ a {
   display: none;
 }
 
+@keyframes chat-message-slide-in {
+  from {
+    transform: translateX(-24px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes chat-message-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.chat-message-enter {
+  animation:
+    chat-message-slide-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    chat-message-fade-in 300ms ease-out both;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-message-enter {
+    animation: none;
+  }
+}
+
 .site-content {
   min-height: 100dvh;
   padding-top: var(--layout-top);
@@ -495,12 +526,40 @@ a {
 
 .leaderboard-period-content {
   opacity: 0;
-  transition: opacity 155ms ease-in-out;
+  transition: opacity 300ms ease-in-out;
   will-change: opacity;
 }
 
 .leaderboard-period-content.is-visible {
   opacity: 1;
+}
+
+.leaderboard-page {
+  position: relative;
+  overflow: hidden;
+}
+
+.leaderboard-backdrop {
+  position: absolute;
+  top: var(--layout-top);
+  left: 0;
+  right: 0;
+  height: 240px;
+  overflow: hidden;
+  pointer-events: none;
+  transition: left 200ms ease-in-out;
+}
+
+@media (min-width: 768px) {
+  .leaderboard-backdrop {
+    height: 520px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .leaderboard-backdrop {
+    left: var(--layout-left);
+  }
 }
 
 .leaderboard-loaded-image {

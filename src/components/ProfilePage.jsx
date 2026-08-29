@@ -11,7 +11,7 @@ import ProfileGameDropdown, {
   ProfileGameIcon,
   profileGames,
 } from "./ProfileGameDropdown";
-import FairnessPanel from "./FairnessPanel";
+import FairnessPanel, { preloadFairnessData } from "./FairnessPanel";
 import GameHistoryPanel from "./GameHistoryPanel";
 import TransactionsPanel from "./TransactionsPanel";
 import SecurityPanel from "./SecurityPanel";
@@ -112,8 +112,11 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
   const [gameImagePhase, setGameImagePhase] = useState("visible");
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
   const [gameDropdownStyle, setGameDropdownStyle] = useState({});
+  const [hasSwitchedTabs, setHasSwitchedTabs] = useState(false);
   const gameTriggerRef = useRef(null);
+  const tabListRef = useRef(null);
   const tabButtonRefs = useRef([]);
+  const [animateTabIndicator, setAnimateTabIndicator] = useState(false);
   const [tabIndicatorStyle, setTabIndicatorStyle] = useState({ opacity: 0 });
 
   const activeTabIndex = Math.max(
@@ -123,7 +126,7 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
 
   const positionTabIndicator = useCallback(() => {
     const activeButton = tabButtonRefs.current[activeTabIndex];
-    if (!activeButton) return;
+    if (!activeButton) return false;
 
     setTabIndicatorStyle({
       width: `${activeButton.offsetWidth}px`,
@@ -131,10 +134,26 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
       transform: `translate3d(${activeButton.offsetLeft}px, ${activeButton.offsetTop}px, 0)`,
       opacity: 1,
     });
+    return true;
   }, [activeTabIndex]);
 
   useLayoutEffect(() => {
-    positionTabIndicator();
+    if (isLoading || !positionTabIndicator()) return undefined;
+
+    const activeButton = tabButtonRefs.current[activeTabIndex];
+    const resizeObserver = new ResizeObserver(positionTabIndicator);
+    if (tabListRef.current) resizeObserver.observe(tabListRef.current);
+    if (activeButton) resizeObserver.observe(activeButton);
+
+    const frame = window.requestAnimationFrame(() => {
+      positionTabIndicator();
+      setAnimateTabIndicator(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+    };
   }, [isLoading, positionTabIndicator]);
 
   useEffect(() => {
@@ -149,12 +168,14 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
   const switchTab = useCallback((tabKey) => {
     const tab = accountTabs.find(([, key]) => key === tabKey);
     if (!tab) return;
+    setHasSwitchedTabs(true);
     setActiveTab(tabKey);
     window.history.pushState({}, "", tab[2]);
   }, []);
 
   useEffect(() => {
     const controller = new AbortController();
+    preloadFairnessData().catch(() => {});
     fetch("/api/session", { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
@@ -166,10 +187,11 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
     return () => controller.abort();
   }, []);
 
-  // Sync active tab with browser back/forward navigation.
+
   useEffect(() => {
     const onPopState = () => {
       const path = window.location.pathname.replace("/account/", "");
+      setHasSwitchedTabs(true);
       setActiveTab(path || "profile");
     };
     window.addEventListener("popstate", onPopState);
@@ -348,11 +370,12 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
 
           <div className="bg-[#202D57]/45 rounded-[20px] p-5 flex flex-col gap-4">
             <div
+              ref={tabListRef}
               className="relative grid grid-cols-2 md:flex bg-[#2F3F71] p-1.5 rounded-[10px] w-full md:w-max gap-1.5 md:gap-0"
             >
               <div
                 aria-hidden="true"
-                className="absolute left-0 top-0 z-0 rounded-lg bg-primary shadow-[0_3px_0_#D38502] transition-[transform,width,height,opacity] duration-300 ease-in-out will-change-transform pointer-events-none"
+                className={`absolute left-0 top-0 z-0 rounded-lg bg-primary shadow-[0_3px_0_#D38502] duration-300 ease-in-out will-change-transform pointer-events-none ${animateTabIndicator ? "transition-[transform,width,height,opacity]" : "transition-none"}`}
                 style={tabIndicatorStyle}
               />
               {accountTabs.map(([label, key, href], index) => (
@@ -365,7 +388,11 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
                   onClick={() => switchTab(key)}
                   className={`relative z-10 px-4 py-2 text-sm font-semibold text-center whitespace-nowrap rounded-lg transition-colors duration-200 cursor-pointer ${
                     index === activeTabIndex
-                      ? "text-[#3A3869]"
+                      ? `text-[#3A3869] ${
+                          hasSwitchedTabs
+                            ? ""
+                            : "bg-primary shadow-[0_3px_0_#D38502]"
+                        }`
                       : "text-white hover:text-accent"
                   }`}
                   data-active={index === activeTabIndex}

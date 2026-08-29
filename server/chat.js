@@ -1,7 +1,3 @@
-// Real-time chat hub for the local Vite dev server.
-// Tracks connected clients, broadcasts messages, and reports a live online count.
-// In production the same protocol is handled by the ChatRoom Durable Object
-// in server/index.js so the client code is identical between environments.
 
 import { WebSocketServer } from "ws";
 import { createRainState, formatRainState } from "./rain.js";
@@ -10,8 +6,7 @@ const HISTORY_LIMIT = 50;
 const MAX_BODY_LENGTH = 500;
 const RATE_LIMIT_WINDOW_MS = 2000;
 
-// Fallback profile used for guests and unknown users. The client also keeps a
-// local lookup table for the demo users that previously existed in the sidebar.
+
 const guestProfile = {
   level: 1,
   color: "#BEBEBE",
@@ -75,6 +70,7 @@ export function attachChatServer(httpServer, options = {}) {
 
   const history = [];
   const clients = new Set();
+  const clientSockets = new Map();
   const rain = createRainState();
   let rainInterval = null;
 
@@ -98,7 +94,7 @@ export function attachChatServer(httpServer, options = {}) {
     if (history.length > HISTORY_LIMIT) history.shift();
   }
 
-  function handleConnection(socket, user) {
+  function handleConnection(socket, user, clientId) {
     const profile = profileFor(user);
     const identity = {
       name: user?.name || "Guest",
@@ -106,6 +102,12 @@ export function attachChatServer(httpServer, options = {}) {
       ...profile,
     };
 
+    const previousSocket = clientSockets.get(clientId);
+    if (previousSocket && previousSocket !== socket) {
+      clients.delete(previousSocket);
+      previousSocket.close(1000, "Replaced by a refreshed connection");
+    }
+    clientSockets.set(clientId, socket);
     clients.add(socket);
 
     socket.send(
@@ -177,6 +179,10 @@ export function attachChatServer(httpServer, options = {}) {
 
       const body = safeString(payload.body, MAX_BODY_LENGTH).trim();
       if (!body) return;
+      const replyName = safeString(payload.reply?.name, 64).trim();
+      const replyBody = safeString(payload.reply?.body, MAX_BODY_LENGTH).trim();
+      const reply =
+        replyName && replyBody ? { name: replyName, body: replyBody } : null;
 
       const now = Date.now();
       if (now - lastMessageAt < RATE_LIMIT_WINDOW_MS) {
@@ -197,15 +203,18 @@ export function attachChatServer(httpServer, options = {}) {
         body,
         time: nowTime(),
         user: profile,
+        ...(reply ? { reply } : {}),
       };
       recordMessage(message);
       broadcast(message);
     });
 
     socket.on("close", () => {
+      if (clientSockets.get(clientId) === socket) clientSockets.delete(clientId);
       if (clients.delete(socket)) broadcastPresence();
     });
     socket.on("error", () => {
+      if (clientSockets.get(clientId) === socket) clientSockets.delete(clientId);
       if (clients.delete(socket)) broadcastPresence();
     });
   }
@@ -217,7 +226,8 @@ export function attachChatServer(httpServer, options = {}) {
     wss.handleUpgrade(request, socket, head, async (ws) => {
       const cookieHeader = request.headers.cookie || "";
       const user = await resolveUser(cookieHeader, verifySession);
-      handleConnection(ws, user);
+      const clientId = requestUrl.searchParams.get("clientId")?.slice(0, 128) || crypto.randomUUID();
+      handleConnection(ws, user, clientId);
     });
   });
 

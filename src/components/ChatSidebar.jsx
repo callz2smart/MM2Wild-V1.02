@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 // Fallback profile used when a message arrives without user metadata. The
@@ -460,11 +460,22 @@ function RainPot({ onTip, rain }) {
   );
 }
 
-function ChatMessage({ name, body, time, user, onProfileClick }) {
+function ChatMessage({
+  name,
+  body,
+  time,
+  user,
+  reply,
+  onProfileClick,
+  onReply,
+  animate = false,
+}) {
   const profile = user ?? fallbackUser;
   return (
     <div
-      className="relative flex flex-col group/message"
+      className={`relative flex flex-col group/message ${
+        animate ? "chat-message-enter" : ""
+      }`}
       data-highlight="false"
     >
       <div className="flex gap-1.75 relative group z-1">
@@ -508,6 +519,27 @@ function ChatMessage({ name, body, time, user, onProfileClick }) {
             </p>
           </div>
           <div className="message-body p-1.75 rounded-lg bg-[#223263]">
+            {reply && (
+              <div className="mb-1 flex min-w-0 items-center gap-1 text-[11px] text-accent/75">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className="size-3.5 -scale-x-100 shrink-0 text-primary"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                >
+                  <g fill="none" stroke="currentColor">
+                    <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+                    <path d="m9 17-5-5 5-5" />
+                  </g>
+                </svg>
+                <p className="min-w-0 truncate font-medium">
+                  <span className="font-semibold text-white">@{reply.name}:</span>{" "}
+                  {reply.body}
+                </p>
+              </div>
+            )}
             <div className="text-sm font-medium text-accent [word-break:break-word]">
               <span>{body}</span>
             </div>
@@ -516,6 +548,7 @@ function ChatMessage({ name, body, time, user, onProfileClick }) {
         <button
           type="button"
           aria-label={`Reply to ${name}`}
+          onClick={() => onReply?.({ name, body })}
           className="cursor-pointer flex items-center justify-center group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 opacity-0 transition-all duration-175 bg-[#31478D] hover:bg-[#3B54A4] size-6.5 rounded-md absolute right-0 top-0"
         >
           <svg
@@ -539,20 +572,22 @@ function ChatMessage({ name, body, time, user, onProfileClick }) {
 
 export default function ChatSidebar() {
   const [message, setMessage] = useState("");
+  const [replyingTo, setReplyingTo] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [onlineCount, setOnlineCount] = useState(0);
+  const [onlineCount, setOnlineCount] = useState(null);
   const [connected, setConnected] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [slowModeNotification, setSlowModeNotification] = useState(null);
   const [isTipRainOpen, setIsTipRainOpen] = useState(false);
   const [profileModal, setProfileModal] = useState(null);
   const [modalClosing, setModalClosing] = useState(false);
-  const [rainState, setRainState] = useState({ pool: 300, countdown: "05:00", progress: 0 });
+  const [rainState, setRainState] = useState({ pool: 300, countdown: "60:00", progress: 100 });
   const socketRef = useRef(null);
   const viewportRef = useRef(null);
+  const inputRef = useRef(null);
   const notificationTimerRef = useRef(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
     const updateLayout = () => {
       document.documentElement.style.setProperty(
@@ -619,7 +654,13 @@ export default function ChatSidebar() {
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const socketUrl = `${protocol}//${window.location.host}/api/chat`;
+    const clientIdKey = "mm2wild_chat_client_id";
+    let clientId = sessionStorage.getItem(clientIdKey);
+    if (!clientId) {
+      clientId = crypto.randomUUID();
+      sessionStorage.setItem(clientIdKey, clientId);
+    }
+    const socketUrl = `${protocol}//${window.location.host}/api/chat?clientId=${encodeURIComponent(clientId)}`;
     let disposed = false;
     let reconnectTimer = null;
 
@@ -632,7 +673,7 @@ export default function ChatSidebar() {
       }
       if (payload.type === "init") {
         setMessages(payload.messages || []);
-        setOnlineCount(payload.online || 0);
+        setOnlineCount(payload.online ?? 0);
         if (payload.rain) setRainState(payload.rain);
       } else if (payload.type === "rain") {
         setRainState(payload);
@@ -644,10 +685,12 @@ export default function ChatSidebar() {
             body: payload.body,
             time: payload.time,
             user: payload.user,
+            reply: payload.reply,
+            animate: true,
           },
         ]);
       } else if (payload.type === "presence") {
-        setOnlineCount(payload.online || 0);
+        setOnlineCount(payload.online ?? 0);
       } else if (payload.type === "error") {
         setMessage("");
         const errorMessage = (payload.error || "").toLowerCase();
@@ -702,7 +745,7 @@ export default function ChatSidebar() {
     [],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (viewport) viewport.scrollTop = viewport.scrollHeight;
   }, [messages]);
@@ -713,9 +756,21 @@ export default function ChatSidebar() {
     if (!body) return;
     const socket = socketRef.current;
     if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "chat", body }));
+      socket.send(
+        JSON.stringify({
+          type: "chat",
+          body,
+          ...(replyingTo ? { reply: replyingTo } : {}),
+        }),
+      );
+      setReplyingTo(null);
     }
     setMessage("");
+  };
+
+  const startReply = (reply) => {
+    setReplyingTo(reply);
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   return (
@@ -735,18 +790,30 @@ export default function ChatSidebar() {
               <p className="font-semibold ml-2">Chat</p>
             </div>
           </div>
-          <div className="h-10.5 relative">
+          <div className="h-10.5 w-16 shrink-0 relative">
             <div className="absolute top-1/2 left-0 right-0 bottom-0 bg-[#18295E] rounded-lg" />
-            <div className="h-[calc(100%-3px)] bg-[#27376A] px-3.5 rounded-lg flex items-center relative">
+            <div className="h-[calc(100%-3px)] bg-[#27376A] rounded-lg flex items-center justify-center relative">
               <span className="relative flex size-2.5">
-                <span className="animate-ping absolute inline-flex size-full rounded bg-[#5CDF9A]/75" />
+                <span
+                  className={`animate-ping absolute inline-flex size-full rounded ${
+                    onlineCount === null
+                      ? "bg-accent/35"
+                      : onlineCount > 0
+                        ? "bg-[#5CDF9A]/75"
+                        : "bg-[#F36D39]/75"
+                  }`}
+                />
                 <span
                   className={`relative inline-flex rounded size-full ${
-                    connected ? "bg-[#5CDF9A]" : "bg-[#F36D39]"
+                    onlineCount === null
+                      ? "bg-accent/60"
+                      : onlineCount > 0
+                        ? "bg-[#5CDF9A]"
+                        : "bg-[#F36D39]"
                   }`}
                 />
               </span>
-              <p className="text-sm font-semibold ml-2">{onlineCount}</p>
+              <p className="text-sm font-semibold ml-2">{onlineCount ?? 0}</p>
             </div>
           </div>
         </div>
@@ -773,7 +840,10 @@ export default function ChatSidebar() {
                     body={entry.body}
                     time={entry.time}
                     user={entry.user}
+                    reply={entry.reply}
+                    animate={entry.animate}
                     onProfileClick={openProfile}
+                    onReply={startReply}
                   />
                 ))}
               </div>
@@ -782,13 +852,57 @@ export default function ChatSidebar() {
         </div>
 
         <div className="p-3.5 bg-linear-to-r from-[#203665] to-[#303C71]">
+          {replyingTo && (
+            <div className="bg-[#17203F] -mb-3 p-2 pb-5 text-xs flex items-center justify-between rounded-t-lg gap-2.5 animate-in fade-in-0 slide-in-from-bottom-3">
+              <div className="flex items-center gap-1 min-w-0">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className="size-4 text-primary -scale-x-100 shrink-0"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                >
+                  <g fill="none" stroke="currentColor">
+                    <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+                    <path d="m9 17-5-5 5-5" />
+                  </g>
+                </svg>
+                <p className="font-medium text-accent truncate min-w-0">
+                  <span className="text-white font-semibold">@{replyingTo.name}:</span>{" "}
+                  {replyingTo.body}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="cursor-pointer text-accent"
+                aria-label="Cancel reply"
+                onClick={() => setReplyingTo(null)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className="size-2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="3.5"
+                >
+                  <path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" />
+                </svg>
+              </button>
+            </div>
+          )}
           <form
             onSubmit={sendMessage}
             className="bg-[#1D2A53] flex items-center py-2.5 pl-3.5 pr-2 gap-2.25 rounded-xl relative"
           >
             <input
+              ref={inputRef}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && replyingTo) setReplyingTo(null);
+              }}
               disabled={!connected}
               className="flex-1 min-w-0 bg-transparent outline-none border-none font-medium text-sm text-white placeholder:text-accent disabled:opacity-60"
               placeholder={connected ? "Enter a message.." : "Connecting…"}

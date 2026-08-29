@@ -8,6 +8,7 @@ import TermsPage from "./components/TermsPage";
 import LeaderboardPage from "./components/LeaderboardPage";
 import FairnessPage from "./components/FairnessPage";
 import RewardsPage from "./components/RewardsPage";
+import LoadingScreen from "./components/LoadingScreen";
 
 export default function App() {
   const [pathname, setPathname] = useState(() => window.location.pathname);
@@ -90,6 +91,7 @@ export default function App() {
           <HomePage />
         )}
       </main>
+      <LoadingScreen />
     </>
   );
 }

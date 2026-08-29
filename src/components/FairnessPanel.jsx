@@ -1,5 +1,35 @@
 import { useEffect, useState } from "react";
 
+let cachedFairnessData = null;
+let fairnessDataRequest = null;
+
+async function requestFairnessData(force = false) {
+  if (!force && cachedFairnessData) return cachedFairnessData;
+  if (!force && fairnessDataRequest) return fairnessDataRequest;
+
+  fairnessDataRequest = fetch("/api/fairness")
+    .then(async (response) => {
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || "Could not load fairness data.");
+      }
+      return response.json();
+    })
+    .then((payload) => {
+      cachedFairnessData = payload;
+      return payload;
+    })
+    .finally(() => {
+      fairnessDataRequest = null;
+    });
+
+  return fairnessDataRequest;
+}
+
+export function preloadFairnessData() {
+  return requestFairnessData();
+}
+
 function CopyButton({ value }) {
   const [copied, setCopied] = useState(false);
 
@@ -116,22 +146,18 @@ function GoldButton({ children, onClick, disabled, fullWidth }) {
 }
 
 export default function FairnessPanel() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(() => cachedFairnessData);
+  const [loading, setLoading] = useState(() => !cachedFairnessData);
   const [error, setError] = useState("");
   const [newClientSeed, setNewClientSeed] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
 
-  const loadFairness = async () => {
+  const loadFairness = async (force = false) => {
+    setLoading(true);
     try {
-      const response = await fetch("/api/fairness");
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error || "Could not load fairness data.");
-      }
-      const payload = await response.json();
+      const payload = await requestFairnessData(force);
       setData(payload);
       setError("");
     } catch (err) {
@@ -142,7 +168,7 @@ export default function FairnessPanel() {
   };
 
   useEffect(() => {
-    loadFairness();
+    if (!data) loadFairness();
   }, []);
 
   const handleChangeClientSeed = async (event) => {
@@ -160,7 +186,11 @@ export default function FairnessPanel() {
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.error || "Could not change client seed.");
-      setData((current) => ({ ...current, ...payload }));
+      setData((current) => {
+        const nextData = { ...current, ...payload };
+        cachedFairnessData = nextData;
+        return nextData;
+      });
       setNewClientSeed("");
       setActionSuccess("Client seed updated.");
       setTimeout(() => setActionSuccess(""), 2500);
@@ -179,6 +209,7 @@ export default function FairnessPanel() {
       const response = await fetch("/api/fairness/rotate", { method: "POST" });
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.error || "Could not rotate server seed.");
+      cachedFairnessData = payload;
       setData(payload);
       setActionSuccess("Server seed rotated. The previous seed is now revealed.");
       setTimeout(() => setActionSuccess(""), 3500);
@@ -189,24 +220,8 @@ export default function FairnessPanel() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="bg-[#283562]/65 rounded-xl p-5 flex flex-col gap-4">
-        <p className="text-sm font-medium text-accent">Loading fairness data…</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-[#283562]/65 rounded-xl p-5 flex flex-col gap-4">
-        <p className="text-sm font-medium text-[#DF5C5C]">{error}</p>
-        <GoldButton onClick={loadFairness}>RETRY</GoldButton>
-      </div>
-    );
-  }
-
-  const canChangeSeed = newClientSeed.trim().length >= 4 && !actionLoading;
+  const canChangeSeed =
+    newClientSeed.trim().length >= 4 && !loading && !actionLoading;
 
   return (
     <div className="bg-[#283562]/65 rounded-xl p-5 flex flex-col gap-4">
@@ -262,7 +277,11 @@ export default function FairnessPanel() {
             You can do this to reveal the non-hashed server seed in your previous games.
           </p>
         </div>
-        <GoldButton onClick={handleRotateServerSeed} disabled={actionLoading} fullWidth>
+        <GoldButton
+          onClick={handleRotateServerSeed}
+          disabled={loading || actionLoading}
+          fullWidth
+        >
           ROTATE SERVER SEED
         </GoldButton>
       </div>
@@ -299,14 +318,19 @@ export default function FairnessPanel() {
       )}
 
       {/* Status messages */}
-      {(actionError || actionSuccess) && (
+      {(error || actionError || actionSuccess) && (
         <p
           className={`text-sm font-medium ${
-            actionError ? "text-[#DF5C5C]" : "text-[#5CDF9A]"
+            error || actionError ? "text-[#DF5C5C]" : "text-[#5CDF9A]"
           }`}
         >
-          {actionError || actionSuccess}
+          {error || actionError || actionSuccess}
         </p>
+      )}
+      {error && (
+        <GoldButton onClick={() => loadFairness(true)} disabled={loading}>
+          RETRY
+        </GoldButton>
       )}
     </div>
   );
