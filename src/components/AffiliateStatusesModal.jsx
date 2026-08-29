@@ -1,28 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-function SquircleLoader() {
-  return (
-    <svg
-      data-v-eaf09615=""
-      data-v-8ead2f23=""
-      className="squircle-loader text-primary size-9 [--uib-speed:0.5s] [--uib-stroke:6px] [--uib-bg-opacity:0.1]"
-      x="0px"
-      y="0px"
-      viewBox="0 0 37 37"
-      height="37"
-      width="37"
-      preserveAspectRatio="xMidYMid meet"
-      aria-label="Loading"
-    >
-      <path className="track" fill="none" strokeWidth="5" pathLength="100" d="M0.37 18.5 C0.37 5.772 5.772 0.37 18.5 0.37 S36.63 5.772 36.63 18.5 S31.228 36.63 18.5 36.63 S0.37 31.228 0.37 18.5" />
-      <path className="car" fill="none" strokeWidth="5" pathLength="100" d="M0.37 18.5 C0.37 5.772 5.772 0.37 18.5 0.37 S36.63 5.772 36.63 18.5 S31.228 36.63 18.5 36.63 S0.37 31.228 0.37 18.5" />
-    </svg>
-  );
-}
-
 export default function AffiliateStatusesModal({ onClose }) {
   const [dialogState, setDialogState] = useState("open");
-  const [loading, setLoading] = useState(true);
   const closeTimerRef = useRef(null);
 
   const requestClose = useCallback(() => {
@@ -30,11 +9,6 @@ export default function AffiliateStatusesModal({ onClose }) {
     setDialogState("closed");
     closeTimerRef.current = window.setTimeout(onClose, 200);
   }, [dialogState, onClose]);
-
-  useEffect(() => {
-    const loadingTimer = window.setTimeout(() => setLoading(false), 700);
-    return () => window.clearTimeout(loadingTimer);
-  }, []);
 
   useEffect(() => {
     const closeOnEscape = (event) => {
@@ -75,12 +49,7 @@ export default function AffiliateStatusesModal({ onClose }) {
         }}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        {loading ? (
-          <div className="min-h-44 flex items-center justify-center">
-            <SquircleLoader />
-          </div>
-        ) : (
-          <div data-v-8ead2f23="" className="bg-[#1D284E] rounded-2xl shadow-lg flex flex-col gap-5.5 max-h-[calc(100vh-24px)] overflow-hidden relative">
+        <div data-v-8ead2f23="" className="bg-[#1D284E] rounded-2xl shadow-lg flex flex-col gap-5.5 max-h-[calc(100vh-24px)] overflow-hidden relative">
             <div className="relative flex flex-col gap-4 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80">
               <div
                 className="absolute top-0 left-0 right-0 h-0.75"
@@ -109,8 +78,7 @@ export default function AffiliateStatusesModal({ onClose }) {
                 <p className="font-medium text-accent text-sm">This status is for users who currently use your code, or used it before, but have never completed a deposit while your code was applied.</p>
               </div>
             </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
