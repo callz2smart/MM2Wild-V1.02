@@ -2,6 +2,35 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { createPortal } from "react-dom";
 import { showNotification } from "./NotificationCenter";
 
+const TURNSTILE_PRODUCTION_SITE_KEY = "0x4AAAAAACO5aJWBw_BqLmoe";
+const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
+let turnstileScriptPromise;
+
+function loadTurnstile() {
+  if (window.turnstile) return Promise.resolve(window.turnstile);
+  if (turnstileScriptPromise) return turnstileScriptPromise;
+
+  turnstileScriptPromise = new Promise((resolve, reject) => {
+    const existingScript = document.querySelector('script[data-mm2wild-turnstile="true"]');
+    const script = existingScript || document.createElement("script");
+    const handleLoad = () => window.turnstile ? resolve(window.turnstile) : reject(new Error("Turnstile failed to initialize"));
+    const handleError = () => reject(new Error("Turnstile failed to load"));
+
+    script.addEventListener("load", handleLoad, { once: true });
+    script.addEventListener("error", handleError, { once: true });
+
+    if (!existingScript) {
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      script.async = true;
+      script.defer = true;
+      script.dataset.mm2wildTurnstile = "true";
+      document.head.appendChild(script);
+    }
+  });
+
+  return turnstileScriptPromise;
+}
+
 function CloseIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3">
@@ -292,6 +321,106 @@ function TipRainModal({ onClose, onSubmit }) {
   );
 }
 
+function RainVerificationModal({ onClose, onVerified }) {
+  const [dialogState, setDialogState] = useState("open");
+  const [challengeError, setChallengeError] = useState(false);
+  const challengeRef = useRef(null);
+  const widgetIdRef = useRef(null);
+  const closeTimerRef = useRef(null);
+  const isClosingRef = useRef(false);
+
+  const requestClose = useCallback(() => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    setDialogState("closed");
+    closeTimerRef.current = window.setTimeout(onClose, 200);
+  }, [onClose]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const hostname = window.location.hostname;
+    const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+    const sitekey = import.meta.env.VITE_TURNSTILE_SITE_KEY || (isLocal ? TURNSTILE_TEST_SITE_KEY : TURNSTILE_PRODUCTION_SITE_KEY);
+
+    loadTurnstile()
+      .then((turnstile) => {
+        if (cancelled || !challengeRef.current) return;
+        widgetIdRef.current = turnstile.render(challengeRef.current, {
+          sitekey,
+          action: "rain_join",
+          theme: "dark",
+          size: "flexible",
+          callback: (token) => {
+            if (cancelled || isClosingRef.current) return;
+            onVerified(token);
+            requestClose();
+          },
+          "error-callback": () => setChallengeError(true),
+          "expired-callback": () => setChallengeError(false),
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setChallengeError(true);
+      });
+
+    return () => {
+      cancelled = true;
+      if (widgetIdRef.current !== null && window.turnstile) {
+        window.turnstile.remove(widgetIdRef.current);
+      }
+      window.clearTimeout(closeTimerRef.current);
+    };
+  }, [onVerified, requestClose]);
+
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") requestClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [requestClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9998] bg-[#0C1535]/65 transition-opacity duration-200 data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0"
+      data-state={dialogState}
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) requestClose();
+      }}
+    >
+      <div
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rain-verification-dialog-title"
+        data-state={dialogState}
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full outline-none flex flex-col duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95"
+        style={{ maxWidth: "min(100dvw - 24px, 440px)", maxHeight: "calc(100% - 24px)", zIndex: 9999 }}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <div className="bg-[#1D284E] rounded-2xl shadow-lg max-h-[calc(100vh-24px)] overflow-hidden relative">
+          <div className="relative flex flex-col gap-5.5 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80">
+            <div className="flex items-center justify-between gap-2">
+              <h2 id="rain-verification-dialog-title" className="text-xl font-bold flex items-center gap-2">Verify you are human</h2>
+              <button type="button" className="text-accent ml-auto cursor-pointer" aria-label="Close" onClick={requestClose}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3">
+                  <path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex justify-center">
+              <div className="h-16 rounded-xl bg-[#28386A]/30 w-full flex items-center justify-center overflow-hidden">
+                <div ref={challengeRef} className="text-center w-full" />
+              </div>
+            </div>
+            {challengeError && <p role="alert" className="text-sm font-medium text-error text-center">Unable to load verification. Please try again.</p>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RainPot({ onTip, onJoin, rain }) {
   const isJoining = rain.phase === "joining";
   return (
@@ -550,6 +679,7 @@ export default function ChatSidebar() {
   const [connected, setConnected] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isTipRainOpen, setIsTipRainOpen] = useState(false);
+  const [isRainVerificationOpen, setIsRainVerificationOpen] = useState(false);
   const [profileModal, setProfileModal] = useState(null);
   const [modalClosing, setModalClosing] = useState(false);
   const [rainState, setRainState] = useState({
@@ -588,6 +718,17 @@ export default function ChatSidebar() {
       message: "Slow mode is enabled. Please wait before sending another message",
       duration: 6000,
     });
+  }, []);
+
+  const closeRainVerification = useCallback(() => {
+    setIsRainVerificationOpen(false);
+  }, []);
+
+  const completeRainVerification = useCallback((turnstileToken) => {
+    const socket = socketRef.current;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "rain_join", turnstileToken }));
+    }
   }, []);
 
   const openProfile = (name, user) => {
@@ -785,12 +926,7 @@ export default function ChatSidebar() {
         <div className="flex relative flex-1 min-h-0">
           <RainPot
             onTip={() => setIsTipRainOpen(true)}
-            onJoin={() => {
-              const socket = socketRef.current;
-              if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: "rain_join" }));
-              }
-            }}
+            onJoin={() => setIsRainVerificationOpen(true)}
             rain={rainState}
           />
           <div className="flex flex-col justify-end flex-1 relative min-h-0">
@@ -955,6 +1091,15 @@ export default function ChatSidebar() {
                 socket.send(JSON.stringify({ type: "rain_tip", amount: value }));
               }
             }}
+          />,
+          document.body,
+        )
+      : null}
+    {isRainVerificationOpen
+      ? createPortal(
+          <RainVerificationModal
+            onClose={closeRainVerification}
+            onVerified={completeRainVerification}
           />,
           document.body,
         )
