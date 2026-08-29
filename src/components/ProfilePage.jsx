@@ -391,7 +391,7 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
                   }}
                   type="button"
                   onClick={() => switchTab(key)}
-                  className={`relative z-10 h-9 px-4 py-0 flex items-center justify-center text-sm font-semibold leading-none text-center whitespace-nowrap rounded-lg transition-colors duration-200 cursor-pointer ${
+                  className={`relative z-10 h-[33px] px-4 py-0 flex items-center justify-center text-sm font-semibold leading-none text-center whitespace-nowrap rounded-lg transition-colors duration-200 cursor-pointer ${
                     index === activeTabIndex
                       ? `text-[#3A3869] ${
                           hasSwitchedTabs
