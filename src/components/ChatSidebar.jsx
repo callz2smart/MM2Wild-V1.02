@@ -7,11 +7,11 @@ const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
 let turnstileScriptPromise;
 
 const chatRanks = {
-  chillguy: { label: "Chill Guy", image: "/ranks/ChillGuy.webp", color: "#C69D72" },
-  highroller: { label: "High Roller", image: "/ranks/Highroller.webp", color: "#5CDF9A" },
-  lucky: { label: "Lucky", image: "/ranks/Lucky.webp", color: "#6CDE07" },
-  unlucky: { label: "Unlucky", image: "/ranks/Unlucky.webp", color: "#FFFFFF" },
-  whale: { label: "Whale", image: "/ranks/Whale.webp", color: "#57A2F3" },
+  chillguy: { label: "Chill Guy", image: "/ranks/ChillGuy.webp", color: "#C69D72", priority: 0 },
+  highroller: { label: "High Roller", image: "/ranks/Highroller.webp", color: "#5CDF9A", priority: 1 },
+  lucky: { label: "Lucky", image: "/ranks/Lucky.webp", color: "#6CDE07", priority: 0 },
+  unlucky: { label: "Unlucky", image: "/ranks/Unlucky.webp", color: "#FFFFFF", priority: 0 },
+  whale: { label: "Whale", image: "/ranks/Whale.webp", color: "#43B6EF", priority: 2 },
 };
 
 function rankValues(value) {
@@ -700,7 +700,11 @@ function ChatMessage({
 }) {
   if (!user) return null;
   const profile = user;
-  const usernameColor = rankDetails(profile.rank)[0]?.color || "#FFFFFF";
+  const usernameRank = rankDetails(profile.rank).reduce(
+    (highest, rank) => (!highest || rank.priority > highest.priority ? rank : highest),
+    null,
+  );
+  const usernameColor = usernameRank?.color || "#FFFFFF";
   return (
     <div
       className={`relative flex flex-col group/message ${
@@ -739,7 +743,7 @@ function ChatMessage({
               </div>
             </div>
             <span
-              className="font-semibold text-[13px] ml-1 cursor-pointer truncate text-(--chat-username-color) hover:text-white transition-colors"
+              className="font-semibold text-[13px] ml-1 cursor-pointer truncate text-(--chat-username-color)"
               style={{ "--chat-username-color": usernameColor }}
               onClick={() => onProfileClick?.(name, user)}
             >
