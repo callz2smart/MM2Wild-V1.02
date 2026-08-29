@@ -343,30 +343,6 @@ a {
   animation: copied-notification-leave 0.35s ease forwards;
 }
 
-.copied-notification-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background: var(--toast-color);
-  opacity: 0.25;
-  transform-origin: left;
-  animation: copied-notification-progress var(--duration) linear forwards;
-}
-
-.Progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background: var(--toast-color);
-  opacity: 0.25;
-  transform-origin: left;
-  animation: copied-notification-progress var(--duration) linear forwards;
-}
-
 @keyframes copied-notification-enter {
   from {
     opacity: 0;
@@ -391,26 +367,12 @@ a {
   }
 }
 
-@keyframes copied-notification-progress {
-  from {
-    transform: scaleX(1);
-  }
-
-  to {
-    transform: scaleX(0);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .copied-notification-enter,
   .copied-notification-leave {
     animation: none;
   }
 
-  .copied-notification-progress,
-  .Progress {
-    display: none;
-  }
 }
 
 .chat-scrollbar {

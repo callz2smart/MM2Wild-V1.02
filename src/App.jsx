@@ -10,6 +10,7 @@ import FairnessPage from "./components/FairnessPage";
 import RewardsPage from "./components/RewardsPage";
 import LoadingScreen from "./components/LoadingScreen";
 import AffiliatesPage from "./components/AffiliatesPage";
+import NotificationCenter from "./components/NotificationCenter";
 
 export default function App() {
   const [pathname, setPathname] = useState(() => window.location.pathname);
@@ -95,6 +96,7 @@ export default function App() {
           <HomePage />
         )}
       </main>
+      <NotificationCenter />
       <LoadingScreen />
     </>
   );

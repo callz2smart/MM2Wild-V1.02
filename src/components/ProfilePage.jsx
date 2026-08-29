@@ -166,8 +166,21 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
   }, [initialTab]);
 
   const switchTab = useCallback((tabKey) => {
-    const tab = accountTabs.find(([, key]) => key === tabKey);
+    const nextTabIndex = accountTabs.findIndex(([, key]) => key === tabKey);
+    const tab = accountTabs[nextTabIndex];
     if (!tab) return;
+
+    const nextButton = tabButtonRefs.current[nextTabIndex];
+    if (nextButton) {
+      setAnimateTabIndicator(true);
+      setTabIndicatorStyle({
+        width: `${nextButton.offsetWidth}px`,
+        height: `${nextButton.offsetHeight}px`,
+        transform: `translate3d(${nextButton.offsetLeft}px, ${nextButton.offsetTop}px, 0)`,
+        opacity: 1,
+      });
+    }
+
     setHasSwitchedTabs(true);
     setActiveTab(tabKey);
     window.history.pushState({}, "", tab[2]);

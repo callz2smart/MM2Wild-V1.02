@@ -7,6 +7,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import SignInModal from "./SignInModal";
+import { showNotification } from "./NotificationCenter";
 import WhatIsThisModal from "./WhatIsThisModal";
 import ProfileDropdown from "./ProfileDropdown";
 import WalletModal from "./WalletModal";
@@ -279,75 +280,6 @@ function RewardsIcon({ className = "size-5" }) {
         d="M11 14v8H7a3 3 0 0 1-3-3v-4a1 1 0 0 1 1-1zm8 0a1 1 0 0 1 1 1v4a3 3 0 0 1-3 3h-4v-8zM16.5 2a3.5 3.5 0 0 1 3.163 5H20a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-7V7h-2v5H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h.337A3.5 3.5 0 0 1 4 5.5C4 3.567 5.567 2 7.483 2c1.755-.03 3.312 1.092 4.381 2.934l.136.243c1.033-1.914 2.56-3.114 4.291-3.175zm-9 2a1.5 1.5 0 0 0 0 3h3.143C9.902 5.095 8.694 3.98 7.5 4m8.983 0c-1.18-.02-2.385 1.096-3.126 3H16.5a1.5 1.5 0 1 0-.017-3"
       />
     </svg>
-  );
-}
-
-function SessionErrorNotification({ state, onDismiss }) {
-  return (
-    <div
-      className={`fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] max-w-[calc(100vw-32px)] ${
-        state === "closing"
-          ? "copied-notification-leave"
-          : "copied-notification-enter"
-      }`}
-      role="region"
-      aria-label="error notification"
-    >
-      <div
-        data-v-218eda1d=""
-        className="relative bg-[#243157] rounded-[9px] overflow-hidden w-[310px]"
-        style={{ "--toast-color": "var(--color-error)" }}
-      >
-        <div
-          data-v-218eda1d=""
-          className="w-1 absolute top-0 bottom-0 left-0 bg-(--toast-color)"
-        />
-        <div
-          data-v-218eda1d=""
-          className="w-14 h-7 absolute bottom-0 left-0 blur-2xl bg-(--toast-color)"
-        />
-        <div data-v-218eda1d="" className="flex gap-3 p-5 relative z-10">
-          <div data-v-218eda1d="" className="flex flex-col gap-0.5 flex-1">
-            <p data-v-218eda1d="" className="font-medium leading-none text-foreground">
-              Uh-oh, Error!
-            </p>
-            <div
-              data-v-218eda1d=""
-              role="alert"
-              aria-live="assertive"
-              aria-atomic="true"
-              className="text-sm font-medium leading-none text-accent"
-            >
-              <span data-v-218eda1d="">The login session could not be found</span>
-            </div>
-          </div>
-          <button
-            data-v-218eda1d=""
-            type="button"
-            className="bg-[#18213A] hover:bg-[#18213A]/75 rounded-[7px] size-6 flex items-center justify-center transition-colors cursor-pointer absolute right-2 top-2"
-            aria-label="Dismiss notification"
-            onClick={onDismiss}
-          >
-            <svg
-              data-v-218eda1d=""
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              className="size-3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.75"
-            >
-              <path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" />
-            </svg>
-          </button>
-        </div>
-        <div
-          data-v-218eda1d=""
-          className="Progress"
-          style={{ animationPlayState: "running", "--duration": "6000ms" }}
-        />
-      </div>
-    </div>
   );
 }
 
@@ -773,32 +705,17 @@ export default function Header() {
   const [isGamesOpen, setIsGamesOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [signedInUser, setSignedInUser] = useState(null);
-  const [sessionNotification, setSessionNotification] = useState(null);
   const [selectedGame, setSelectedGame] = useState(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const gamesTriggerRef = useRef(null);
-  const sessionNotificationTimerRef = useRef(null);
-  const sessionNotificationCloseTimerRef = useRef(null);
-
-  const dismissSessionNotification = useCallback(() => {
-    window.clearTimeout(sessionNotificationTimerRef.current);
-    setSessionNotification((current) => (current ? "closing" : null));
-    window.clearTimeout(sessionNotificationCloseTimerRef.current);
-    sessionNotificationCloseTimerRef.current = window.setTimeout(
-      () => setSessionNotification(null),
-      350,
-    );
-  }, []);
-
   const showSessionNotification = useCallback(() => {
-    window.clearTimeout(sessionNotificationTimerRef.current);
-    window.clearTimeout(sessionNotificationCloseTimerRef.current);
-    setSessionNotification("open");
-    sessionNotificationTimerRef.current = window.setTimeout(
-      dismissSessionNotification,
-      6000,
-    );
-  }, [dismissSessionNotification]);
+    showNotification({
+      type: "error",
+      title: "Uh-oh, Error!",
+      message: "The login session could not be found",
+      duration: 6000,
+    });
+  }, []);
 
   const handleSignedIn = useCallback((user) => {
     setSignedInUser(user);
@@ -818,8 +735,6 @@ export default function Header() {
       .catch(() => {});
     return () => {
       controller.abort();
-      window.clearTimeout(sessionNotificationTimerRef.current);
-      window.clearTimeout(sessionNotificationCloseTimerRef.current);
     };
   }, [showSessionNotification]);
 
@@ -1351,12 +1266,6 @@ export default function Header() {
           </div>
         </div>
       </div>
-      {sessionNotification ? (
-        <SessionErrorNotification
-          state={sessionNotification}
-          onDismiss={dismissSessionNotification}
-        />
-      ) : null}
       {isGamesOpen &&
         createPortal(
           <GamesDropdown

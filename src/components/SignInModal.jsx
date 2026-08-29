@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { showNotification } from "./NotificationCenter";
 
 function CopyIcon({ className }) {
   return (
@@ -16,82 +17,6 @@ function CopyIcon({ className }) {
         d="M6.6 11.397c0-2.726 0-4.089.844-4.936.843-.847 2.2-.847 4.916-.847h2.88c2.715 0 4.073 0 4.917.847S21 8.671 21 11.397v4.82c0 2.726 0 4.089-.843 4.936-.844.847-2.202.847-4.917.847h-2.88c-2.715 0-4.073 0-4.916-.847-.844-.847-.844-2.21-.844-4.936z"
       />
     </svg>
-  );
-}
-
-function Notification({ notification, onDismiss }) {
-  return (
-    <div
-      className={`max-w-[calc(100vw-32px)] ${
-        notification.state === "closing"
-          ? "copied-notification-leave"
-          : "copied-notification-enter"
-      }`}
-      role="region"
-      aria-label={`${notification.type} notification`}
-    >
-      <div
-        data-v-218eda1d=""
-        className="relative bg-[#243157] rounded-[9px] overflow-hidden w-[310px] max-w-full"
-        style={{ "--toast-color": `var(--color-${notification.type})` }}
-      >
-        <div className="w-1 absolute top-0 bottom-0 left-0 bg-(--toast-color)" />
-        <div className="w-14 h-7 absolute bottom-0 left-0 blur-2xl bg-(--toast-color)" />
-        <div
-          data-v-218eda1d=""
-          className="flex gap-3 p-5 relative z-10"
-        >
-          <div
-            data-v-218eda1d=""
-            className="flex flex-col gap-0.5 flex-1"
-          >
-            <p
-              data-v-218eda1d=""
-              className="font-medium leading-none text-foreground"
-            >
-              {notification.title}
-            </p>
-            <div
-              data-v-218eda1d=""
-              role={notification.role}
-              aria-live={notification.ariaLive}
-              aria-atomic="true"
-              className="text-sm font-medium leading-none text-accent"
-            >
-              <span data-v-218eda1d="">{notification.message}</span>
-            </div>
-          </div>
-          <button
-            data-v-218eda1d=""
-            type="button"
-            className="bg-[#18213A] hover:bg-[#18213A]/75 rounded-[7px] size-6 flex items-center justify-center transition-colors cursor-pointer absolute right-2 top-2"
-            aria-label="Dismiss notification"
-            onClick={onDismiss}
-          >
-            <svg
-              data-v-218eda1d=""
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              className="size-3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.75"
-            >
-              <path
-                fill="none"
-                stroke="currentColor"
-                d="M20 4 4 20M4 4l16 16"
-              />
-            </svg>
-          </button>
-        </div>
-        <div
-          data-v-218eda1d=""
-          className="copied-notification-progress"
-          style={{ "--duration": "4000ms" }}
-        />
-      </div>
-    </div>
   );
 }
 
@@ -237,45 +162,8 @@ export default function SignInModal({ onClose, onSignedIn }) {
   const [verificationChallenge, setVerificationChallenge] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [dialogState, setDialogState] = useState("open");
-  const [notifications, setNotifications] = useState([]);
   const isClosingRef = useRef(false);
   const closeTimerRef = useRef(null);
-  const notificationTimersRef = useRef(new Map());
-
-  const dismissNotification = useCallback((id) => {
-    const timers = notificationTimersRef.current;
-    window.clearTimeout(timers.get(id));
-    setNotifications((current) =>
-      current.map((notification) =>
-        notification.id === id
-          ? { ...notification, state: "closing" }
-          : notification,
-      ),
-    );
-    window.clearTimeout(timers.get(`${id}:close`));
-    timers.set(
-      `${id}:close`,
-      window.setTimeout(() => {
-        setNotifications((current) =>
-          current.filter((notification) => notification.id !== id),
-        );
-        timers.delete(id);
-        timers.delete(`${id}:close`);
-      }, 350),
-    );
-  }, []);
-
-  const showNotification = useCallback((details) => {
-    const id = `${Date.now()}-${crypto.randomUUID()}`;
-    setNotifications((current) => [
-      ...current,
-      { id, state: "open", ...details },
-    ]);
-    notificationTimersRef.current.set(
-      id,
-      window.setTimeout(() => dismissNotification(id), 4000),
-    );
-  }, [dismissNotification]);
 
   const showCopiedNotification = useCallback(() => {
     showNotification({
@@ -319,10 +207,6 @@ export default function SignInModal({ onClose, onSignedIn }) {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
       window.clearTimeout(closeTimerRef.current);
-      notificationTimersRef.current.forEach((timer) =>
-        window.clearTimeout(timer),
-      );
-      notificationTimersRef.current.clear();
     };
   }, [requestClose]);
 
@@ -742,17 +626,6 @@ export default function SignInModal({ onClose, onSignedIn }) {
           </div>
         </div>
       </div>
-      {notifications.length > 0 ? (
-        <div className="fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] flex max-w-[calc(100vw-32px)] flex-col gap-3">
-          {notifications.map((notification) => (
-            <Notification
-              key={notification.id}
-              notification={notification}
-              onDismiss={() => dismissNotification(notification.id)}
-            />
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 }

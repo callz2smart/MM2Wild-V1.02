@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { showNotification } from "./NotificationCenter";
 
 function CloseIcon() {
   return (
@@ -188,66 +189,6 @@ function ChatIcon({ className = "size-5" }) {
         d="M1 6a5 5 0 1 1 2.59 4.382l-1.944.592a.5.5 0 0 1-.624-.624l.592-1.947A5 5 0 0 1 1 6m3-.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1h-3a.5.5 0 0 0-.5.5M4.5 7a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1z"
       />
     </svg>
-  );
-}
-
-function SlowModeNotification({ state, onDismiss }) {
-  return (
-    <div
-      className={`fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] max-w-[calc(100vw-32px)] ${
-        state === "closing"
-          ? "copied-notification-leave"
-          : "copied-notification-enter"
-      }`}
-      role="region"
-      aria-label="error notification"
-    >
-      <div
-        className="relative bg-[#243157] rounded-[9px] overflow-hidden w-[310px] max-w-full"
-        style={{ "--toast-color": "var(--color-error)" }}
-      >
-        <div className="w-1 absolute top-0 bottom-0 left-0 bg-(--toast-color)" />
-        <div className="w-14 h-7 absolute bottom-0 left-0 blur-2xl bg-(--toast-color)" />
-        <div data-v-218eda1d="" className="flex gap-3 p-5 relative z-10">
-          <div data-v-218eda1d="" className="flex flex-col gap-0.5 flex-1">
-            <p data-v-218eda1d="" className="font-medium leading-none text-foreground">
-              Uh-oh, Error!
-            </p>
-            <div
-              data-v-218eda1d=""
-              role="alert"
-              aria-live="assertive"
-              aria-atomic="true"
-              className="text-sm font-medium leading-none text-accent"
-            >
-              <span data-v-218eda1d="">
-                Slow mode is enabled. Please wait before sending another message
-              </span>
-            </div>
-          </div>
-          <button
-            data-v-218eda1d=""
-            type="button"
-            className="bg-[#18213A] hover:bg-[#18213A]/75 rounded-[7px] size-6 flex items-center justify-center transition-colors cursor-pointer absolute right-2 top-2"
-            aria-label="Dismiss notification"
-            onClick={onDismiss}
-          >
-            <svg
-              data-v-218eda1d=""
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              className="size-3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.75"
-            >
-              <path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" />
-            </svg>
-          </button>
-        </div>
-        <div className="Progress" style={{ animationPlayState: "running", "--duration": "6000ms" }} />
-      </div>
-    </div>
   );
 }
 
@@ -568,7 +509,6 @@ export default function ChatSidebar() {
   const [onlineCount, setOnlineCount] = useState(null);
   const [connected, setConnected] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
-  const [slowModeNotification, setSlowModeNotification] = useState(null);
   const [isTipRainOpen, setIsTipRainOpen] = useState(false);
   const [profileModal, setProfileModal] = useState(null);
   const [modalClosing, setModalClosing] = useState(false);
@@ -576,7 +516,6 @@ export default function ChatSidebar() {
   const socketRef = useRef(null);
   const viewportRef = useRef(null);
   const inputRef = useRef(null);
-  const notificationTimerRef = useRef(null);
 
   useLayoutEffect(() => {
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
@@ -595,29 +534,13 @@ export default function ChatSidebar() {
     };
   }, [isChatOpen]);
 
-  const dismissSlowModeNotification = useCallback(() => {
-    clearTimeout(notificationTimerRef.current);
-    setSlowModeNotification((current) =>
-      current ? { ...current, state: "closing" } : null,
-    );
-    notificationTimerRef.current = setTimeout(
-      () => setSlowModeNotification(null),
-      350,
-    );
-  }, []);
-
   const showSlowModeNotification = useCallback(() => {
-    clearTimeout(notificationTimerRef.current);
-    setSlowModeNotification({ id: Date.now(), state: "open" });
-    notificationTimerRef.current = setTimeout(() => {
-      setSlowModeNotification((current) =>
-        current ? { ...current, state: "closing" } : null,
-      );
-      notificationTimerRef.current = setTimeout(
-        () => setSlowModeNotification(null),
-        350,
-      );
-    }, 6000);
+    showNotification({
+      type: "error",
+      title: "Uh-oh, Error!",
+      message: "Slow mode is enabled. Please wait before sending another message",
+      duration: 6000,
+    });
   }, []);
 
   const openProfile = (name, user) => {
@@ -731,11 +654,6 @@ export default function ChatSidebar() {
       socketRef.current = null;
     };
   }, [showSlowModeNotification]);
-
-  useEffect(
-    () => () => clearTimeout(notificationTimerRef.current),
-    [],
-  );
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -964,16 +882,6 @@ export default function ChatSidebar() {
     >
       <ChatIcon className="size-5.5 text-accent" />
     </button>
-    {slowModeNotification
-      ? createPortal(
-          <SlowModeNotification
-            key={slowModeNotification.id}
-            state={slowModeNotification.state}
-            onDismiss={dismissSlowModeNotification}
-          />,
-          document.body,
-        )
-      : null}
     {isTipRainOpen
       ? createPortal(
           <TipRainModal

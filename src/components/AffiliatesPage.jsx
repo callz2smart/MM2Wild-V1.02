@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Footer } from "./HomePage";
 import LineWobbleLoader from "./LineWobbleLoader";
 import AffiliateStatusesModal from "./AffiliateStatusesModal";
+import { showNotification } from "./NotificationCenter";
 
 const usersIconPaths = [
   "M12 16.14h-.87a8.67 8.67 0 0 0-6.43 2.52l-.24.28v8.28h4.08v-4.7l.55-.62.25-.29a11 11 0 0 1 4.71-2.86A6.6 6.6 0 0 1 12 16.14",
@@ -148,31 +149,9 @@ function AffiliateSetup({ onSubmit }) {
   );
 }
 
-function SuccessNotification({ notification, onDismiss }) {
-  return (
-    <div className={`fixed right-[calc(var(--layout-right,0px)+16px)] bottom-[calc(var(--layout-bottom,0px)+16px)] z-[10000] max-w-[calc(100vw-32px)] ${notification.state === "closing" ? "copied-notification-leave" : "copied-notification-enter"}`} role="region" aria-label="Success notification">
-      <div className="relative bg-[#243157] rounded-[9px] overflow-hidden w-[310px] max-w-full" style={{ "--toast-color": "var(--color-success)" }}>
-        <div className="w-1 absolute top-0 bottom-0 left-0 bg-(--toast-color)" />
-        <div className="w-14 h-7 absolute bottom-0 left-0 blur-2xl bg-(--toast-color)" />
-        <div className="flex gap-3 p-5 relative z-10">
-          <div className="flex flex-col gap-0.5 flex-1">
-            <p className="font-medium leading-none text-foreground">{notification.title}</p>
-            <div role="status" aria-live="polite" className="text-sm font-medium leading-none text-accent">{notification.message}</div>
-          </div>
-          <button type="button" className="bg-[#18213A] hover:bg-[#18213A]/75 rounded-[7px] size-6 flex items-center justify-center transition-colors cursor-pointer absolute right-2 top-2" aria-label="Dismiss notification" onClick={onDismiss}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.75"><path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" /></svg>
-          </button>
-        </div>
-        <div className="copied-notification-progress" style={{ "--duration": "4000ms" }} />
-      </div>
-    </div>
-  );
-}
-
 export default function AffiliatesPage() {
   const [user, setUser] = useState(null);
   const [affiliate, setAffiliate] = useState(undefined);
-  const [notification, setNotification] = useState(null);
   const [search, setSearch] = useState("");
   const [statusesOpen, setStatusesOpen] = useState(false);
 
@@ -198,22 +177,9 @@ export default function AffiliatesPage() {
     return () => controller.abort();
   }, []);
 
-  useEffect(() => {
-    if (!notification) return undefined;
-    const timer = window.setTimeout(
-      () => setNotification((current) => current && (
-        current.state === "closing" ? null : { ...current, state: "closing" }
-      )),
-      notification.state === "closing" ? 350 : 4000,
-    );
-    return () => window.clearTimeout(timer);
-  }, [notification]);
-
   const handleAffiliateCreated = (createdAffiliate) => {
     setAffiliate(createdAffiliate);
-    setNotification({
-      id: Date.now(),
-      state: "open",
+    showNotification({
       title: "Well done!",
       message: "Affiliate code set successfully!",
     });
@@ -222,9 +188,7 @@ export default function AffiliatesPage() {
   const copyReferralLink = async () => {
     try {
       await navigator.clipboard.writeText(referralLink);
-      setNotification({
-        id: Date.now(),
-        state: "open",
+      showNotification({
         title: "Nice, Copied!",
         message: "Successfully copied to clipboard.",
       });
@@ -349,13 +313,6 @@ export default function AffiliatesPage() {
         </div>
         {affiliate === null && <AffiliateSetup onSubmit={handleAffiliateCreated} />}
       </div>
-      {notification && (
-        <SuccessNotification
-          key={notification.id}
-          notification={notification}
-          onDismiss={() => setNotification((current) => current ? { ...current, state: "closing" } : null)}
-        />
-      )}
       {statusesOpen && <AffiliateStatusesModal onClose={() => setStatusesOpen(false)} />}
       <Footer />
     </div>

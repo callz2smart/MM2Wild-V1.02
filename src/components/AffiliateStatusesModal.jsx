@@ -68,7 +68,7 @@ export default function AffiliateStatusesModal({ onClose }) {
         aria-labelledby="affiliate-statuses-title"
         data-state={dialogState}
         style={{
-          maxWidth: "min(100dvw - 24px, 520px)",
+          maxWidth: "min(100dvw - 24px, 680px)",
           maxHeight: "calc(100% - 24px)",
           zIndex: 9999,
           pointerEvents: "auto",
@@ -76,7 +76,7 @@ export default function AffiliateStatusesModal({ onClose }) {
         onPointerDown={(event) => event.stopPropagation()}
       >
         {loading ? (
-          <div className="bg-[#1D284E] rounded-2xl shadow-lg min-h-44 flex items-center justify-center">
+          <div className="min-h-44 flex items-center justify-center">
             <SquircleLoader />
           </div>
         ) : (
