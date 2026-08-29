@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Footer } from "./HomePage";
 import LineWobbleLoader from "./LineWobbleLoader";
+import AffiliateStatusesModal from "./AffiliateStatusesModal";
 
 const usersIconPaths = [
   "M12 16.14h-.87a8.67 8.67 0 0 0-6.43 2.52l-.24.28v8.28h4.08v-4.7l.55-.62.25-.29a11 11 0 0 1 4.71-2.86A6.6 6.6 0 0 1 12 16.14",
@@ -173,6 +174,7 @@ export default function AffiliatesPage() {
   const [affiliate, setAffiliate] = useState(undefined);
   const [notification, setNotification] = useState(null);
   const [search, setSearch] = useState("");
+  const [statusesOpen, setStatusesOpen] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -317,7 +319,7 @@ export default function AffiliatesPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-semibold">Referred Users</h2>
-                      <button type="button" aria-label="Referral information" className="cursor-pointer text-accent/70 hover:text-accent transition-colors">
+                      <button type="button" aria-label="Referral information" className="cursor-pointer text-accent/70 hover:text-accent transition-colors" onClick={() => setStatusesOpen(true)}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5"><path fill="currentColor" d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 1 0 22 12 10 10 0 0 0 12 2" /></svg>
                       </button>
                     </div>
@@ -354,6 +356,7 @@ export default function AffiliatesPage() {
           onDismiss={() => setNotification((current) => current ? { ...current, state: "closing" } : null)}
         />
       )}
+      {statusesOpen && <AffiliateStatusesModal onClose={() => setStatusesOpen(false)} />}
       <Footer />
     </div>
   );
