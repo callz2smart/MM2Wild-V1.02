@@ -340,7 +340,7 @@ function RainVerificationModal({ onClose, onVerified }) {
     let cancelled = false;
     const hostname = window.location.hostname;
     const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
-    const sitekey = import.meta.env.VITE_TURNSTILE_SITE_KEY || (isLocal ? TURNSTILE_TEST_SITE_KEY : TURNSTILE_PRODUCTION_SITE_KEY);
+    const sitekey = import.meta.env.CLOUDFLARED_TURNSTILE_SITE_KEY || (isLocal ? TURNSTILE_TEST_SITE_KEY : TURNSTILE_PRODUCTION_SITE_KEY);
 
     loadTurnstile()
       .then((turnstile) => {

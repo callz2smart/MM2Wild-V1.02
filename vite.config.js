@@ -65,5 +65,10 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss(), localBackend(backendEnv)],
+    define: {
+      "import.meta.env.CLOUDFLARED_TURNSTILE_SITE_KEY": JSON.stringify(
+        loadedEnv.CLOUDFLARED_TURNSTILE_SITE_KEY || "",
+      ),
+    },
   };
 });
