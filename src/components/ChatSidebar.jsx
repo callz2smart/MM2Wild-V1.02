@@ -292,7 +292,8 @@ function TipRainModal({ onClose, onSubmit }) {
   );
 }
 
-function RainPot({ onTip, rain }) {
+function RainPot({ onTip, onJoin, rain }) {
+  const isJoining = rain.phase === "joining";
   return (
     <div
       className="flex flex-col top-0 left-3 right-3 rounded-xl absolute z-10 overflow-hidden p-3.5 shadow-xl min-h-[80px]"
@@ -319,6 +320,14 @@ function RainPot({ onTip, rain }) {
         />
       </div>
       <div className="absolute top-2 right-2 flex items-center gap-2 z-20">
+        {isJoining && (
+          <div className="bg-[#223263] px-1.5 py-1 text-xs font-medium rounded-md flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4">
+              <path fill="currentColor" d="M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4" />
+            </svg>
+            <p>{rain.participantCount ?? 0}</p>
+          </div>
+        )}
         <div className="bg-[#223263] px-1.5 py-1 text-xs font-medium rounded-md flex items-center gap-1">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -334,7 +343,7 @@ function RainPot({ onTip, rain }) {
         </div>
       </div>
       <div className="flex flex-col gap-3 relative z-10">
-        <p className="text-sm font-semibold text-white">RAIN POT</p>
+        <p className="text-sm font-semibold text-white">{isJoining ? "IT'S RAINING!" : "RAIN POT"}</p>
         <div className="flex gap-2">
           <div className="h-8.5 relative">
             <div className="absolute top-1/2 left-0 right-0 bottom-0 bg-[#191840] rounded-lg" />
@@ -385,6 +394,37 @@ function RainPot({ onTip, rain }) {
               </div>
             </div>
           </button>
+          {isJoining && (
+            <button
+              type="button"
+              onClick={onJoin}
+              disabled={rain.joined}
+              className="relative cursor-pointer disabled:cursor-default outline-none flex select-none transition-opacity group/button h-8.5"
+            >
+              <div
+                className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                style={{
+                  top: "var(--sb-shadow-size,3px)",
+                  backgroundColor: "rgb(15,195,101)",
+                }}
+              />
+              <div
+                className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-3"
+                style={{
+                  height: "calc(100% - var(--sb-shadow-size,3px))",
+                  backgroundColor: "rgb(92,223,154)",
+                  color: "rgb(58,56,105)",
+                }}
+              >
+                <div
+                  className="transition-opacity flex items-center justify-center size-full"
+                  style={{ filter: "drop-shadow(rgb(15,195,101) 0 2px 0)" }}
+                >
+                  {rain.joined ? "JOINED" : "JOIN"}
+                </div>
+              </div>
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -512,7 +552,14 @@ export default function ChatSidebar() {
   const [isTipRainOpen, setIsTipRainOpen] = useState(false);
   const [profileModal, setProfileModal] = useState(null);
   const [modalClosing, setModalClosing] = useState(false);
-  const [rainState, setRainState] = useState({ pool: 300, countdown: "60:00", progress: 100 });
+  const [rainState, setRainState] = useState({
+    pool: 300,
+    countdown: "60:00",
+    progress: 100,
+    phase: "active",
+    participantCount: 0,
+    joined: false,
+  });
   const socketRef = useRef(null);
   const viewportRef = useRef(null);
   const inputRef = useRef(null);
@@ -591,7 +638,14 @@ export default function ChatSidebar() {
         setOnlineCount(payload.online ?? 0);
         if (payload.rain) setRainState(payload.rain);
       } else if (payload.type === "rain") {
-        setRainState(payload);
+        setRainState((current) => ({
+          ...payload,
+          joined: payload.rainId === current.rainId ? current.joined : false,
+        }));
+      } else if (payload.type === "rain_joined") {
+        setRainState((current) =>
+          current.rainId === payload.rainId ? { ...current, joined: true } : current,
+        );
       } else if (payload.type === "chat") {
         setMessages((current) => [
           ...current,
@@ -729,7 +783,16 @@ export default function ChatSidebar() {
         </div>
 
         <div className="flex relative flex-1 min-h-0">
-          <RainPot onTip={() => setIsTipRainOpen(true)} rain={rainState} />
+          <RainPot
+            onTip={() => setIsTipRainOpen(true)}
+            onJoin={() => {
+              const socket = socketRef.current;
+              if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: "rain_join" }));
+              }
+            }}
+            rain={rainState}
+          />
           <div className="flex flex-col justify-end flex-1 relative min-h-0">
             <div
               className="z-2 absolute top-0 left-0 right-1 h-20 bg-linear-to-r from-[#152340] to-[#212A53] pointer-events-none"

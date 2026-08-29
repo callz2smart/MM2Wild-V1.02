@@ -12,6 +12,7 @@ function localBackend(backendEnv) {
       // /api/chat upgrades are handled alongside the REST API below.
       attachChatServer(devServer.httpServer, {
         verifySession: (token) => resolveSessionUser(token, backendEnv),
+        env: backendEnv,
       });
 
       devServer.middlewares.use(async (request, response, next) => {

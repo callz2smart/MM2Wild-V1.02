@@ -1,6 +1,4 @@
-// Inserts sample login sessions for a given user via the Supabase REST API.
-// Usage: node scripts/seed-sessions.js [username] [count]
-// Defaults: username=Redbet_holder, count=10
+
 
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -56,13 +54,13 @@ const browsers = [
 ];
 
 function randomIp() {
-  // Use clearly fake/test IP ranges (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24 are reserved for documentation)
+
   const testRanges = [
     () => `192.0.2.${1 + Math.floor(Math.random() * 254)}`,
     () => `198.51.100.${1 + Math.floor(Math.random() * 254)}`,
     () => `203.0.113.${1 + Math.floor(Math.random() * 254)}`,
     () => {
-      // Fake IPv6 in documentation range
+
       const parts = ["2001", "db8"];
       for (let i = 0; i < 6; i++) {
         parts.push(Math.floor(Math.random() * 0xffff).toString(16));
@@ -82,7 +80,7 @@ function generateSession(userUuid, index) {
   const browserConfig = randomChoice(browsers);
   const isCurrent = index === 0;
 
-  // Spread dates across the last ~8 months
+
   const daysAgo = isCurrent ? 0 : Math.random() * 240;
   const lastActive = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
 
@@ -99,7 +97,7 @@ function generateSession(userUuid, index) {
 }
 
 async function main() {
-  // 1. Look up the user
+
   const userResponse = await fetch(
     `${SUPABASE_URL}/rest/v1/mm2wild_users?username=eq.${encodeURIComponent(username)}&select=uuid,username`,
     {
@@ -118,7 +116,7 @@ async function main() {
   const userUuid = users[0].uuid;
   console.log(`Seeding ${count} sessions for ${username} (${userUuid})...`);
 
-  // 2. Clear existing sessions for this user
+ 
   await fetch(`${SUPABASE_URL}/rest/v1/mm2wild_sessions?user_uuid=eq.${userUuid}`, {
     method: "DELETE",
     headers: {
@@ -127,10 +125,10 @@ async function main() {
     },
   });
 
-  // 3. Generate sessions — first one is the current session
+
   const sessions = Array.from({ length: count }, (_, i) => generateSession(userUuid, i));
 
-  // 4. Insert
+
   const batchSize = 25;
   let inserted = 0;
   for (let i = 0; i < sessions.length; i += batchSize) {

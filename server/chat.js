@@ -1,6 +1,6 @@
 
 import { WebSocketServer } from "ws";
-import { createRainState, formatRainState } from "./rain.js";
+import { createRainState, createSupabaseRainStore, formatRainState } from "./rain.js";
 
 const HISTORY_LIMIT = 50;
 const MAX_BODY_LENGTH = 500;
@@ -26,8 +26,7 @@ function safeString(value, maxLength) {
   return value.slice(0, maxLength);
 }
 
-// Resolve the user identity for a connecting client from the session cookie.
-// Returns null for anonymous connections (they may still observe the chat).
+
 async function resolveUser(cookieHeader, verifySession) {
   if (!cookieHeader || typeof verifySession !== "function") return null;
   const match = cookieHeader.match(/mm2wild_session=([^;]+)/);
@@ -36,6 +35,7 @@ async function resolveUser(cookieHeader, verifySession) {
     const session = await verifySession(match[1]);
     if (!session) return null;
     return {
+      uuid: session.uuid,
       name: session.username || `User ${session.robloxUserId}`,
       level: session.level ?? 1,
       avatar: session.avatar_headshot,
@@ -64,10 +64,11 @@ export function attachChatServer(httpServer, options = {}) {
   const history = [];
   const clients = new Set();
   const clientSockets = new Map();
-  const rain = createRainState();
+  const rain = createRainState({ store: createSupabaseRainStore(options.env) });
   let rainInterval = null;
 
-  function broadcastRain() {
+  async function broadcastRain() {
+    await rain.tick();
     broadcast(formatRainState(rain));
   }
 
@@ -87,7 +88,7 @@ export function attachChatServer(httpServer, options = {}) {
     if (history.length > HISTORY_LIMIT) history.shift();
   }
 
-  function handleConnection(socket, user, clientId) {
+  async function handleConnection(socket, user, clientId) {
     const profile = profileFor(user);
     const identity = user ? { name: user.name, ...profile } : null;
 
@@ -99,18 +100,19 @@ export function attachChatServer(httpServer, options = {}) {
     clientSockets.set(clientId, socket);
     clients.add(socket);
 
+    await rain.ready();
     socket.send(
       JSON.stringify({
         type: "init",
         online: clients.size,
         messages: history,
         you: identity,
-        rain: rain.state(),
+        rain: rain.state(user?.uuid),
       }),
     );
     broadcastPresence();
 
-    // Start the rain broadcast interval once we have at least one client.
+
     if (!rainInterval) {
       rainInterval = setInterval(() => {
         if (clients.size === 0) {
@@ -118,7 +120,7 @@ export function attachChatServer(httpServer, options = {}) {
           rainInterval = null;
           return;
         }
-        broadcastRain();
+        void broadcastRain();
       }, 1000);
     }
 
@@ -145,7 +147,7 @@ export function attachChatServer(httpServer, options = {}) {
           socket.send(JSON.stringify({ type: "error", error: result.error }));
           return;
         }
-        broadcastRain();
+        await broadcastRain();
         const tipMessage = {
           type: "chat",
           name: "Rain Bot",
@@ -155,6 +157,17 @@ export function attachChatServer(httpServer, options = {}) {
         };
         recordMessage(tipMessage);
         broadcast(tipMessage);
+        return;
+      }
+
+      if (payload.type === "rain_join") {
+        const result = await rain.join(user.uuid);
+        if (!result.ok) {
+          socket.send(JSON.stringify({ type: "error", error: result.error }));
+          return;
+        }
+        await broadcastRain();
+        socket.send(JSON.stringify({ type: "rain_joined", rainId: rain.state().rainId }));
         return;
       }
 
@@ -208,7 +221,7 @@ export function attachChatServer(httpServer, options = {}) {
       const cookieHeader = request.headers.cookie || "";
       const user = await resolveUser(cookieHeader, verifySession);
       const clientId = requestUrl.searchParams.get("clientId")?.slice(0, 128) || crypto.randomUUID();
-      handleConnection(ws, user, clientId);
+      await handleConnection(ws, user, clientId);
     });
   });
 

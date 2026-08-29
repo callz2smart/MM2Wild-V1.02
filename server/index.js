@@ -1,4 +1,4 @@
-import { createRainState, formatRainState } from "./rain.js";
+import { createRainState, createSupabaseRainStore, formatRainState } from "./rain.js";
 
 const json = (body, status = 200, extraHeaders = {}) =>
   new Response(JSON.stringify(body), {
@@ -476,11 +476,12 @@ export class ChatRoom {
     this.history = [];
     this.sessions = new Set();
     this.clientSockets = new Map();
-    this.rain = createRainState();
+    this.rain = createRainState({ store: createSupabaseRainStore(env) });
     this.rainInterval = null;
   }
 
-  broadcastRain() {
+  async broadcastRain() {
+    await this.rain.tick();
     this.broadcast(formatRainState(this.rain));
   }
 
@@ -492,7 +493,7 @@ export class ChatRoom {
         this.rainInterval = null;
         return;
       }
-      this.broadcastRain();
+      void this.broadcastRain();
     }, 1000);
   }
 
@@ -528,6 +529,7 @@ export class ChatRoom {
 
     server.serializeAttachment({ profile, userUuid: account?.uuid || null, lastMessageAt: 0 });
 
+    await this.rain.ready();
     server.send(
       JSON.stringify({
         type: "init",
@@ -565,7 +567,7 @@ export class ChatRoom {
           server.send(JSON.stringify({ type: "error", error: result.error }));
           return;
         }
-        this.broadcastRain();
+        await this.broadcastRain();
         const tipMessage = {
           type: "chat",
           name: "Rain Bot",
@@ -578,6 +580,17 @@ export class ChatRoom {
         for (const peer of this.sessions) {
           if (peer.readyState === 1) peer.send(JSON.stringify(tipMessage));
         }
+        return;
+      }
+
+      if (payload.type === "rain_join") {
+        const result = await this.rain.join(userUuid);
+        if (!result.ok) {
+          server.send(JSON.stringify({ type: "error", error: result.error }));
+          return;
+        }
+        await this.broadcastRain();
+        server.send(JSON.stringify({ type: "rain_joined", rainId: this.rain.state().rainId }));
         return;
       }
 

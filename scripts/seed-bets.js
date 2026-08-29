@@ -1,6 +1,4 @@
-// Inserts sample game history for a given user via the Supabase REST API.
-// Usage: node scripts/seed-bets.js [username] [count]
-// Defaults: username=Redbet_holder, count=25
+
 
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -61,7 +59,7 @@ function generateBet(userUuid) {
     : 0;
   const profit = won ? Math.round((amount * multiplier - amount) * 100) / 100 : -amount;
 
-  // Spread dates across the last 7 days
+
   const daysAgo = Math.random() * 7;
   const date = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
 
@@ -77,7 +75,7 @@ function generateBet(userUuid) {
 }
 
 async function main() {
-  // 1. Look up the user
+
   const userResponse = await fetch(
     `${SUPABASE_URL}/rest/v1/mm2wild_users?username=eq.${encodeURIComponent(username)}&select=uuid,username`,
     {
@@ -96,10 +94,10 @@ async function main() {
   const userUuid = users[0].uuid;
   console.log(`Seeding ${count} bets for ${username} (${userUuid})...`);
 
-  // 2. Generate bets
+
   const bets = Array.from({ length: count }, () => generateBet(userUuid));
 
-  // 3. Insert in batches of 25 (Supabase batch limit)
+
   const batchSize = 25;
   let inserted = 0;
   for (let i = 0; i < bets.length; i += batchSize) {

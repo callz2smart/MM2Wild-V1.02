@@ -1,6 +1,4 @@
-// Inserts sample transaction history for a given user via the Supabase REST API.
-// Usage: node scripts/seed-transactions.js [username] [count]
-// Defaults: username=Redbet_holder, count=30
+
 
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -36,7 +34,7 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 const username = process.argv[2] || "Redbet_holder";
 const count = parseInt(process.argv[3] || "30", 10);
 
-// Method weights — rakeback and deposits are most common
+
 const methodPool = [
   ...Array(10).fill("rakeback"),
   ...Array(5).fill("mm2_deposit"),
@@ -48,7 +46,7 @@ const methodPool = [
   ...Array(2).fill("affiliate"),
 ];
 
-// Pending/declined only applies to deposits & withdrawals (crypto + mm2)
+
 const depositWithdrawMethods = ["mm2_deposit", "mm2_withdraw", "crypto_deposit", "crypto_withdraw"];
 const completedOnly = ["completed"];
 const depositWithdrawStatusPool = [
@@ -67,7 +65,7 @@ function generateTransaction(userUuid) {
     ? randomChoice(depositWithdrawStatusPool)
     : randomChoice(completedOnly);
 
-  // Amounts vary by method
+
   let amount;
   if (method === "rakeback") amount = Math.floor(Math.random() * 50);
   else if (method === "mm2_deposit") amount = Math.floor(Math.random() * 2000) + 50;
@@ -77,7 +75,7 @@ function generateTransaction(userUuid) {
   else if (method === "tip_sent" || method === "tip_received") amount = Math.floor(Math.random() * 500) + 10;
   else amount = Math.floor(Math.random() * 300) + 5;
 
-  // Spread dates across the last 14 days
+
   const daysAgo = Math.random() * 14;
   const date = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
 
@@ -91,7 +89,7 @@ function generateTransaction(userUuid) {
 }
 
 async function main() {
-  // 1. Look up the user
+
   const userResponse = await fetch(
     `${SUPABASE_URL}/rest/v1/mm2wild_users?username=eq.${encodeURIComponent(username)}&select=uuid,username`,
     {
@@ -110,10 +108,10 @@ async function main() {
   const userUuid = users[0].uuid;
   console.log(`Seeding ${count} transactions for ${username} (${userUuid})...`);
 
-  // 2. Generate transactions
+
   const transactions = Array.from({ length: count }, () => generateTransaction(userUuid));
 
-  // 3. Insert in batches of 25
+
   const batchSize = 25;
   let inserted = 0;
   for (let i = 0; i < transactions.length; i += batchSize) {
