@@ -116,7 +116,7 @@ async function main() {
   const userUuid = users[0].uuid;
   console.log(`Seeding ${count} sessions for ${username} (${userUuid})...`);
 
- 
+
   await fetch(`${SUPABASE_URL}/rest/v1/mm2wild_sessions?user_uuid=eq.${userUuid}`, {
     method: "DELETE",
     headers: {
