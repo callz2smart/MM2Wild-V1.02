@@ -37,6 +37,7 @@ async function resolveUser(cookieHeader, verifySession) {
     return {
       uuid: session.uuid,
       name: session.username || `User ${session.robloxUserId}`,
+      rank: session.rank || "user",
       level: session.level ?? 1,
       avatar: session.avatar_headshot,
     };
@@ -48,6 +49,7 @@ async function resolveUser(cookieHeader, verifySession) {
 function profileFor(user) {
   if (!user) return null;
   return {
+    rank: user.rank || "user",
     level: user.level ?? 1,
     color: colorForLevel(user.level ?? 1),
     avatar: user.avatar,

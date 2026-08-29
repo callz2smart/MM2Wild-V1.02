@@ -119,13 +119,26 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
     };
   }
 
+  async function saveNewRain(candidate) {
+    try {
+      await store.save(candidate);
+    } catch (error) {
+      // Another server may have created the next rain between our load and
+      // save. Adopt that row instead of running a second in-memory rain.
+      const stored = await store.loadCurrent();
+      if (!stored) throw error;
+      load(stored);
+    }
+  }
+
   function updatePhase() {
     const timestamp = now();
     if (timestamp >= rain.joinEndsAt) {
       const previousId = rain.id;
       rain = newRain(timestamp);
+      const nextRain = rain;
       transitionPromise = (store
-        ? store.complete(previousId).then(() => store.save(rain))
+        ? store.complete(previousId).then(() => saveNewRain(nextRain))
         : Promise.resolve()).catch(() => {});
     } else if (timestamp >= rain.endsAt && rain.phase === "active") {
       rain.phase = "joining";
@@ -159,7 +172,7 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
           if (!store) return;
           const stored = await store.loadCurrent();
           if (stored) load(stored);
-          else await store.save(rain);
+          else await saveNewRain(rain);
           updatePhase();
           if (transitionPromise) await transitionPromise;
         })().catch(() => {});
@@ -208,8 +221,12 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
     },
 
     reset() {
+      const previousId = rain.id;
       rain = newRain(now());
-      transitionPromise = (store ? store.save(rain) : Promise.resolve()).catch(() => {});
+      const nextRain = rain;
+      transitionPromise = (store
+        ? store.complete(previousId).then(() => saveNewRain(nextRain))
+        : Promise.resolve()).catch(() => {});
     },
   };
 

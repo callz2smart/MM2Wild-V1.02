@@ -1,10 +1,134 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { showNotification } from "./NotificationCenter";
 
 const TURNSTILE_PRODUCTION_SITE_KEY = "0x4AAAAAACO5aJWBw_BqLmoe";
 const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
 let turnstileScriptPromise;
+
+const chatRanks = {
+  chillguy: { label: "Chill Guy", image: "/ranks/ChillGuy.webp" },
+  highroller: { label: "High Roller", image: "/ranks/Highroller.webp" },
+  lucky: { label: "Lucky", image: "/ranks/Lucky.webp" },
+  unlucky: { label: "Unlucky", image: "/ranks/Unlucky.webp" },
+  whale: { label: "Whale", image: "/ranks/Whale.webp" },
+};
+
+function rankValues(value) {
+  if (Array.isArray(value)) return value;
+
+  const text = String(value || "").trim();
+  if (!text) return [];
+  if (text.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // Fall back to the delimited text format below.
+    }
+  }
+  return text.split(/[,;|]/);
+}
+
+function RankBadge({ rank }) {
+  const tooltipId = useId();
+  const [tooltipState, setTooltipState] = useState(null);
+  const openTimerRef = useRef(null);
+  const closeTimerRef = useRef(null);
+
+  useEffect(() => () => {
+    clearTimeout(openTimerRef.current);
+    clearTimeout(closeTimerRef.current);
+  }, []);
+
+  const showTooltip = () => {
+    clearTimeout(closeTimerRef.current);
+    clearTimeout(openTimerRef.current);
+    openTimerRef.current = setTimeout(() => setTooltipState("delayed-open"), 100);
+  };
+
+  const hideTooltip = () => {
+    clearTimeout(openTimerRef.current);
+    if (!tooltipState) return;
+    setTooltipState("closed");
+    closeTimerRef.current = setTimeout(() => setTooltipState(null), 150);
+  };
+
+  return (
+    <span
+      className="relative flex items-center"
+      aria-describedby={tooltipState ? tooltipId : undefined}
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+      onFocus={showTooltip}
+      onBlur={hideTooltip}
+    >
+      <img src={rank.image} alt="" className="size-4 object-contain no-interaction" />
+      {tooltipState && (
+      <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-2000 -translate-x-1/2 whitespace-nowrap">
+        <div
+          data-dismissable-layer=""
+          className="bg-[#314175] overflow-hidden rounded-lg px-2.5 py-1.5 shadow-xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=bottom]:slide-out-to-top-2 data-[side=left]:slide-in-from-right-2 data-[side=left]:slide-out-to-right-2 data-[side=right]:slide-in-from-left-2 data-[side=right]:slide-out-to-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=top]:slide-out-to-bottom-2 z-2000 text-xs font-semibold"
+          data-state={tooltipState}
+          data-side="top"
+          data-align="center"
+          style={{
+            "--reka-popper-transform-origin": "50% 27.9844px",
+            "--reka-popper-available-width": "1203px",
+            "--reka-popper-available-height": "383.453125px",
+            "--reka-popper-anchor-width": "16px",
+            "--reka-popper-anchor-height": "16px",
+            "--reka-tooltip-content-transform-origin": "var(--reka-popper-transform-origin)",
+            "--reka-tooltip-content-available-width": "var(--reka-popper-available-width)",
+            "--reka-tooltip-content-available-height": "var(--reka-popper-available-height)",
+            "--reka-tooltip-trigger-width": "var(--reka-popper-anchor-width)",
+            "--reka-tooltip-trigger-height": "var(--reka-popper-anchor-height)",
+          }}
+        >
+          {rank.label}
+          <span
+            aria-hidden="true"
+            id={tooltipId}
+            role="tooltip"
+            style={{
+              position: "absolute",
+              border: 0,
+              width: "1px",
+              height: "1px",
+              padding: 0,
+              margin: "-1px",
+              overflow: "hidden",
+              clip: "rect(0px, 0px, 0px, 0px)",
+              clipPath: "inset(50%)",
+              whiteSpace: "nowrap",
+              overflowWrap: "normal",
+              top: "-1px",
+              left: "-1px",
+            }}
+          >
+            {rank.label}
+          </span>
+        </div>
+      </span>
+      )}
+    </span>
+  );
+}
+
+function RankBadges({ ranks }) {
+  const details = rankValues(ranks)
+    .map((value) => String(value).toLowerCase().replace(/[^a-z0-9]/g, ""))
+    .map((key) => chatRanks[key])
+    .filter((rank, index, allRanks) => rank && allRanks.indexOf(rank) === index);
+
+  if (!details.length) return null;
+
+  return (
+    <span className="ml-1 flex shrink-0 items-center gap-0.5">
+      {details.map((rank) => <RankBadge key={rank.label} rank={rank} />)}
+    </span>
+  );
+}
 
 function loadTurnstile() {
   if (window.turnstile) return Promise.resolve(window.turnstile);
@@ -610,11 +734,12 @@ function ChatMessage({
               </div>
             </div>
             <span
-              className="font-semibold text-[13px] ml-1 cursor-pointer truncate hover:text-primary transition-colors"
+              className="font-semibold text-[13px] ml-1 cursor-pointer truncate hover:text-white transition-colors"
               onClick={() => onProfileClick?.(name, user)}
             >
               {name}
             </span>
+            <RankBadges ranks={profile.rank} />
             <p className="text-[13px] font-semibold ml-auto pl-1 text-accent">
               {time}
             </p>

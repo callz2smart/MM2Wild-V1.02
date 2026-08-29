@@ -508,6 +508,7 @@ export class ChatRoom {
     const profile = account
       ? {
           name: account.username,
+          rank: account.rank || "user",
           level: account.level ?? 1,
           color: chatColorForLevel(account.level ?? 1),
           avatar: account.avatar_headshot,
