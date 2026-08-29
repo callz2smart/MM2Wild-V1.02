@@ -7,11 +7,11 @@ const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
 let turnstileScriptPromise;
 
 const chatRanks = {
-  chillguy: { label: "Chill Guy", image: "/ranks/ChillGuy.webp" },
-  highroller: { label: "High Roller", image: "/ranks/Highroller.webp" },
-  lucky: { label: "Lucky", image: "/ranks/Lucky.webp" },
-  unlucky: { label: "Unlucky", image: "/ranks/Unlucky.webp" },
-  whale: { label: "Whale", image: "/ranks/Whale.webp" },
+  chillguy: { label: "Chill Guy", image: "/ranks/ChillGuy.webp", color: "#C69D72" },
+  highroller: { label: "High Roller", image: "/ranks/Highroller.webp", color: "#5CDF9A" },
+  lucky: { label: "Lucky", image: "/ranks/Lucky.webp", color: "#6CDE07" },
+  unlucky: { label: "Unlucky", image: "/ranks/Unlucky.webp", color: "#FFFFFF" },
+  whale: { label: "Whale", image: "/ranks/Whale.webp", color: "#57A2F3" },
 };
 
 function rankValues(value) {
@@ -28,6 +28,13 @@ function rankValues(value) {
     }
   }
   return text.split(/[,;|]/);
+}
+
+function rankDetails(ranks) {
+  return rankValues(ranks)
+    .map((value) => String(value).toLowerCase().replace(/[^a-z0-9]/g, ""))
+    .map((key) => chatRanks[key])
+    .filter((rank, index, allRanks) => rank && allRanks.indexOf(rank) === index);
 }
 
 function RankBadge({ rank }) {
@@ -116,10 +123,7 @@ function RankBadge({ rank }) {
 }
 
 function RankBadges({ ranks }) {
-  const details = rankValues(ranks)
-    .map((value) => String(value).toLowerCase().replace(/[^a-z0-9]/g, ""))
-    .map((key) => chatRanks[key])
-    .filter((rank, index, allRanks) => rank && allRanks.indexOf(rank) === index);
+  const details = rankDetails(ranks);
 
   if (!details.length) return null;
 
@@ -696,6 +700,7 @@ function ChatMessage({
 }) {
   if (!user) return null;
   const profile = user;
+  const usernameColor = rankDetails(profile.rank)[0]?.color || "#FFFFFF";
   return (
     <div
       className={`relative flex flex-col group/message ${
@@ -734,7 +739,8 @@ function ChatMessage({
               </div>
             </div>
             <span
-              className="font-semibold text-[13px] ml-1 cursor-pointer truncate hover:text-white transition-colors"
+              className="font-semibold text-[13px] ml-1 cursor-pointer truncate text-(--chat-username-color) hover:text-white transition-colors"
+              style={{ "--chat-username-color": usernameColor }}
               onClick={() => onProfileClick?.(name, user)}
             >
               {name}
