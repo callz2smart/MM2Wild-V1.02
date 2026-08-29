@@ -684,7 +684,7 @@ export default function ChatSidebar() {
   const [modalClosing, setModalClosing] = useState(false);
   const [rainState, setRainState] = useState({
     pool: 300,
-    countdown: "60:00",
+    countdown: "58:30",
     progress: 100,
     phase: "active",
     participantCount: 0,

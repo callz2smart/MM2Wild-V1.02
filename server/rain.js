@@ -1,6 +1,6 @@
 export const RAIN_INITIAL_POOL = 300;
-export const RAIN_DURATION_MS = 60 * 60 * 1000;
-export const RAIN_JOIN_DURATION_MS = 60 * 1000;
+export const RAIN_DURATION_MS = (58 * 60 + 30) * 1000;
+export const RAIN_JOIN_DURATION_MS = (1 * 60 + 30) * 1000;
 
 function newRain(startedAt) {
   return {
