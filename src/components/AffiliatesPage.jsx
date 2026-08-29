@@ -301,7 +301,7 @@ export default function AffiliatesPage() {
                       </button>
                     </div>
                     <div className="w-full sm:w-64 relative flex group rounded-lg items-center justify-center bg-[#0F1222]/55 h-10 px-3">
-                      <div className="absolute inset-0.25 ring-2 ring-transparent group-focus-within:ring-primary/40 rounded-lg transition-shadow pointer-events-none" />
+                      <div className="absolute inset-0.25 ring-2 ring-transparent rounded-lg pointer-events-none" />
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4 shrink-0 my-auto text-accent" strokeWidth="2.5"><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607" /></svg>
                       <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by username..." className="bg-transparent outline-none size-full peer placeholder:text-accent px-2 font-medium text-sm" />
                     </div>
