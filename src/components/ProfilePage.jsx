@@ -202,17 +202,22 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
     const trigger = gameTriggerRef.current;
     if (!trigger) return;
     const rect = trigger.getBoundingClientRect();
-    const gap = 0;
+    const gap = 10;
+    const naturalMenuHeight = profileGames.length * 38 + 8;
+    const availableHeight = Math.max(0, rect.top - gap - 8);
+    const menuHeight = Math.min(384, naturalMenuHeight, availableHeight);
+    const menuTop = Math.max(8, rect.top - gap - menuHeight);
     setGameDropdownStyle({
       position: "fixed",
       left: "0px",
       top: "0px",
-      transform: `translate(${rect.left}px, ${rect.bottom + gap}px)`,
-      minWidth: "max-content",
-      "--reka-popper-transform-origin": "0% 0px",
+      transform: `translate3d(${rect.left}px, ${menuTop}px, 0)`,
+      width: `${rect.width}px`,
+      minWidth: `${rect.width}px`,
+      "--reka-popper-transform-origin": "0% 100%",
       zIndex: 9999,
       "--reka-popper-available-width": `${window.innerWidth - rect.left}px`,
-      "--reka-popper-available-height": `${Math.max(0, window.innerHeight - rect.bottom - gap)}px`,
+      "--reka-popper-available-height": `${availableHeight}px`,
       "--reka-popper-anchor-width": `${rect.width}px`,
       "--reka-popper-anchor-height": `${rect.height}px`,
     });
@@ -371,7 +376,7 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
           <div className="bg-[#202D57]/45 rounded-[20px] p-5 flex flex-col gap-4">
             <div
               ref={tabListRef}
-              className="relative grid grid-cols-2 md:flex bg-[#2F3F71] p-1.5 rounded-[10px] w-full md:w-max gap-1.5 md:gap-0"
+              className="relative grid grid-cols-2 md:flex md:h-12 bg-[#2F3F71] p-1.5 rounded-[10px] w-full md:w-max gap-1.5 md:gap-0"
             >
               <div
                 aria-hidden="true"
@@ -386,7 +391,7 @@ export default function ProfilePage({ activeTab: initialTab = "profile" }) {
                   }}
                   type="button"
                   onClick={() => switchTab(key)}
-                  className={`relative z-10 px-4 py-2 text-sm font-semibold text-center whitespace-nowrap rounded-lg transition-colors duration-200 cursor-pointer ${
+                  className={`relative z-10 h-9 px-4 py-0 flex items-center justify-center text-sm font-semibold leading-none text-center whitespace-nowrap rounded-lg transition-colors duration-200 cursor-pointer ${
                     index === activeTabIndex
                       ? `text-[#3A3869] ${
                           hasSwitchedTabs

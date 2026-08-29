@@ -41,7 +41,7 @@ export default function ProfileGameDropdown({ style, selectedGame, onSelect }) {
         role="listbox"
         data-state="open"
         dir="ltr"
-        data-side="bottom"
+        data-side="top"
         data-align="start"
         style={{
           boxSizing: "border-box",
