@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Footer, footerLogoInnerMarkup } from "./HomePage";
 import LeaderboardRulesModal from "./LeaderboardRulesModal";
+import LineWobbleLoader from "./LineWobbleLoader";
 
 const winnersByPeriod = {
   daily: [
@@ -47,6 +48,29 @@ const previousWinners = [
   level, name, prize, dateRange, borderStart, borderEnd,
   avatar: `https://tr.rbxcdn.com/30DAY-AvatarHeadshot-${avatarId}-Png/180/180/AvatarHeadshot/Webp/noFilter`,
 }));
+
+const leaderboardAssets = [
+  "/coin.webp",
+  "/items/chroma-evergreen.webp",
+  "/items/chroma-evergun.webp",
+  "/coins/mbx-1.webp",
+  "/coins/mbx-2.webp",
+  ...[1, 2, 3, 4].map((rank) => `/leaderboard/character-${rank}.webp`),
+  ...[1, 2, 3].map((rank) => `/leaderboard/indicator-${rank}.webp`),
+  ...Object.values(winnerData).flat().map((player) => player.avatar),
+  ...tableData.map((player) => player.avatar),
+  ...previousWinners.map((winner) => winner.avatar),
+];
+
+function loadLeaderboardAsset(src) {
+  return new Promise((resolve) => {
+    const asset = new Image();
+    asset.onload = resolve;
+    asset.onerror = resolve;
+    asset.src = src;
+    if (asset.complete) resolve();
+  });
+}
 
 function Coin({ className = "size-4" }) {
   return <img src="/coin.webp" alt="" className={`bg-cover bg-center ${className}`} />;
@@ -156,6 +180,7 @@ function PreviousWinnerCard({ winner }) {
 }
 
 export default function LeaderboardPage() {
+  const [isLoading, setIsLoading] = useState(true);
   const [period, setPeriod] = useState("daily");
   const [displayedPeriod, setDisplayedPeriod] = useState("daily");
   const [visible, setVisible] = useState(true);
@@ -164,6 +189,16 @@ export default function LeaderboardPage() {
   const winners = winnerData[displayedPeriod];
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(leaderboardAssets.map(loadLeaderboardAsset)).then(() => {
+      if (!cancelled) setIsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function changePeriod(nextPeriod) {
     if (nextPeriod === period) return;
@@ -174,6 +209,14 @@ export default function LeaderboardPage() {
       setDisplayedPeriod(nextPeriod);
       requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
     }, 300);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="site-content flex items-center justify-center min-h-[calc(100dvh-var(--layout-top))]">
+        <LineWobbleLoader />
+      </div>
+    );
   }
 
   return (

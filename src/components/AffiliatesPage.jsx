@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Footer } from "./HomePage";
+import LineWobbleLoader from "./LineWobbleLoader";
 
 const usersIconPaths = [
   "M12 16.14h-.87a8.67 8.67 0 0 0-6.43 2.52l-.24.28v8.28h4.08v-4.7l.55-.62.25-.29a11 11 0 0 1 4.71-2.86A6.6 6.6 0 0 1 12 16.14",
@@ -182,11 +183,15 @@ export default function AffiliatesPage() {
       .then(async ([sessionResponse, affiliateResponse]) => {
         const sessionPayload = sessionResponse.ok ? await sessionResponse.json() : null;
         const affiliatePayload = affiliateResponse.ok ? await affiliateResponse.json() : null;
-        if (sessionPayload?.user) setUser(sessionPayload.user);
+        if (!sessionPayload?.user) {
+          window.location.replace("/");
+          return;
+        }
+        setUser(sessionPayload.user);
         setAffiliate(affiliatePayload?.affiliate || null);
       })
       .catch((error) => {
-        if (error.name !== "AbortError") setAffiliate(null);
+        if (error.name !== "AbortError") window.location.replace("/");
       });
     return () => controller.abort();
   }, []);
@@ -205,10 +210,18 @@ export default function AffiliatesPage() {
     setNotification("open");
   };
 
-  const level = Number(user?.level || 1);
+  if (!user || affiliate === undefined) {
+    return (
+      <div className="site-content flex items-center justify-center min-h-[calc(100dvh-var(--layout-top))]">
+        <LineWobbleLoader />
+      </div>
+    );
+  }
+
+  const level = Number(user.level || 1);
   const levelColor = level === 1 ? "#BEBEBE" : "#F33939";
-  const username = user?.username || "Guest";
-  const avatar = user?.avatar_headshot || "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-7D7A24EE2B3413B902FFE1E6C81F36C7-Png/180/180/AvatarHeadshot/Webp/noFilter";
+  const username = user.username;
+  const avatar = user.avatar_headshot;
   const affiliateCode = affiliate?.code || "";
   const referralLink = affiliateCode ? `${window.location.origin}/r/${affiliateCode}` : "-";
   const levelStyle = {

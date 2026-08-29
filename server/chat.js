@@ -7,13 +7,6 @@ const MAX_BODY_LENGTH = 500;
 const RATE_LIMIT_WINDOW_MS = 2000;
 
 
-const guestProfile = {
-  level: 1,
-  color: "#BEBEBE",
-  avatar:
-    "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-9E12919EC1A578390B1018D597D9FC67-Png/180/180/AvatarHeadshot/Webp/noFilter",
-};
-
 function colorForLevel(level) {
   if (level >= 30) return "#F33972";
   if (level >= 20) return "#F36D39";
@@ -45,7 +38,7 @@ async function resolveUser(cookieHeader, verifySession) {
     return {
       name: session.username || `User ${session.robloxUserId}`,
       level: session.level ?? 1,
-      avatar: session.avatar_headshot || guestProfile.avatar,
+      avatar: session.avatar_headshot,
     };
   } catch {
     return null;
@@ -53,11 +46,11 @@ async function resolveUser(cookieHeader, verifySession) {
 }
 
 function profileFor(user) {
-  if (!user) return { ...guestProfile };
+  if (!user) return null;
   return {
     level: user.level ?? 1,
     color: colorForLevel(user.level ?? 1),
-    avatar: user.avatar || guestProfile.avatar,
+    avatar: user.avatar,
   };
 }
 
@@ -96,11 +89,7 @@ export function attachChatServer(httpServer, options = {}) {
 
   function handleConnection(socket, user, clientId) {
     const profile = profileFor(user);
-    const identity = {
-      name: user?.name || "Guest",
-      anonymous: !user,
-      ...profile,
-    };
+    const identity = user ? { name: user.name, ...profile } : null;
 
     const previousSocket = clientSockets.get(clientId);
     if (previousSocket && previousSocket !== socket) {
@@ -135,31 +124,23 @@ export function attachChatServer(httpServer, options = {}) {
 
     let lastMessageAt = 0;
 
-    socket.on("message", (raw) => {
-      if (identity.anonymous) {
-        socket.send(
-          JSON.stringify({
-            type: "error",
-            error: "Sign in to send messages to the chat.",
-          }),
-        );
-        return;
-      }
-
+    socket.on("message", async (raw) => {
       let payload;
       try {
         payload = JSON.parse(raw.toString());
       } catch {
         return;
       }
-      if (payload?.type !== "chat" && payload?.type !== "rain_tip") return;
+      if (!["chat", "rain_tip", "rain_join"].includes(payload?.type)) return;
+
+      if (!identity) {
+        const action = payload.type === "chat" ? "send messages to the chat" : payload.type === "rain_tip" ? "tip the rain" : "join the rain";
+        socket.send(JSON.stringify({ type: "error", error: `Sign in to ${action}.` }));
+        return;
+      }
 
       if (payload.type === "rain_tip") {
-        if (identity.anonymous) {
-          socket.send(JSON.stringify({ type: "error", error: "Sign in to tip the rain." }));
-          return;
-        }
-        const result = rain.tip(payload.amount);
+        const result = await rain.tip(payload.amount);
         if (!result.ok) {
           socket.send(JSON.stringify({ type: "error", error: result.error }));
           return;
@@ -170,7 +151,7 @@ export function attachChatServer(httpServer, options = {}) {
           name: "Rain Bot",
           body: `${identity.name} tipped ${payload.amount} coins to the rain pot!`,
           time: nowTime(),
-          user: { level: 99, color: "#E5AD4E", avatar: guestProfile.avatar },
+          user: { level: 99, color: "#E5AD4E", avatar: "/coin.webp" },
         };
         recordMessage(tipMessage);
         broadcast(tipMessage);

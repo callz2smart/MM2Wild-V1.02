@@ -509,9 +509,9 @@ export class ChatRoom {
           name: account.username,
           level: account.level ?? 1,
           color: chatColorForLevel(account.level ?? 1),
-          avatar: account.avatar_headshot || guestChatProfile.avatar,
+          avatar: account.avatar_headshot,
         }
-      : { ...guestChatProfile, name: "Guest" };
+      : null;
 
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
@@ -526,33 +526,24 @@ export class ChatRoom {
     this.clientSockets.set(clientId, server);
     this.sessions.add(server);
 
-    server.serializeAttachment({ profile, lastMessageAt: 0 });
+    server.serializeAttachment({ profile, userUuid: account?.uuid || null, lastMessageAt: 0 });
 
     server.send(
       JSON.stringify({
         type: "init",
         online: this.sessions.size,
         messages: this.history,
-        you: { ...profile, anonymous: !account },
-        rain: this.rain.state(),
+        you: profile,
+        rain: this.rain.state(account?.uuid),
       }),
     );
     this.broadcastPresence();
     this.startRainInterval();
 
-    server.addEventListener("message", (event) => {
+    server.addEventListener("message", async (event) => {
       const attachment = server.deserializeAttachment() || {};
       const identity = attachment.profile || profile;
-
-      if (!account) {
-        server.send(
-          JSON.stringify({
-            type: "error",
-            error: "Sign in to send messages to the chat.",
-          }),
-        );
-        return;
-      }
+      const userUuid = attachment.userUuid || account?.uuid;
 
       let payload;
       try {
@@ -560,14 +551,16 @@ export class ChatRoom {
       } catch {
         return;
       }
-      if (payload?.type !== "chat" && payload?.type !== "rain_tip") return;
+      if (!["chat", "rain_tip", "rain_join"].includes(payload?.type)) return;
+
+      if (!userUuid || !identity) {
+        const action = payload.type === "chat" ? "send messages to the chat" : payload.type === "rain_tip" ? "tip the rain" : "join the rain";
+        server.send(JSON.stringify({ type: "error", error: `Sign in to ${action}.` }));
+        return;
+      }
 
       if (payload.type === "rain_tip") {
-        if (!account) {
-          server.send(JSON.stringify({ type: "error", error: "Sign in to tip the rain." }));
-          return;
-        }
-        const result = this.rain.tip(payload.amount);
+        const result = await this.rain.tip(payload.amount);
         if (!result.ok) {
           server.send(JSON.stringify({ type: "error", error: result.error }));
           return;
@@ -578,7 +571,7 @@ export class ChatRoom {
           name: "Rain Bot",
           body: `${identity.name} tipped ${payload.amount} coins to the rain pot!`,
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
-          user: { level: 99, color: "#E5AD4E", avatar: guestChatProfile.avatar },
+          user: { level: 99, color: "#E5AD4E", avatar: "/coin.webp" },
         };
         this.history.push(tipMessage);
         if (this.history.length > 50) this.history.shift();
@@ -646,13 +639,6 @@ export class ChatRoom {
     }
   }
 }
-
-const guestChatProfile = {
-  level: 1,
-  color: "#BEBEBE",
-  avatar:
-    "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-9E12919EC1A578390B1018D597D9FC67-Png/180/180/AvatarHeadshot/Webp/noFilter",
-};
 
 function chatColorForLevel(level) {
   if (level >= 30) return "#F33972";

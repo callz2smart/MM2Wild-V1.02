@@ -1,16 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-// Fallback profile used when a message arrives without user metadata. The
-// server normally sends a full profile with every chat message, but this keeps
-// the UI resilient if an older message format slips through.
-const fallbackUser = {
-  level: 1,
-  color: "#BEBEBE",
-  avatar:
-    "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-9E12919EC1A578390B1018D597D9FC67-Png/180/180/AvatarHeadshot/Webp/noFilter",
-};
-
 function CloseIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3">
@@ -470,7 +460,8 @@ function ChatMessage({
   onReply,
   animate = false,
 }) {
-  const profile = user ?? fallbackUser;
+  if (!user) return null;
+  const profile = user;
   return (
     <div
       className={`relative flex flex-col group/message ${
@@ -630,8 +621,9 @@ export default function ChatSidebar() {
   }, []);
 
   const openProfile = (name, user) => {
+    if (!user) return;
     setModalClosing(false);
-    setProfileModal({ name, user: user ?? fallbackUser });
+    setProfileModal({ name, user });
   };
 
   const closeProfile = () => {
