@@ -332,7 +332,6 @@ export default function SignInModal({ onClose, onSignedIn }) {
 
     if (hasResolvedUser) {
       setIsContinuing(true);
-      const loadingStartedAt = performance.now();
       let generatedPhrase = "";
 
       try {
@@ -355,15 +354,6 @@ export default function SignInModal({ onClose, onSignedIn }) {
           error.message || "Verification phrase could not be generated.",
         );
       } finally {
-        const remainingLoadingTime = Math.max(
-          0,
-          650 - (performance.now() - loadingStartedAt),
-        );
-        if (remainingLoadingTime > 0) {
-          await new Promise((resolve) =>
-            window.setTimeout(resolve, remainingLoadingTime),
-          );
-        }
         setIsContinuing(false);
       }
 
@@ -384,7 +374,6 @@ export default function SignInModal({ onClose, onSignedIn }) {
 
     setLookupError("");
     setIsResolving(true);
-    const loadingStartedAt = performance.now();
     try {
       const response = await fetch(
         `/api/roblox-user?username=${encodeURIComponent(username.trim())}`,
@@ -402,15 +391,6 @@ export default function SignInModal({ onClose, onSignedIn }) {
       setHasResolvedUser(false);
       setLookupError(error.message || "Roblox user could not be loaded.");
     } finally {
-      const remainingLoadingTime = Math.max(
-        0,
-        650 - (performance.now() - loadingStartedAt),
-      );
-      if (remainingLoadingTime > 0) {
-        await new Promise((resolve) =>
-          window.setTimeout(resolve, remainingLoadingTime),
-        );
-      }
       setIsResolving(false);
     }
   };
@@ -419,7 +399,6 @@ export default function SignInModal({ onClose, onSignedIn }) {
     if (isVerifying || !resolvedUser || !verificationChallenge) return;
 
     setIsVerifying(true);
-    const loadingStartedAt = performance.now();
 
     try {
       const response = await fetch("/api/verify-roblox-bio", {
@@ -439,28 +418,9 @@ export default function SignInModal({ onClose, onSignedIn }) {
         );
       }
 
-      const remainingLoadingTime = Math.max(
-        0,
-        650 - (performance.now() - loadingStartedAt),
-      );
-      if (remainingLoadingTime > 0) {
-        await new Promise((resolve) =>
-          window.setTimeout(resolve, remainingLoadingTime),
-        );
-      }
-
       onSignedIn(payload.user);
       requestClose();
     } catch (error) {
-      const remainingLoadingTime = Math.max(
-        0,
-        650 - (performance.now() - loadingStartedAt),
-      );
-      if (remainingLoadingTime > 0) {
-        await new Promise((resolve) =>
-          window.setTimeout(resolve, remainingLoadingTime),
-        );
-      }
       showVerificationError(error.message);
       setIsVerifying(false);
     }

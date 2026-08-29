@@ -72,7 +72,6 @@ function CopyIcon() {
 function AffiliateSetup({ onSubmit }) {
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [closing, setClosing] = useState(false);
   const [error, setError] = useState("");
 
   const submitCode = async (event) => {
@@ -82,7 +81,6 @@ function AffiliateSetup({ onSubmit }) {
     setSubmitting(true);
     setError("");
     try {
-      const startedAt = performance.now();
       const response = await fetch("/api/affiliates", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -92,12 +90,7 @@ function AffiliateSetup({ onSubmit }) {
       if (!response.ok || !payload?.affiliate) {
         throw new Error(payload?.error || "Your affiliate code could not be saved.");
       }
-      const remainingSpinnerTime = Math.max(0, 700 - (performance.now() - startedAt));
-      if (remainingSpinnerTime) {
-        await new Promise((resolve) => window.setTimeout(resolve, remainingSpinnerTime));
-      }
-      setClosing(true);
-      window.setTimeout(() => onSubmit(payload.affiliate), 200);
+      onSubmit(payload.affiliate);
     } catch (submitError) {
       setError(submitError.message || "Your affiliate code could not be saved.");
       setSubmitting(false);
@@ -105,8 +98,8 @@ function AffiliateSetup({ onSubmit }) {
   };
 
   return (
-    <div className={`absolute inset-0 z-10 bg-[#151D3E]/70 flex items-center justify-center rounded-2xl transition-opacity duration-200 ${closing ? "opacity-0" : "opacity-100"}`}>
-      <div className={`bg-[#1D284E] rounded-2xl flex shadow-lg overflow-hidden relative w-full transition-[opacity,transform] duration-200 ${closing ? "opacity-0 scale-95" : "opacity-100 scale-100"}`} style={{ maxWidth: "680px", maxHeight: "calc(100vh - 24px)" }}>
+    <div className="absolute inset-0 z-10 bg-[#151D3E]/70 flex items-center justify-center rounded-2xl">
+      <div className="bg-[#1D284E] rounded-2xl flex shadow-lg overflow-hidden relative w-full" style={{ maxWidth: "680px", maxHeight: "calc(100vh - 24px)" }}>
         <form
           className="flex flex-col flex-1 gap-5.5 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
           onSubmit={submitCode}
@@ -177,7 +170,6 @@ function SuccessNotification({ state, onDismiss }) {
 export default function AffiliatesPage() {
   const [user, setUser] = useState(null);
   const [affiliate, setAffiliate] = useState(undefined);
-  const [affiliateSettling, setAffiliateSettling] = useState(false);
   const [notification, setNotification] = useState(null);
   const [search, setSearch] = useState("");
 
@@ -208,15 +200,8 @@ export default function AffiliatesPage() {
     return () => window.clearTimeout(timer);
   }, [notification]);
 
-  useEffect(() => {
-    if (!affiliateSettling) return undefined;
-    const timer = window.setTimeout(() => setAffiliateSettling(false), 950);
-    return () => window.clearTimeout(timer);
-  }, [affiliateSettling]);
-
   const handleAffiliateCreated = (createdAffiliate) => {
     setAffiliate(createdAffiliate);
-    setAffiliateSettling(true);
     setNotification("open");
   };
 
@@ -257,7 +242,7 @@ export default function AffiliatesPage() {
                     <p className="text-xl font-semibold truncate">{username}</p>
                   </div>
                   <div className="bg-[#2A3868] rounded-lg p-3 flex items-center justify-center gap-2 shadow-[0_3px_0_#192963] w-full">
-                    <p className="text-accent font-medium"><span className="text-[#5CDF9A]">{affiliate && !affiliateSettling ? `${affiliate.commissionRate}%` : "-"}</span> Commission</p>
+                    <p className="text-accent font-medium"><span className="text-[#5CDF9A]">{affiliate ? `${affiliate.commissionRate}%` : "-"}</span> Commission</p>
                   </div>
                   <div className="bg-[#161D3A] p-3.5 rounded-xl w-full flex flex-col gap-2.5">
                     <p className="text-sm font-medium text-accent">YOUR CODE</p>
@@ -313,18 +298,7 @@ export default function AffiliatesPage() {
                     <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                       <table className="border-separate w-full border-spacing-y-2 table-fixed min-w-192">
                         <thead><tr className="align-middle outline-none text-left text-sm text-accent font-medium border-none"><th className="pb-2 pl-4">USER</th><th className="pb-2 w-40">WAGERED</th><th className="pb-2 w-40">COMMISSION</th><th className="pb-2 pr-4 w-32 text-right">STATUS</th></tr></thead>
-                        <tbody>
-                          {affiliateSettling ? Array.from({ length: 4 }, (_, row) => (
-                            <tr key={row} className="bg-[#2F3F71]/50">
-                              <td className="p-4 rounded-l-xl"><div className="h-7 rounded-lg bg-[#354777]/70 animate-pulse" /></td>
-                              <td className="p-4"><div className="h-7 rounded-lg bg-[#354777]/70 animate-pulse" /></td>
-                              <td className="p-4"><div className="h-7 rounded-lg bg-[#354777]/70 animate-pulse" /></td>
-                              <td className="p-4 rounded-r-xl"><div className="h-7 rounded-lg bg-[#354777]/70 animate-pulse" /></td>
-                            </tr>
-                          )) : (
-                            <tr><td colSpan="4" className="py-8 text-center bg-[#2F3F71]/50 rounded-xl"><p className="font-medium text-accent">No referred users yet</p></td></tr>
-                          )}
-                        </tbody>
+                        <tbody><tr><td colSpan="4" className="py-8 text-center bg-[#2F3F71]/50 rounded-xl"><p className="font-medium text-accent">No referred users yet</p></td></tr></tbody>
                       </table>
                     </div>
                     <div className="flex items-center justify-end gap-5 py-3 px-4 bg-[#28386A] rounded-xl">
