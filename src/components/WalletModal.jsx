@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { showNotification } from "./NotificationCenter";
 
 const hiddenIfMissing = (event) => {
   event.currentTarget.style.display = "none";
@@ -153,10 +154,20 @@ function DollarIcon() {
   return <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" className="rounded-full size-6 shrink-0"><path fill="#6CDE07" d="M20 20H0V0h20v20ZM9.437 4a.324.324 0 0 0-.24.094.325.325 0 0 0-.093.239v.934c-.893.124-1.596.435-2.109.933a2.453 2.453 0 0 0-.756 1.814c0 .55.124 1.013.371 1.386.248.365.606.662 1.075.893.477.222 1.052.405 1.724.547.522.107.938.213 1.247.32.319.098.55.213.69.347a.61.61 0 0 1 .213.48c0 .275-.133.493-.398.653-.256.16-.641.24-1.154.24-.31 0-.571-.036-.783-.107a1.562 1.562 0 0 1-.504-.306 1.647 1.647 0 0 1-.292-.387 1.111 1.111 0 0 0-.186-.174.48.48 0 0 0-.278-.066H6.292c-.08 0-.15.031-.212.094a.257.257 0 0 0-.08.186c.018.409.141.8.371 1.173.23.364.57.676 1.022.934.46.257 1.03.431 1.711.52v.92c0 .098.032.177.093.24a.323.323 0 0 0 .24.093h1.1a.306.306 0 0 0 .226-.094.304.304 0 0 0 .106-.239v-.934c.628-.08 1.176-.244 1.645-.493a2.841 2.841 0 0 0 1.088-.973c.265-.4.398-.863.398-1.387 0-.542-.115-.991-.345-1.347-.23-.364-.592-.657-1.088-.88-.495-.23-1.145-.422-1.95-.573a10.744 10.744 0 0 1-1.154-.307c-.283-.097-.487-.213-.61-.346a.693.693 0 0 1-.173-.467c0-.284.11-.494.332-.627.22-.142.522-.213.902-.213.363 0 .659.076.889.227.23.142.371.311.424.507a.49.49 0 0 0 .186.172c.07.036.155.054.252.054h1.751a.27.27 0 0 0 .2-.08.304.304 0 0 0 .08-.2c-.01-.32-.125-.654-.346-1-.213-.347-.526-.658-.942-.934-.415-.275-.929-.466-1.539-.573v-.96a.304.304 0 0 0-.106-.24.307.307 0 0 0-.226-.093h-1.1Z" /></svg>;
 }
 
+function RedeemSpinner() {
+  return <svg viewBox="0 0 40 40" className="ring-loader size-5.5 [--uib-speed:1.5s]" aria-hidden="true"><circle className="track" cx="20" cy="20" r="17.5" fill="none" strokeWidth="5" /><circle className="car" cx="20" cy="20" r="17.5" fill="none" strokeWidth="5" pathLength="100" /></svg>;
+}
+
 function KinguinDepositView({ onBack, onClose }) {
   const [giftcardCode, setGiftcardCode] = useState("");
   const [coinValue, setCoinValue] = useState("1,000");
   const [usdValue, setUsdValue] = useState("10.00");
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const redeemTimerRef = useRef(null);
+
+  useEffect(() => () => {
+    if (redeemTimerRef.current) window.clearTimeout(redeemTimerRef.current);
+  }, []);
 
   const cleanNumber = (value) => value.replace(/,/g, "").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
   const updateCoins = (value) => {
@@ -181,6 +192,20 @@ function KinguinDepositView({ onBack, onClose }) {
     setUsdValue(dollars.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     setCoinValue((dollars * 100).toLocaleString("en-US", { maximumFractionDigits: 2 }));
   };
+  const redeemGiftcard = (event) => {
+    event.preventDefault();
+    if (!giftcardCode.trim() || isRedeeming) return;
+    setIsRedeeming(true);
+    redeemTimerRef.current = window.setTimeout(() => {
+      setIsRedeeming(false);
+      showNotification({
+        type: "error",
+        title: "Uh-oh, Error!",
+        message: <span>The gift card you requested could not be found</span>,
+        duration: 6000,
+      });
+    }, 1000);
+  };
 
   return <div className="flex flex-col gap-6 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80">
     <h2 id="reka-dialog-title-v-6" className="sr-only">Deposit Giftcard</h2>
@@ -189,9 +214,9 @@ function KinguinDepositView({ onBack, onClose }) {
       <div className="flex items-center gap-3 ml-auto"><button type="button" onClick={onBack} className="cursor-pointer text-accent px-3 h-10 bg-[#253361] hover:bg-[#2D3D73] rounded-lg hidden sm:flex items-center font-medium transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5 rotate-180" strokeWidth="2.5"><path fill="none" stroke="currentColor" d="M5 12h14m-7-7 7 7-7 7" /></svg><span className="ml-1.5">BACK</span></button><button type="button" aria-label="Close" onClick={onClose} className="text-accent cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3"><path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" /></svg></button></div>
     </div>
     <div className="w-full h-0.5 bg-[#253361] rounded-full shrink-0" />
-    <form className="flex flex-col sm:flex-row w-full gap-2" onSubmit={(event) => event.preventDefault()}>
-      <div className="w-full"><label htmlFor="kinguin-giftcard-code" className="text-sm font-semibold text-accent mb-1.75 block w-fit">REDEEM YOUR GIFTCARD</label><div className="relative flex group rounded-lg items-center justify-center bg-[#151C35] h-12 pl-3 pr-1 w-full"><div className="absolute inset-0.25 ring-2 ring-transparent rounded-lg transition-shadow pointer-events-none" /><input id="kinguin-giftcard-code" value={giftcardCode} onChange={(event) => setGiftcardCode(event.target.value)} placeholder="XXXX-XXXX-XXXXXX-XXXXXX" className="bg-transparent outline-none size-full peer placeholder:text-accent font-medium text-sm" /><button type="submit" disabled={!giftcardCode.trim()} className={`relative cursor-pointer outline-none select-none transition-opacity group/button h-9 shrink-0 hidden sm:flex ${giftcardCode.trim() ? "" : "opacity-40 pointer-events-none"}`}><div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} /><div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}><div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>REDEEM CODE</div></div></button></div></div>
-      <button type="submit" disabled={!giftcardCode.trim()} className={`relative cursor-pointer outline-none flex select-none transition-opacity group/button h-11 shrink-0 sm:hidden ${giftcardCode.trim() ? "" : "opacity-40 pointer-events-none"}`}><div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} /><div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}><div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>REDEEM CODE</div></div></button>
+    <form className="flex flex-col sm:flex-row w-full gap-2" onSubmit={redeemGiftcard}>
+      <div className="w-full"><label htmlFor="kinguin-giftcard-code" className="text-sm font-semibold text-accent mb-1.75 block w-fit">REDEEM YOUR GIFTCARD</label><div className="relative flex group rounded-lg items-center justify-center bg-[#151C35] h-12 pl-3 pr-1 w-full"><div className="absolute inset-0.25 ring-2 ring-transparent rounded-lg transition-shadow pointer-events-none" /><input id="kinguin-giftcard-code" value={giftcardCode} onChange={(event) => setGiftcardCode(event.target.value)} placeholder="XXXX-XXXX-XXXXXX-XXXXXX" className="bg-transparent outline-none size-full peer placeholder:text-accent font-medium text-sm" /><button type="submit" disabled={!giftcardCode.trim() || isRedeeming} aria-busy={isRedeeming} className={`relative w-[130px] cursor-pointer outline-none select-none transition-opacity group/button h-9 shrink-0 hidden sm:flex ${giftcardCode.trim() ? "" : "opacity-40 pointer-events-none"}`}><div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} /><div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}><div className="transition-opacity flex items-center justify-center size-full whitespace-nowrap" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>{isRedeeming ? <RedeemSpinner /> : "REDEEM CODE"}</div></div></button></div></div>
+      <button type="submit" disabled={!giftcardCode.trim() || isRedeeming} aria-busy={isRedeeming} className={`relative w-full cursor-pointer outline-none flex select-none transition-opacity group/button h-11 shrink-0 sm:hidden ${giftcardCode.trim() ? "" : "opacity-40 pointer-events-none"}`}><div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} /><div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}><div className="transition-opacity flex items-center justify-center size-full whitespace-nowrap" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>{isRedeeming ? <RedeemSpinner /> : "REDEEM CODE"}</div></div></button>
     </form>
     <div className="flex flex-col gap-4">
       <p className="font-medium text-accent">Buy a gift card from Kinguin. After purchase, you&apos;ll get a code you can redeem here. Click on a card to be redirected to Kinguin.com.</p>

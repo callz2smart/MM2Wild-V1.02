@@ -31,10 +31,10 @@ export function showNotification({
   message,
   role = type === "error" ? "alert" : "status",
   ariaLive = type === "error" ? "assertive" : "polite",
-  duration = 4000,
+  duration = 6000,
 }) {
   const id = `${Date.now()}-${crypto.randomUUID()}`;
-  notifications = [...notifications, { id, state: "open", type, title, message, role, ariaLive }];
+  notifications = [...notifications, { id, state: "open", type, title, message, role, ariaLive, duration }];
   publish();
   timers.set(id, window.setTimeout(() => dismissNotification(id), duration));
   return id;
@@ -63,6 +63,7 @@ function Notification({ notification }) {
             </svg>
           </button>
         </div>
+        <div className="Progress" style={{ animationPlayState: "running", "--duration": `${notification.duration}ms` }} />
       </div>
     </div>
   );
