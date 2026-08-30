@@ -240,6 +240,35 @@ function ChatMessageBody({ body }) {
   });
 }
 
+function ReplyPreview({ reply }) {
+  const replyColor = reply.user?.color || "#7C8CB7";
+
+  return (
+    <div className="ml-5 flex h-6 min-w-0 items-center">
+      <div className="h-3 w-5 shrink-0 rounded-tl-lg border-l border-t border-accent/80" />
+      {reply.user?.avatar && (
+        <div
+          className="ml-1.5 size-4 shrink-0 rounded-[5px] p-0.5"
+          style={{ background: `linear-gradient(${replyColor}55, ${replyColor})` }}
+        >
+          <div className="flex size-full items-center justify-center rounded-[3px] bg-[#1A2339]">
+            <img
+              src={reply.user.avatar}
+              className="size-9/12 rounded-sm object-contain object-center no-interaction"
+              alt=""
+              loading="lazy"
+            />
+          </div>
+        </div>
+      )}
+      <p className="ml-1 min-w-0 truncate text-[11px] font-medium text-accent">
+        <span className="font-semibold text-white">@{reply.name}:</span>{" "}
+        {reply.body}
+      </p>
+    </div>
+  );
+}
+
 function loadTurnstile() {
   if (window.turnstile) return Promise.resolve(window.turnstile);
   if (turnstileScriptPromise) return turnstileScriptPromise;
@@ -281,7 +310,7 @@ function TipIcon() {
   );
 }
 
-function ProfileModal({ user, name, onClose, closing }) {
+function ProfileModal({ user, name, onClose, onTip, closing }) {
   if (!user) return null;
   const profile = user;
 
@@ -381,7 +410,11 @@ function ProfileModal({ user, name, onClose, closing }) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => onTip?.({ user, name })}
+                    className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 flex-1"
+                  >
                     <div
                       className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
                       style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(211, 133, 2)" }}
@@ -546,6 +579,209 @@ function TipRainModal({ onClose, onSubmit }) {
               <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(211, 133, 2)" }} />
               <div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(243, 178, 57)", color: "rgb(58, 56, 105)" }}>
                 <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)" }}>TIP RAIN</div>
+              </div>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TipUserModal({ initialUsername, balanceType, onClose }) {
+  const [dialogState, setDialogState] = useState("open");
+  const [username, setUsername] = useState(initialUsername || "");
+  const [amount, setAmount] = useState("");
+  const [showInChat, setShowInChat] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const closeTimerRef = useRef(null);
+
+  const requestClose = useCallback(() => {
+    if (dialogState === "closed") return;
+    setDialogState("closed");
+    closeTimerRef.current = window.setTimeout(onClose, 150);
+  }, [dialogState, onClose]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (submitting) return;
+    const nextErrors = {};
+    const trimmedUsername = username.trim();
+    const decimalPlaces = balanceType === "crypto" ? 8 : 2;
+    const amountPattern = new RegExp(`^\\d+(?:\\.\\d{1,${decimalPlaces}})?$`);
+    if (!trimmedUsername) nextErrors.username = "Username is required.";
+    else if (!/^[A-Za-z0-9_]{3,20}$/.test(trimmedUsername)) {
+      nextErrors.username = "Enter a valid username.";
+    }
+    if (!amount) nextErrors.amount = "Amount is required.";
+    else if (!amountPattern.test(amount) || Number(amount) <= 0) {
+      nextErrors.amount = `Enter a valid amount with no more than ${decimalPlaces} decimal places.`;
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      return;
+    }
+
+    setFieldErrors({});
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/tips", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          username: trimmedUsername,
+          amount,
+          balanceType,
+          showInChat,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(payload?.error || "The tip could not be sent.");
+
+      window.dispatchEvent(new CustomEvent("mm2wild:balance-updated"));
+      showNotification({
+        type: "success",
+        title: "Tip Sent!",
+        message: `You sent ${Number(payload.tip?.amount || amount).toLocaleString("en-US", {
+          maximumFractionDigits: balanceType === "crypto" ? 8 : 2,
+        })} ${balanceType === "crypto" ? "crypto" : "MM2"} coins to ${payload.tip?.recipient_username || username}.`,
+        duration: 5000,
+      });
+      requestClose();
+    } catch (error) {
+      const message = error.message || "The tip could not be sent.";
+      const usernameError = /user|username|yourself/i.test(message);
+      setFieldErrors(usernameError ? { username: message } : { amount: message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") requestClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [requestClose]);
+
+  useEffect(() => () => window.clearTimeout(closeTimerRef.current), []);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9998] bg-[#0C1535]/65 transition-opacity duration-150 data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0"
+      data-state={dialogState}
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) requestClose();
+      }}
+    >
+      <div
+        data-v-8ead2f23=""
+        data-dismissable-layer=""
+        tabIndex={-1}
+        className="dialog-content fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full outline-none flex flex-col data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95"
+        role="dialog"
+        aria-modal="true"
+        aria-describedby="tip-user-description"
+        aria-labelledby="tip-user-title"
+        data-state={dialogState}
+        style={{
+          maxWidth: "min(100dvw - 24px, 480px)",
+          maxHeight: "calc(100% - 24px)",
+          zIndex: 9999,
+          pointerEvents: "auto",
+        }}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <div data-v-8ead2f23="" className="bg-[#1D284E] rounded-2xl shadow-lg flex flex-col gap-5.5 max-h-[calc(100vh-24px)] overflow-hidden">
+          <form
+            className="relative flex flex-col items-center gap-5.5 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
+            onSubmit={handleSubmit}
+          >
+            <div className="absolute left-1/2 h-12 w-32 blur-3xl -translate-x-1/2 -top-3 rounded-lg bg-[#FFC055]/70" />
+            <div className="size-17 bg-[#FFC055]/10 text-[#FFC055] flex items-center justify-center rounded-full shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-10 drop-shadow-[0_2px_0_#826432]">
+                <path fill="currentColor" d="M16 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5m5.45 5.6c-.39-.4-.88-.6-1.45-.6h-7l-2.08-.73.33-.94L13 16h2.8c.35 0 .63-.14.86-.37s.34-.51.34-.82c0-.54-.26-.91-.78-1.12L8.95 11H7v9l7 2 8.03-3c.01-.53-.19-1-.58-1.4M5 11H.984v11H5z" />
+              </svg>
+            </div>
+            <h2 id="tip-user-title" className="text-xl font-bold">Tip User</h2>
+            <p id="tip-user-description" className="sr-only">Send coins to another MM2Wild user.</p>
+            <div className="w-full h-0.5 bg-[#2F3C68] rounded-full shrink-0" />
+            <div className="w-full">
+              <label htmlFor="tip-user-username" className="text-sm font-semibold text-accent mb-1.75 block w-fit uppercase">SEND TO</label>
+              <div className="w-full relative flex group rounded-lg items-center justify-center bg-[#0F1222]/55 h-11 px-3">
+                <div className={`absolute inset-0.25 ring-2 rounded-lg transition-shadow pointer-events-none ${fieldErrors.username ? "ring-error" : "ring-transparent"}`} />
+                <input
+                  id="tip-user-username"
+                  name="username"
+                  value={username}
+                  onChange={(event) => {
+                    setUsername(event.target.value);
+                    setFieldErrors((current) => ({ ...current, username: undefined }));
+                  }}
+                  placeholder="Enter username..."
+                  className="bg-transparent outline-none size-full font-medium peer text-[15px] placeholder:text-accent"
+                  autoComplete="off"
+                  aria-invalid={Boolean(fieldErrors.username)}
+                  aria-describedby={fieldErrors.username ? "tip-user-username-error" : undefined}
+                />
+              </div>
+              {fieldErrors.username && (
+                <p id="tip-user-username-error" role="alert" className="mt-1.75 text-[13px] font-medium text-error">{fieldErrors.username}</p>
+              )}
+            </div>
+            <div className="w-full">
+              <label htmlFor="tip-user-amount" className="text-sm font-semibold text-accent mb-1.75 block w-fit uppercase">AMOUNT</label>
+              <div className="w-full relative flex group rounded-lg items-center justify-center bg-[#0F1222]/55 h-11 px-3">
+                <div className={`absolute inset-0.25 ring-2 rounded-lg transition-shadow pointer-events-none ${fieldErrors.amount ? "ring-error" : "ring-transparent"}`} />
+                <img src="/coin.webp" alt="" className="bg-cover bg-center size-5 shrink-0 my-auto" />
+                <input
+                  id="tip-user-amount"
+                  type="text"
+                  value={amount}
+                  onChange={(event) => {
+                    setAmount(event.target.value.replace(/[^0-9.]/g, ""));
+                    setFieldErrors((current) => ({ ...current, amount: undefined }));
+                  }}
+                  placeholder="Enter amount..."
+                  className="bg-transparent outline-none size-full font-medium peer text-[15px] placeholder:text-accent pl-2"
+                  inputMode="decimal"
+                  aria-invalid={Boolean(fieldErrors.amount)}
+                  aria-describedby={fieldErrors.amount ? "tip-user-amount-error" : undefined}
+                />
+              </div>
+              {fieldErrors.amount && (
+                <p id="tip-user-amount-error" role="alert" className="mt-1.75 text-[13px] font-medium text-error">{fieldErrors.amount}</p>
+              )}
+            </div>
+            <div className="w-full">
+              <div className="flex items-center gap-2">
+                <button
+                  className="cursor-pointer peer shrink-0 rounded-md ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-[#0F1222]/55 data-[state=checked]:bg-[#E5AD4E] size-5 text-[#1D284E]"
+                  id="tip-user-show-chat"
+                  role="checkbox"
+                  type="button"
+                  aria-checked={showInChat}
+                  data-state={showInChat ? "checked" : "unchecked"}
+                  aria-label="SHOW IN CHAT AS A MESSAGE"
+                  onClick={() => setShowInChat((current) => !current)}
+                >
+                  {showInChat && (
+                    <span data-state="checked" className="flex h-full w-full items-center justify-center text-current pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-[60%]" strokeWidth="4.5">
+                        <path fill="none" stroke="currentColor" d="M20 6 9 17l-5-5" />
+                      </svg>
+                    </span>
+                  )}
+                </button>
+                <label htmlFor="tip-user-show-chat" className="font-semibold cursor-pointer text-accent uppercase text-sm">SHOW IN CHAT AS A MESSAGE</label>
+              </div>
+            </div>
+            <button type="submit" disabled={submitting} className="relative cursor-pointer disabled:cursor-wait disabled:opacity-70 outline-none flex select-none transition-opacity group/button h-10.5 w-full">
+              <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(211, 133, 2)" }} />
+              <div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(243, 178, 57)", color: "rgb(58, 56, 105)" }}>
+                <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)" }}>SEND TIP</div>
               </div>
             </button>
           </form>
@@ -835,6 +1071,7 @@ function ChatMessage({
       }`}
       data-highlight="false"
     >
+      {reply && <ReplyPreview reply={reply} />}
       <div className="flex gap-1.75 relative group z-1">
         <div
           className="size-10 rounded-[9px] cursor-pointer flex shrink-0 flex-col items-center relative bg-linear-to-b from-[#1D2A53] from-5% p-0.5"
@@ -878,27 +1115,6 @@ function ChatMessage({
             </p>
           </div>
           <div className="message-body p-1.75 rounded-lg bg-[#223263]">
-            {reply && (
-              <div className="mb-1 flex min-w-0 items-center gap-1 text-[11px] text-accent/75">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  className="size-3.5 -scale-x-100 shrink-0 text-primary"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                >
-                  <g fill="none" stroke="currentColor">
-                    <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
-                    <path d="m9 17-5-5 5-5" />
-                  </g>
-                </svg>
-                <p className="min-w-0 truncate font-medium">
-                  <span className="font-semibold text-white">@{reply.name}:</span>{" "}
-                  {reply.body}
-                </p>
-              </div>
-            )}
             <div className="text-sm font-medium text-accent [word-break:break-word]">
               <ChatMessageBody body={body} />
             </div>
@@ -907,7 +1123,7 @@ function ChatMessage({
         <button
           type="button"
           aria-label={`Reply to ${name}`}
-          onClick={() => onReply?.({ name, body })}
+          onClick={() => onReply?.({ name, body, user })}
           className="cursor-pointer flex items-center justify-center group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 opacity-0 transition-all duration-175 bg-[#31478D] hover:bg-[#3B54A4] size-6.5 rounded-md absolute right-0 top-0"
         >
           <svg
@@ -929,7 +1145,7 @@ function ChatMessage({
   );
 }
 
-export default function ChatSidebar() {
+export default function ChatSidebar({ onInitialRenderReady, selectedBalanceType = "mm2" }) {
   const [message, setMessage] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -937,6 +1153,7 @@ export default function ChatSidebar() {
   const [connected, setConnected] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isTipRainOpen, setIsTipRainOpen] = useState(false);
+  const [tipUserModal, setTipUserModal] = useState(null);
   const [isRainVerificationOpen, setIsRainVerificationOpen] = useState(false);
   const [profileModal, setProfileModal] = useState(null);
   const [modalClosing, setModalClosing] = useState(false);
@@ -1088,6 +1305,12 @@ export default function ChatSidebar() {
     setProfileModal({ name, user });
   };
 
+  const openTipUser = ({ name, user }) => {
+    setProfileModal(null);
+    setModalClosing(false);
+    setTipUserModal({ name, user });
+  };
+
   const closeProfile = () => {
     if (!profileModal || modalClosing) return;
     setModalClosing(true);
@@ -1178,12 +1401,20 @@ export default function ChatSidebar() {
       const socket = new WebSocket(socketUrl);
       socketRef.current = socket;
 
-      socket.addEventListener("open", () => setConnected(true));
+      socket.addEventListener("open", () => {
+        if (disposed) {
+          socket.close();
+          return;
+        }
+        setConnected(true);
+      });
       socket.addEventListener("message", handleMessage);
       socket.addEventListener("close", () => {
+        if (disposed) return;
         setConnected(false);
+        setOnlineCount((current) => current ?? 0);
         if (socketRef.current === socket) socketRef.current = null;
-        if (!disposed) reconnectTimer = setTimeout(connect, 1500);
+        reconnectTimer = setTimeout(connect, 1500);
       });
       socket.addEventListener("error", () => {
         // The close event always fires after an error, which handles cleanup.
@@ -1196,10 +1427,14 @@ export default function ChatSidebar() {
       disposed = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       const socket = socketRef.current;
-      if (socket) socket.close();
+      if (socket?.readyState === WebSocket.OPEN) socket.close();
       socketRef.current = null;
     };
   }, [showSlowModeNotification]);
+
+  useEffect(() => {
+    if (onlineCount !== null) onInitialRenderReady?.();
+  }, [onlineCount, onInitialRenderReady]);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -1449,6 +1684,7 @@ export default function ChatSidebar() {
           user={profileModal.user}
           name={profileModal.name}
           onClose={closeProfile}
+          onTip={openTipUser}
           closing={modalClosing}
         />
       )}
@@ -1482,6 +1718,16 @@ export default function ChatSidebar() {
                 socket.send(JSON.stringify({ type: "rain_tip", amount: value }));
               }
             }}
+          />,
+          document.body,
+        )
+      : null}
+    {tipUserModal
+      ? createPortal(
+          <TipUserModal
+            initialUsername={tipUserModal.name}
+            balanceType={selectedBalanceType}
+            onClose={() => setTipUserModal(null)}
           />,
           document.body,
         )

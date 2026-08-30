@@ -1,4 +1,4 @@
-import { useEffect, useState, startTransition } from "react";
+import { useCallback, useEffect, useState, startTransition } from "react";
 import Header from "./components/Header";
 import Subheader from "./components/Subheader";
 import ChatSidebar from "./components/ChatSidebar";
@@ -14,6 +14,19 @@ import NotificationCenter from "./components/NotificationCenter";
 
 export default function App() {
   const [pathname, setPathname] = useState(() => window.location.pathname);
+  const [isHeaderReady, setIsHeaderReady] = useState(false);
+  const [isChatPresenceReady, setIsChatPresenceReady] = useState(false);
+  const [selectedBalanceType, setSelectedBalanceType] = useState(() => (
+    localStorage.getItem("mm2wild_balance_type") === "crypto" ? "crypto" : "mm2"
+  ));
+
+  const markHeaderReady = useCallback(() => setIsHeaderReady(true), []);
+  const markChatPresenceReady = useCallback(() => setIsChatPresenceReady(true), []);
+  const selectBalanceType = useCallback((balanceType) => {
+    const nextBalanceType = balanceType === "crypto" ? "crypto" : "mm2";
+    localStorage.setItem("mm2wild_balance_type", nextBalanceType);
+    setSelectedBalanceType(nextBalanceType);
+  }, []);
 
   useEffect(() => {
     const updateRoute = () => {
@@ -77,9 +90,16 @@ export default function App() {
     <>
       <div className="app-background fixed inset-0 size-full bg-linear-to-br from-[#131C2F] to-[#212A53] z-0" />
       <main className="relative z-1">
-        <Header />
+        <Header
+          onInitialRenderReady={markHeaderReady}
+          selectedBalanceType={selectedBalanceType}
+          onBalanceTypeChange={selectBalanceType}
+        />
         <Subheader />
-        <ChatSidebar />
+        <ChatSidebar
+          onInitialRenderReady={markChatPresenceReady}
+          selectedBalanceType={selectedBalanceType}
+        />
         {isAccountPage ? (
           <ProfilePage activeTab={activeTab} />
         ) : isTermsPage ? (
@@ -97,7 +117,7 @@ export default function App() {
         )}
       </main>
       <NotificationCenter />
-      <LoadingScreen />
+      <LoadingScreen appReady={isHeaderReady && isChatPresenceReady} />
     </>
   );
 }

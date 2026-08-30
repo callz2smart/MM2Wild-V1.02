@@ -12,6 +12,17 @@ import WhatIsThisModal from "./WhatIsThisModal";
 import ProfileDropdown from "./ProfileDropdown";
 import WalletModal from "./WalletModal";
 
+async function preloadImage(source) {
+  if (!source) return;
+  const image = new Image();
+  image.src = source;
+  try {
+    await image.decode();
+  } catch {
+    // A broken avatar must not prevent the signed-in header from rendering.
+  }
+}
+
 function GamesDropdown({ style, selectedGame, onSelect }) {
   const selectGame = (event, game) => {
     event.preventDefault();
@@ -401,7 +412,7 @@ function CurrencyDropdown({
   );
 }
 
-function SignedInHeaderControls({ user, onLogout }) {
+function SignedInHeaderControls({ user, onLogout, selectedCurrency, onSelectCurrency }) {
   const mm2Balance = Number(user.mm2_balance || 0).toLocaleString("en-US", {
     maximumFractionDigits: 2,
   });
@@ -416,7 +427,6 @@ function SignedInHeaderControls({ user, onLogout }) {
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [walletInitialTab, setWalletInitialTab] = useState("deposit");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState("mm2");
   const [currencyDropdownStyle, setCurrencyDropdownStyle] = useState({});
   const balanceTriggerRef = useRef(null);
   const profileTriggerRef = useRef(null);
@@ -646,7 +656,7 @@ function SignedInHeaderControls({ user, onLogout }) {
                 )}
                 <div className="size-9.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-lg p-0.5" style={{ "--level-border-start": "#272539", "--level-border-end": levelColor, "--level-text": levelColor }}>
                   <div className="rounded-[6px] size-full flex items-center justify-center bg-[#1A2339]">
-                    <img src={user.avatar_headshot} className="size-9/12 object-contain object-center rounded-[5px] ease-in-out transition-opacity no-interaction" alt={`${user.username} avatar`} loading="lazy" />
+                    <img src={user.avatar_headshot} className="size-9/12 object-contain object-center rounded-[5px] ease-in-out transition-opacity no-interaction" alt={`${user.username} avatar`} loading="eager" />
                   </div>
                   <div className="bg-linear-to-b from-(--level-border-start) to-(--level-border-end) absolute bottom-0 right-0 p-0.5 rounded-md rounded-br-lg">
                     <div className="rounded-sm size-full flex items-center justify-center px-1.25 py-0.5 text-[10px] font-medium leading-none text-(--level-text) bg-[#1A2339]">{user.level || 1}</div>
@@ -668,7 +678,7 @@ function SignedInHeaderControls({ user, onLogout }) {
             cryptoBalance={cryptoBalance}
             selectedCurrency={selectedCurrency}
             onSelect={(currency) => {
-              setSelectedCurrency(currency);
+              onSelectCurrency(currency);
               setIsCurrencyOpen(false);
             }}
             onExplain={() => {
@@ -701,10 +711,11 @@ function SignedInHeaderControls({ user, onLogout }) {
   );
 }
 
-export default function Header() {
+export default function Header({ onInitialRenderReady, selectedBalanceType, onBalanceTypeChange }) {
   const [isGamesOpen, setIsGamesOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [signedInUser, setSignedInUser] = useState(null);
+  const [isSessionResolved, setIsSessionResolved] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const gamesTriggerRef = useRef(null);
@@ -723,20 +734,49 @@ export default function Header() {
 
   useEffect(() => {
     const controller = new AbortController();
+    let active = true;
     fetch("/api/session", { signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json().catch(() => null);
         if (response.status === 401) showSessionNotification();
         return response.ok ? payload : null;
       })
-      .then((payload) => {
-        if (payload?.user) setSignedInUser(payload.user);
+      .then(async (payload) => {
+        if (!payload?.user) return;
+        await preloadImage(payload.user.avatar_headshot);
+        if (active) setSignedInUser(payload.user);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (active) setIsSessionResolved(true);
+      });
     return () => {
+      active = false;
       controller.abort();
     };
   }, [showSessionNotification]);
+
+  useEffect(() => {
+    if (isSessionResolved) onInitialRenderReady?.();
+  }, [isSessionResolved, onInitialRenderReady]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const updateBalance = async () => {
+      try {
+        const response = await fetch("/api/session", { signal: controller.signal });
+        const payload = await response.json().catch(() => null);
+        if (response.ok && payload?.user) setSignedInUser(payload.user);
+      } catch {
+        // The next session refresh will reconcile the displayed balance.
+      }
+    };
+    window.addEventListener("mm2wild:balance-updated", updateBalance);
+    return () => {
+      controller.abort();
+      window.removeEventListener("mm2wild:balance-updated", updateBalance);
+    };
+  }, []);
 
   const positionDropdown = useCallback(() => {
     const trigger = gamesTriggerRef.current;
@@ -1212,6 +1252,8 @@ export default function Header() {
                   <SignedInHeaderControls
                     user={signedInUser}
                     onLogout={() => setSignedInUser(null)}
+                    selectedCurrency={selectedBalanceType}
+                    onSelectCurrency={onBalanceTypeChange}
                   />
                 ) : (
                 <button

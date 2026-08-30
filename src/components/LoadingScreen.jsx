@@ -1,39 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const minimumVisibleTime = 900;
+const maximumVisibleTime = 10000;
 const fadeDuration = 300;
 
-export default function LoadingScreen() {
+export default function LoadingScreen({ appReady = false }) {
+  const [areVisualAssetsReady, setAreVisualAssetsReady] = useState(false);
+  const [fallbackReady, setFallbackReady] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const startedAtRef = useRef(performance.now());
+  const finishStartedRef = useRef(false);
 
   useEffect(() => {
-    const startedAt = performance.now();
-    let fadeTimer;
-    let removeTimer;
     let readinessTimer;
     let firstPaintFrame;
     let secondPaintFrame;
     let windowLoadHandler;
     let cancelled = false;
-
-    const finishLoading = () => {
-      const remainingTime = Math.max(
-        0,
-        minimumVisibleTime - (performance.now() - startedAt),
-      );
-
-      fadeTimer = window.setTimeout(() => {
-        if (cancelled) return;
-        setIsClosing(true);
-        removeTimer = window.setTimeout(
-          () => {
-            if (!cancelled) setIsVisible(false);
-          },
-          fadeDuration,
-        );
-      }, remainingTime);
-    };
 
     const waitForWindowLoad = new Promise((resolve) => {
       if (document.readyState === "complete") resolve();
@@ -78,7 +62,7 @@ export default function LoadingScreen() {
         });
       });
 
-    const prepareApp = async () => {
+    const prepareVisualAssets = async () => {
       await waitForWindowLoad;
       const visualAssetsReady = Promise.allSettled([
         document.fonts?.ready ?? Promise.resolve(),
@@ -90,23 +74,48 @@ export default function LoadingScreen() {
       await Promise.race([visualAssetsReady, readinessTimeout]);
       window.clearTimeout(readinessTimer);
       await waitForPaint();
-      if (!cancelled) finishLoading();
+      if (!cancelled) setAreVisualAssetsReady(true);
     };
 
-    prepareApp();
+    prepareVisualAssets();
 
     return () => {
       cancelled = true;
-      if (windowLoadHandler) {
-        window.removeEventListener("load", windowLoadHandler);
-      }
-      window.clearTimeout(fadeTimer);
-      window.clearTimeout(removeTimer);
+      if (windowLoadHandler) window.removeEventListener("load", windowLoadHandler);
       window.clearTimeout(readinessTimer);
       window.cancelAnimationFrame(firstPaintFrame);
       window.cancelAnimationFrame(secondPaintFrame);
     };
   }, []);
+
+  useEffect(() => {
+    const fallbackTimer = window.setTimeout(
+      () => setFallbackReady(true),
+      maximumVisibleTime,
+    );
+    return () => window.clearTimeout(fallbackTimer);
+  }, []);
+
+  useEffect(() => {
+    if (finishStartedRef.current) return undefined;
+    if (!(appReady && areVisualAssetsReady) && !fallbackReady) return undefined;
+
+    finishStartedRef.current = true;
+    const remainingTime = Math.max(
+      0,
+      minimumVisibleTime - (performance.now() - startedAtRef.current),
+    );
+    let removeTimer;
+    const fadeTimer = window.setTimeout(() => {
+      setIsClosing(true);
+      removeTimer = window.setTimeout(() => setIsVisible(false), fadeDuration);
+    }, remainingTime);
+
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(removeTimer);
+    };
+  }, [appReady, areVisualAssetsReady, fallbackReady]);
 
   if (!isVisible) return null;
 

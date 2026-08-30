@@ -1,4 +1,5 @@
 import { createRainState, createSupabaseRainStore, formatRainState } from "./rain.js";
+import { transferUserTip } from "./tips.js";
 
 const json = (body, status = 200, extraHeaders = {}) =>
   new Response(JSON.stringify(body), {
@@ -464,6 +465,63 @@ async function createAffiliate(request, env) {
   return json({ affiliate: formatAffiliate(rows[0]) }, 201);
 }
 
+async function sendUserTip(request, env) {
+  const sessionCookie = cookieValue(request, "mm2wild_session");
+  const sender = await resolveSessionUser(sessionCookie, env);
+  if (!sender) return missingSession(request);
+
+  const body = await request.json().catch(() => null);
+  const recipientUsername = String(body?.username || "").trim();
+  const amountText = String(body?.amount || "").trim();
+  const balanceType = body?.balanceType === "crypto" ? "crypto" : "mm2";
+  const showInChat = body?.showInChat !== false;
+
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(recipientUsername)) {
+    return json({ error: "Enter a valid username." }, 400);
+  }
+  const decimalPlaces = balanceType === "crypto" ? 8 : 2;
+  const amountPattern = new RegExp(`^\\d+(?:\\.\\d{1,${decimalPlaces}})?$`);
+  if (!amountPattern.test(amountText) || Number(amountText) <= 0) {
+    return json({ error: `Enter a valid amount with no more than ${decimalPlaces} decimal places.` }, 400);
+  }
+
+  try {
+    const tip = await transferUserTip(
+      env,
+      sender.uuid,
+      recipientUsername,
+      balanceType,
+      Number(amountText),
+      showInChat,
+    );
+    if (showInChat) {
+      const announcement = {
+        sender: sender.username,
+        recipient: tip.recipient_username,
+        amount: Number(tip.amount).toLocaleString("en-US", {
+          maximumFractionDigits: tip.balance_type === "crypto" ? 8 : 2,
+        }),
+        balanceType: tip.balance_type,
+      };
+      if (typeof env.CHAT_ANNOUNCE === "function") {
+        env.CHAT_ANNOUNCE(announcement);
+      } else if (env.CHAT_ROOM) {
+        const roomId = env.CHAT_ROOM.idFromName("global");
+        await env.CHAT_ROOM.get(roomId).fetch("https://mm2wild.internal/internal/tip-announcement", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(announcement),
+        });
+      }
+    }
+    return json({ tip });
+  } catch (error) {
+    const message = error.message || "The tip could not be sent.";
+    const status = message === "User not found." ? 404 : 409;
+    return json({ error: message }, status);
+  }
+}
+
 export { resolveSessionUser };
 
 // Cloudflare Durable Object that powers the live chat in production.
@@ -497,7 +555,34 @@ export class ChatRoom {
     }, 1000);
   }
 
+  announceUserTip({ sender, recipient, amount, balanceType }) {
+    const tipMessage = {
+      type: "chat",
+      name: "Tip Bot",
+      body: `${sender} tipped ${recipient} ${amount} ${balanceType === "crypto" ? "crypto" : "MM2"} coins!`,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+      user: { level: 99, color: "#E5AD4E", avatar: "/coin.webp" },
+    };
+    this.history.push(tipMessage);
+    if (this.history.length > 50) this.history.shift();
+    for (const peer of this.sessions) {
+      if (peer.readyState === 1) peer.send(JSON.stringify(tipMessage));
+    }
+  }
+
   async fetch(request) {
+    const requestUrl = new URL(request.url);
+    if (requestUrl.pathname === "/internal/tip-announcement" && request.method === "POST") {
+      const announcement = await request.json().catch(() => null);
+      if (announcement?.sender && announcement?.recipient && announcement?.amount) {
+        this.announceUserTip(announcement);
+      }
+      return json({ announced: true });
+    }
     if (request.headers.get("upgrade") !== "websocket") {
       return json({ error: "This route requires a WebSocket connection." }, 426);
     }
@@ -518,7 +603,6 @@ export class ChatRoom {
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
 
-    const requestUrl = new URL(request.url);
     const clientId = requestUrl.searchParams.get("clientId")?.slice(0, 128) || crypto.randomUUID();
     const previousSocket = this.clientSockets.get(clientId);
     if (previousSocket && previousSocket !== server) {
@@ -599,8 +683,17 @@ export class ChatRoom {
       if (!body) return;
       const replyName = String(payload.reply?.name || "").slice(0, 64).trim();
       const replyBody = String(payload.reply?.body || "").slice(0, 500).trim();
+      const repliedMessage = [...this.history]
+        .reverse()
+        .find((entry) => entry.name === replyName && entry.body === replyBody);
       const reply =
-        replyName && replyBody ? { name: replyName, body: replyBody } : null;
+        replyName && replyBody
+          ? {
+              name: replyName,
+              body: replyBody,
+              ...(repliedMessage?.user ? { user: repliedMessage.user } : {}),
+            }
+          : null;
 
       const now = Date.now();
       if (now - (attachment.lastMessageAt || 0) < 2000) {
@@ -1031,6 +1124,9 @@ export default {
     }
     if (url.pathname === "/api/session" && request.method === "GET") {
       return getSession(request, env);
+    }
+    if (url.pathname === "/api/tips" && request.method === "POST") {
+      return sendUserTip(request, env);
     }
     if (url.pathname === "/api/affiliates" && request.method === "GET") {
       try {

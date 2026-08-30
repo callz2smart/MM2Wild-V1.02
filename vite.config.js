@@ -10,10 +10,11 @@ function localBackend(backendEnv) {
     configureServer(devServer) {
       // Attach the real-time chat WebSocket server to the dev HTTP server so
       // /api/chat upgrades are handled alongside the REST API below.
-      attachChatServer(devServer.httpServer, {
+      const chatServer = attachChatServer(devServer.httpServer, {
         verifySession: (token) => resolveSessionUser(token, backendEnv),
         env: backendEnv,
       });
+      backendEnv.CHAT_ANNOUNCE = chatServer.announceUserTip;
 
       devServer.middlewares.use(async (request, response, next) => {
         const requestUrl = new URL(request.url, "http://localhost");
