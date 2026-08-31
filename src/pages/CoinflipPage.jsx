@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { createPortal, flushSync } from "react-dom";
-import LineWobbleLoader from "./LineWobbleLoader";
-import CoinflipCreateModal from "./CoinflipCreateModal";
-import CoinflipViewModal from "./CoinflipViewModal";
+import LineWobbleLoader from "../components/LineWobbleLoader";
+import CoinflipCreateModal from "../components/CoinflipCreateModal";
+import CoinflipViewModal from "../components/CoinflipViewModal";
 
 function CoinflipPlayerTooltip({ tooltip }) {
   if (!tooltip) return null;

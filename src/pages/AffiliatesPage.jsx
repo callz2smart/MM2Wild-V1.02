@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Footer } from "./HomePage";
-import LineWobbleLoader from "./LineWobbleLoader";
-import AffiliateStatusesModal from "./AffiliateStatusesModal";
-import { showNotification } from "./NotificationCenter";
+import LineWobbleLoader from "../components/LineWobbleLoader";
+import AffiliateStatusesModal from "../components/AffiliateStatusesModal";
+import { showNotification } from "../components/NotificationCenter";
 
 const usersIconPaths = [
   "M12 16.14h-.87a8.67 8.67 0 0 0-6.43 2.52l-.24.28v8.28h4.08v-4.7l.55-.62.25-.29a11 11 0 0 1 4.71-2.86A6.6 6.6 0 0 1 12 16.14",

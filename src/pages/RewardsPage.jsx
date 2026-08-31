@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Footer, footerLogoInnerMarkup } from "./HomePage";
-import LineWobbleLoader from "./LineWobbleLoader";
+import LineWobbleLoader from "../components/LineWobbleLoader";
 
 const bonusCards = [
   {

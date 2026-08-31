@@ -2,16 +2,16 @@ import { useCallback, useEffect, useState, startTransition } from "react";
 import Header from "./components/Header";
 import Subheader from "./components/Subheader";
 import ChatSidebar from "./components/ChatSidebar";
-import HomePage from "./components/HomePage";
-import ProfilePage from "./components/ProfilePage";
-import TermsPage from "./components/TermsPage";
-import LeaderboardPage from "./components/LeaderboardPage";
-import FairnessPage from "./components/FairnessPage";
-import RewardsPage from "./components/RewardsPage";
+import HomePage from "./pages/HomePage";
+import ProfilePage from "./pages/ProfilePage";
+import TermsPage from "./pages/TermsPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import FairnessPage from "./pages/FairnessPage";
+import RewardsPage from "./pages/RewardsPage";
 import LoadingScreen from "./components/LoadingScreen";
-import AffiliatesPage from "./components/AffiliatesPage";
+import AffiliatesPage from "./pages/AffiliatesPage";
 import NotificationCenter from "./components/NotificationCenter";
-import CoinflipPage from "./components/CoinflipPage";
+import CoinflipPage from "./pages/CoinflipPage";
 
 export default function App() {
   const [pathname, setPathname] = useState(() => window.location.pathname);
