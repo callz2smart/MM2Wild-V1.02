@@ -185,8 +185,10 @@ function CoinflipContent({
           onMouseOver={showPlayerTooltip}
           onMouseOut={hidePlayerTooltip}
           onClick={(event) => {
-            const viewButton = event.target.closest("button");
-            if (viewButton?.textContent.trim() === "VIEW") onViewCoinflip();
+            const coinflipRow = event.target.closest(".coinflip-list-item");
+            if (coinflipRow && event.currentTarget.contains(coinflipRow)) {
+              onViewCoinflip();
+            }
           }}
           bis_skin_checked="1"
         >
