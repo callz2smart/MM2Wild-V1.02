@@ -214,7 +214,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -293,7 +293,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -359,13 +359,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/55.webp"
                       alt="Eternal"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -374,13 +374,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/55.webp"
                       alt="Eternal"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -528,7 +528,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -607,7 +607,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -681,13 +681,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/126.webp"
                       alt="Bioblade"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -696,13 +696,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/126.webp"
                       alt="Bioblade"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -850,7 +850,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -929,7 +929,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -995,13 +995,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/273.webp"
                       alt="Icebeam"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -1010,13 +1010,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/273.webp"
                       alt="Icebeam"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -1164,7 +1164,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -1243,7 +1243,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -1317,13 +1317,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/81.webp"
                       alt="Nightblade"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -1332,13 +1332,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/81.webp"
                       alt="Nightblade"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -1486,7 +1486,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -1565,7 +1565,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -1639,13 +1639,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/97.webp"
                       alt="Gemstone"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -1654,13 +1654,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/97.webp"
                       alt="Gemstone"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -1808,7 +1808,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -1887,7 +1887,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -1961,13 +1961,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/4.webp"
                       alt="C. Fang"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -1976,13 +1976,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/4.webp"
                       alt="C. Fang"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -2130,7 +2130,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -2209,7 +2209,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -2283,13 +2283,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/4.webp"
                       alt="C. Fang"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -2298,13 +2298,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/4.webp"
                       alt="C. Fang"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -2452,7 +2452,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -2531,7 +2531,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -2597,13 +2597,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/178.webp"
                       alt="Silver Minty"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -2612,13 +2612,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/178.webp"
                       alt="Silver Minty"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -2766,7 +2766,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -2845,7 +2845,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -2911,13 +2911,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/32.webp"
                       alt="Australis"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -2926,13 +2926,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/32.webp"
                       alt="Australis"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -3080,7 +3080,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -3159,7 +3159,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -3225,13 +3225,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/83.webp"
                       alt="Sunset"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -3240,13 +3240,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/83.webp"
                       alt="Sunset"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -3394,7 +3394,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -3473,7 +3473,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -3547,13 +3547,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/83.webp"
                       alt="Sunset"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -3562,13 +3562,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/83.webp"
                       alt="Sunset"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -3716,7 +3716,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -3795,7 +3795,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -3861,13 +3861,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/10.webp"
                       alt="Sunrise"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -3876,13 +3876,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/10.webp"
                       alt="Sunrise"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -4030,7 +4030,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -4109,7 +4109,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -4183,13 +4183,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/10.webp"
                       alt="Sunrise"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -4198,13 +4198,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/10.webp"
                       alt="Sunrise"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -4352,7 +4352,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -4431,7 +4431,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -4505,13 +4505,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/229.webp"
                       alt="Xenoknife"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -4520,13 +4520,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/229.webp"
                       alt="Xenoknife"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -4673,7 +4673,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -4752,7 +4752,7 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
                       bis_skin_checked="1"
                     >
                       <div
@@ -4818,13 +4818,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/33.webp"
                       alt="Celestial"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
@@ -4833,13 +4833,13 @@ function CoinflipContent({
                   <div
                     data-state="closed"
                     data-grace-area-trigger=""
-                    className="size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
                     bis_skin_checked="1"
                   >
                     <img
                       src="https://cdn.mm2wild.com/items/33.webp"
                       alt="Celestial"
-                      className="absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
                       loading="lazy"
                       fetchPriority="low"
                       style={{ opacity: "1" }}
