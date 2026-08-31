@@ -135,6 +135,12 @@ function normalizeMm2Name(value) {
   return String(value || '').replace(/\s+\((?:knife|gun)\)\s*$/i, '').trim()
 }
 
+function normalizeMm2Value(value) {
+  const numericValue = Number(value)
+  if (!Number.isFinite(numericValue) || numericValue <= 0) return null
+  return numericValue < 1 ? numericValue : Math.round(numericValue)
+}
+
 function encodePath(pathname) {
   return pathname.split('/').map(encodeURIComponent).join('/')
 }
@@ -178,8 +184,8 @@ async function loadUpstreamItems() {
       const sourceName = String(row.name || '').trim()
       const sourceNameKey = sourceName.toLowerCase()
       const name = normalizeMm2Name(sourceName)
-      const value = Number(row.value)
-      if (!name || !Number.isFinite(value) || value <= 0 || excludedPlaceholderNames.has(sourceNameKey)) continue
+      const value = normalizeMm2Value(row.value)
+      if (!name || value === null || excludedPlaceholderNames.has(sourceNameKey)) continue
 
       const iconPath = iconPaths.get(sourceNameKey) || iconPaths.get(name.toLowerCase())
       const item = {
@@ -223,7 +229,7 @@ if (unnormalizedWeaponLabels.length) {
 console.log(`Upstream commit: ${commitSha}`)
 console.log(`Validated ${sourceItems.length.toLocaleString('en-US')} current MM2 items.`)
 console.log(`Removed trailing (Knife)/(Gun) labels from ${normalizedWeaponLabels} item names.`)
-console.log(`Exact fractional values preserved: ${sourceItems.filter((item) => !Number.isInteger(item.value)).length}.`)
+console.log(`Fractional values below 1 preserved: ${sourceItems.filter((item) => item.value < 1).length}.`)
 console.log(`Items without an upstream icon: ${missingImages.length}${missingImages.length ? ` (${missingImages.map((item) => item.name).join(', ')})` : ''}.`)
 
 if (sourceOnly) {
@@ -299,6 +305,9 @@ if (finalKeys.length !== expectedKeys.length || finalKeys.some((key, index) => k
 }
 if (finalItems.some((item) => !(Number(item.value) > 0))) {
   throw new Error('MM2 verification failed: the final catalog contains a non-positive value.')
+}
+if (finalItems.some((item) => Number(item.value) >= 1 && !Number.isInteger(Number(item.value)))) {
+  throw new Error('MM2 verification failed: values at or above 1 must be whole numbers.')
 }
 
 console.log(`MM2 sync complete: added ${inserted}, updated ${updated}, and removed ${staleItems.length}.`)
