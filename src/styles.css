@@ -74,6 +74,64 @@ body {
   background: #0d1429;
 }
 
+.coinflip-route .coinflip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.coinflip-route .coinflip-list.is-price-descending {
+  flex-direction: column-reverse;
+}
+
+.coinflip-route .coinflip-list-item {
+  position: relative;
+}
+
+.coinflip-create-items-grid > .coinflip-item-selected {
+  transform: none !important;
+}
+
+.coinflip-create-items-grid > .coinflip-item-selected > :first-child {
+  transform: none !important;
+}
+
+.coinflip-create-items-grid > .coinflip-item-selected > :nth-child(2) {
+  opacity: 1 !important;
+}
+
+.coinflip-create-items-grid
+  > .coinflip-item-selected
+  > :nth-child(3)
+  > div
+  > div:last-child {
+  opacity: 1 !important;
+}
+
+.coinflip-route .transform-3d {
+  transform-style: preserve-3d;
+}
+
+.coinflip-route .backface-hidden {
+  backface-visibility: hidden;
+}
+
+.coinflip-route .translate-z-0\.5 {
+  transform: translateZ(0.5px);
+}
+
+.coinflip-route .-translate-z-0\.5 {
+  transform: translateZ(-0.5px);
+}
+
+.coinflip-route .rotate-y-180 {
+  transform: rotateY(180deg) translateZ(-0.5px);
+}
+
+.coinflip-route .group\/coinflip-card:hover .group-hover\/coinflip-card\:rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
 .scrollbar-hide {
   scrollbar-width: none;
   -ms-overflow-style: none;
