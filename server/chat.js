@@ -1,6 +1,7 @@
 
 import { WebSocketServer } from "ws";
 import { createRainState, createSupabaseRainStore, formatRainState } from "./rain.js";
+import { createRouletteState } from "./roulette.js";
 
 const HISTORY_LIMIT = 50;
 const MAX_BODY_LENGTH = 500;
@@ -66,6 +67,8 @@ export function attachChatServer(httpServer, options = {}) {
   const clientSockets = new Map();
   const rain = createRainState({ store: createSupabaseRainStore(options.env) });
   let rainInterval = null;
+  const roulette = createRouletteState({ env: options.env });
+  let rouletteStarted = false;
 
   async function broadcastRain() {
     await rain.tick();
@@ -112,6 +115,23 @@ export function attachChatServer(httpServer, options = {}) {
     );
     broadcastPresence();
 
+    // Start the roulette lifecycle on the first connection and send init state.
+    if (!rouletteStarted) {
+      rouletteStarted = true;
+      void roulette.start();
+    }
+    const rouletteState = await roulette.ready();
+    socket.send(JSON.stringify({ ...rouletteState, type: "roulette_init" }));
+
+    // Forward roulette broadcasts to this socket (scoped to the user for myBet).
+    const unsubscribeRoulette = roulette.subscribe((data, scopeUuid) => {
+      if (socket.readyState !== socket.OPEN) return;
+      // Only send user-scoped snapshots to the matching user; broadcast
+      // events (scopeUuid === null) go to everyone.
+      if (scopeUuid && scopeUuid !== user?.uuid) return;
+      socket.send(data);
+    });
+
 
     if (!rainInterval) {
       rainInterval = setInterval(() => {
@@ -133,11 +153,25 @@ export function attachChatServer(httpServer, options = {}) {
       } catch {
         return;
       }
-      if (!["chat", "rain_tip", "rain_join"].includes(payload?.type)) return;
+      if (!["chat", "rain_tip", "rain_join", "roulette_bet"].includes(payload?.type)) return;
 
       if (!identity) {
-        const action = payload.type === "chat" ? "send messages to the chat" : payload.type === "rain_tip" ? "tip the rain" : "join the rain";
+        const action = payload.type === "chat" ? "send messages to the chat" : payload.type === "rain_tip" ? "tip the rain" : payload.type === "rain_join" ? "join the rain" : "place a roulette bet";
         socket.send(JSON.stringify({ type: "error", error: `Sign in to ${action}.` }));
+        return;
+      }
+
+      if (payload.type === "roulette_bet") {
+        const result = await roulette.placeBet(user.uuid, identity.name, payload.color, payload.amount, user.avatar);
+        if (!result.ok) {
+          socket.send(JSON.stringify({ type: "roulette_error", error: result.error }));
+          return;
+        }
+        socket.send(JSON.stringify({
+          type: "roulette_bet_confirmed",
+          bet: result.bet,
+          balance: result.balance,
+        }));
         return;
       }
 
@@ -206,10 +240,12 @@ export function attachChatServer(httpServer, options = {}) {
     socket.on("close", () => {
       if (clientSockets.get(clientId) === socket) clientSockets.delete(clientId);
       if (clients.delete(socket)) broadcastPresence();
+      unsubscribeRoulette();
     });
     socket.on("error", () => {
       if (clientSockets.get(clientId) === socket) clientSockets.delete(clientId);
       if (clients.delete(socket)) broadcastPresence();
+      unsubscribeRoulette();
     });
   }
 

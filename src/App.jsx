@@ -11,6 +11,7 @@ import RewardsPage from "./components/RewardsPage";
 import LoadingScreen from "./components/LoadingScreen";
 import AffiliatesPage from "./components/AffiliatesPage";
 import NotificationCenter from "./components/NotificationCenter";
+import RoulettePage from "./components/RoulettePage";
 
 export default function App() {
   const [pathname, setPathname] = useState(() => window.location.pathname);
@@ -72,6 +73,7 @@ export default function App() {
   const isFairnessPage = pathname === "/fairness";
   const isRewardsPage = pathname === "/rewards";
   const isAffiliatesPage = pathname === "/affiliates";
+  const isRoulettePage = pathname === "/games/roulette";
 
   return (
     <>
@@ -92,6 +94,8 @@ export default function App() {
           <RewardsPage />
         ) : isAffiliatesPage ? (
           <AffiliatesPage />
+        ) : isRoulettePage ? (
+          <RoulettePage />
         ) : (
           <HomePage />
         )}

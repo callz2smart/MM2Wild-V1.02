@@ -1,4 +1,5 @@
 import { createRainState, createSupabaseRainStore, formatRainState } from "./rain.js";
+import { createRouletteState } from "./roulette.js";
 
 const json = (body, status = 200, extraHeaders = {}) =>
   new Response(JSON.stringify(body), {
@@ -478,6 +479,8 @@ export class ChatRoom {
     this.clientSockets = new Map();
     this.rain = createRainState({ store: createSupabaseRainStore(env) });
     this.rainInterval = null;
+    this.roulette = createRouletteState({ env });
+    this.rouletteStarted = false;
   }
 
   async broadcastRain() {
@@ -542,6 +545,21 @@ export class ChatRoom {
     this.broadcastPresence();
     this.startRainInterval();
 
+    // Start the roulette lifecycle on the first connection and send init state.
+    if (!this.rouletteStarted) {
+      this.rouletteStarted = true;
+      void this.roulette.start();
+    }
+    const rouletteState = await this.roulette.ready();
+    server.send(JSON.stringify({ ...rouletteState, type: "roulette_init" }));
+
+    // Forward roulette broadcasts to this socket (scoped to the user for myBet).
+    const unsubscribeRoulette = this.roulette.subscribe((data, scopeUuid) => {
+      if (server.readyState !== 1) return;
+      if (scopeUuid && scopeUuid !== account?.uuid) return;
+      server.send(data);
+    });
+
     server.addEventListener("message", async (event) => {
       const attachment = server.deserializeAttachment() || {};
       const identity = attachment.profile || profile;
@@ -553,11 +571,25 @@ export class ChatRoom {
       } catch {
         return;
       }
-      if (!["chat", "rain_tip", "rain_join"].includes(payload?.type)) return;
+      if (!["chat", "rain_tip", "rain_join", "roulette_bet"].includes(payload?.type)) return;
 
       if (!userUuid || !identity) {
-        const action = payload.type === "chat" ? "send messages to the chat" : payload.type === "rain_tip" ? "tip the rain" : "join the rain";
+        const action = payload.type === "chat" ? "send messages to the chat" : payload.type === "rain_tip" ? "tip the rain" : payload.type === "rain_join" ? "join the rain" : "place a roulette bet";
         server.send(JSON.stringify({ type: "error", error: `Sign in to ${action}.` }));
+        return;
+      }
+
+      if (payload.type === "roulette_bet") {
+        const result = await this.roulette.placeBet(userUuid, identity.name, payload.color, payload.amount, account?.avatar_headshot);
+        if (!result.ok) {
+          server.send(JSON.stringify({ type: "roulette_error", error: result.error }));
+          return;
+        }
+        server.send(JSON.stringify({
+          type: "roulette_bet_confirmed",
+          bet: result.bet,
+          balance: result.balance,
+        }));
         return;
       }
 
@@ -636,10 +668,12 @@ export class ChatRoom {
     server.addEventListener("close", () => {
       if (this.clientSockets.get(clientId) === server) this.clientSockets.delete(clientId);
       if (this.sessions.delete(server)) this.broadcastPresence();
+      unsubscribeRoulette();
     });
     server.addEventListener("error", () => {
       if (this.clientSockets.get(clientId) === server) this.clientSockets.delete(clientId);
       if (this.sessions.delete(server)) this.broadcastPresence();
+      unsubscribeRoulette();
     });
 
     return new Response(null, { status: 101, webSocket: client });
