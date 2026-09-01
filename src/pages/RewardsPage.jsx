@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Footer, footerLogoInnerMarkup } from "./HomePage";
+import LineWobbleLoader from "../components/LineWobbleLoader";
 
 const bonusCards = [
   {
@@ -55,6 +56,30 @@ const dailyCases = [
   { level: 90, color: "rgba(243,57,178,0.15)" },
   { level: 100, color: "rgba(255,231,18,0.15)" },
 ];
+
+const rewardsAssets = [
+  ...bonusCards.map((card) => card.image),
+  ...dailyCases.map((caseData) => `/level-cases/level-${caseData.level}.png`),
+  "/coins/mbx-1.webp",
+  "/coins/mbx-2.webp",
+  "/falling-coins.webp",
+  "/simple-leafs.webp",
+  "/coin.webp",
+  "/leaderboard/character-1.webp",
+  "/items/chroma-evergun.webp",
+  "/items/chroma-evergreen.webp",
+  "/nand-ilustration.png",
+];
+
+function loadRewardAsset(src) {
+  return new Promise((resolve) => {
+    const asset = new Image();
+    asset.onload = resolve;
+    asset.onerror = resolve;
+    asset.src = src;
+    if (asset.complete) resolve();
+  });
+}
 
 function BonusCard({ card }) {
   return (
@@ -139,9 +164,28 @@ function DailyCaseCard({ caseData }) {
 }
 
 export default function RewardsPage() {
+  const [isLoading, setIsLoading] = useState(true);
   const [code, setCode] = useState("");
   const [rainProgress] = useState(32);
   const [rainTime] = useState("09:23");
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(rewardsAssets.map(loadRewardAsset)).then(() => {
+      if (!cancelled) setIsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="site-content flex items-center justify-center min-h-[calc(100dvh-var(--layout-top))]">
+        <LineWobbleLoader />
+      </div>
+    );
+  }
 
   return (
     <div className="site-content">

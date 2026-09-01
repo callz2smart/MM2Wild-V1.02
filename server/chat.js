@@ -38,6 +38,7 @@ async function resolveUser(cookieHeader, verifySession) {
     return {
       uuid: session.uuid,
       name: session.username || `User ${session.robloxUserId}`,
+      rank: session.rank || "user",
       level: session.level ?? 1,
       avatar: session.avatar_headshot,
     };
@@ -49,6 +50,7 @@ async function resolveUser(cookieHeader, verifySession) {
 function profileFor(user) {
   if (!user) return null;
   return {
+    rank: user.rank || "user",
     level: user.level ?? 1,
     color: colorForLevel(user.level ?? 1),
     avatar: user.avatar,
@@ -89,6 +91,18 @@ export function attachChatServer(httpServer, options = {}) {
   function recordMessage(message) {
     history.push(message);
     if (history.length > HISTORY_LIMIT) history.shift();
+  }
+
+  function announceUserTip({ sender, recipient, amount, balanceType }) {
+    const tipMessage = {
+      type: "chat",
+      name: "Tip Bot",
+      body: `${sender} tipped ${recipient} ${amount} ${balanceType === "crypto" ? "crypto" : "MM2"} coins!`,
+      time: nowTime(),
+      user: { level: 99, color: "#E5AD4E", avatar: "/coin.webp" },
+    };
+    recordMessage(tipMessage);
+    broadcast(tipMessage);
   }
 
   async function handleConnection(socket, user, clientId) {
@@ -209,8 +223,17 @@ export function attachChatServer(httpServer, options = {}) {
       if (!body) return;
       const replyName = safeString(payload.reply?.name, 64).trim();
       const replyBody = safeString(payload.reply?.body, MAX_BODY_LENGTH).trim();
+      const repliedMessage = [...history]
+        .reverse()
+        .find((entry) => entry.name === replyName && entry.body === replyBody);
       const reply =
-        replyName && replyBody ? { name: replyName, body: replyBody } : null;
+        replyName && replyBody
+          ? {
+              name: replyName,
+              body: replyBody,
+              ...(repliedMessage?.user ? { user: repliedMessage.user } : {}),
+            }
+          : null;
 
       const now = Date.now();
       if (now - lastMessageAt < RATE_LIMIT_WINDOW_MS) {
@@ -261,5 +284,5 @@ export function attachChatServer(httpServer, options = {}) {
     });
   });
 
-  return { wss, rain };
+  return { wss, rain, announceUserTip };
 }

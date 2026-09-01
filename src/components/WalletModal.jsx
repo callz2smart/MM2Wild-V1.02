@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { showNotification } from "./NotificationCenter";
 
 const hiddenIfMissing = (event) => {
   event.currentTarget.style.display = "none";
@@ -138,6 +139,93 @@ function Mm2DepositView({ onBack, onClose }) {
   </div>;
 }
 
+const kinguinGiftCards = [
+  { coins: 500, price: "5.00", href: "https://www.kinguin.net/category/443565/mm2wild-500-coins-gift-card" },
+  { coins: 1000, price: "10.00", href: "https://www.kinguin.net/category/447069/mm2wild-1000-coins-gift-card" },
+  { coins: 2500, price: "25.00", href: "https://www.kinguin.net/category/447070/mm2wild-2500-coins-gift-card" },
+  { coins: 5000, price: "50.00", href: "https://www.kinguin.net/category/447072/mm2wild-5000-coins-gift-card" },
+  { coins: 10000, price: "100.00", href: "https://www.kinguin.net/category/447077/mm2wild-10000-coins-gift-card" },
+  { coins: 15000, price: "150.00", href: "https://www.kinguin.net/category/447078/mm2wild-15000-coins-gift-card" },
+  { coins: 25000, price: "250.00", href: "https://www.kinguin.net/category/447079/mm2wild-25000-coins-gift-card" },
+  { coins: 50000, price: "500.00", href: "https://www.kinguin.net/category/447085/mm2wild-50000-coins-gift-card" },
+];
+
+function DollarIcon() {
+  return <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" className="rounded-full size-6 shrink-0"><path fill="#6CDE07" d="M20 20H0V0h20v20ZM9.437 4a.324.324 0 0 0-.24.094.325.325 0 0 0-.093.239v.934c-.893.124-1.596.435-2.109.933a2.453 2.453 0 0 0-.756 1.814c0 .55.124 1.013.371 1.386.248.365.606.662 1.075.893.477.222 1.052.405 1.724.547.522.107.938.213 1.247.32.319.098.55.213.69.347a.61.61 0 0 1 .213.48c0 .275-.133.493-.398.653-.256.16-.641.24-1.154.24-.31 0-.571-.036-.783-.107a1.562 1.562 0 0 1-.504-.306 1.647 1.647 0 0 1-.292-.387 1.111 1.111 0 0 0-.186-.174.48.48 0 0 0-.278-.066H6.292c-.08 0-.15.031-.212.094a.257.257 0 0 0-.08.186c.018.409.141.8.371 1.173.23.364.57.676 1.022.934.46.257 1.03.431 1.711.52v.92c0 .098.032.177.093.24a.323.323 0 0 0 .24.093h1.1a.306.306 0 0 0 .226-.094.304.304 0 0 0 .106-.239v-.934c.628-.08 1.176-.244 1.645-.493a2.841 2.841 0 0 0 1.088-.973c.265-.4.398-.863.398-1.387 0-.542-.115-.991-.345-1.347-.23-.364-.592-.657-1.088-.88-.495-.23-1.145-.422-1.95-.573a10.744 10.744 0 0 1-1.154-.307c-.283-.097-.487-.213-.61-.346a.693.693 0 0 1-.173-.467c0-.284.11-.494.332-.627.22-.142.522-.213.902-.213.363 0 .659.076.889.227.23.142.371.311.424.507a.49.49 0 0 0 .186.172c.07.036.155.054.252.054h1.751a.27.27 0 0 0 .2-.08.304.304 0 0 0 .08-.2c-.01-.32-.125-.654-.346-1-.213-.347-.526-.658-.942-.934-.415-.275-.929-.466-1.539-.573v-.96a.304.304 0 0 0-.106-.24.307.307 0 0 0-.226-.093h-1.1Z" /></svg>;
+}
+
+function RedeemSpinner() {
+  return <svg viewBox="0 0 40 40" className="ring-loader size-5.5 [--uib-speed:1.5s]" aria-hidden="true"><circle className="track" cx="20" cy="20" r="17.5" fill="none" strokeWidth="5" /><circle className="car" cx="20" cy="20" r="17.5" fill="none" strokeWidth="5" pathLength="100" /></svg>;
+}
+
+function KinguinDepositView({ onBack, onClose }) {
+  const [giftcardCode, setGiftcardCode] = useState("");
+  const [coinValue, setCoinValue] = useState("1,000");
+  const [usdValue, setUsdValue] = useState("10.00");
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const redeemTimerRef = useRef(null);
+
+  useEffect(() => () => {
+    if (redeemTimerRef.current) window.clearTimeout(redeemTimerRef.current);
+  }, []);
+
+  const cleanNumber = (value) => value.replace(/,/g, "").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+  const updateCoins = (value) => {
+    const clean = cleanNumber(value);
+    setCoinValue(clean);
+    setUsdValue(clean && clean !== "." ? String(Number(clean) / 100) : "");
+  };
+  const updateUsd = (value) => {
+    const clean = cleanNumber(value);
+    setUsdValue(clean);
+    setCoinValue(clean && clean !== "." ? String(Number(clean) * 100) : "");
+  };
+  const formatValues = () => {
+    const coins = Number(coinValue.replace(/,/g, ""));
+    if (!coinValue || !Number.isFinite(coins)) return;
+    setCoinValue(coins.toLocaleString("en-US", { maximumFractionDigits: 2 }));
+    setUsdValue((coins / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  };
+  const formatUsd = () => {
+    const dollars = Number(usdValue.replace(/,/g, ""));
+    if (!usdValue || !Number.isFinite(dollars)) return;
+    setUsdValue(dollars.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    setCoinValue((dollars * 100).toLocaleString("en-US", { maximumFractionDigits: 2 }));
+  };
+  const redeemGiftcard = (event) => {
+    event.preventDefault();
+    if (!giftcardCode.trim() || isRedeeming) return;
+    setIsRedeeming(true);
+    redeemTimerRef.current = window.setTimeout(() => {
+      setIsRedeeming(false);
+      showNotification({
+        type: "error",
+        title: "Uh-oh, Error!",
+        message: <span>The gift card you requested could not be found</span>,
+        duration: 6000,
+      });
+    }, 1000);
+  };
+
+  return <div className="flex flex-col gap-6 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80">
+    <h2 id="reka-dialog-title-v-6" className="sr-only">Deposit Giftcard</h2>
+    <div className="flex items-center gap-1.5">
+      <div className="text-lg sm:text-xl font-semibold flex items-center gap-2"><div className="size-8 rounded-lg shrink-0 bg-[#D74B2E] flex relative overflow-hidden"><img src="/wallet/kinguin.webp" alt="Kinguin" className="size-8.5 object-contain absolute -bottom-1.5 left-1/2 -translate-x-1/2" /></div><p className="shrink-0">DEPOSIT VIA KINGUIN</p></div>
+      <div className="flex items-center gap-3 ml-auto"><button type="button" onClick={onBack} className="cursor-pointer text-accent px-3 h-10 bg-[#253361] hover:bg-[#2D3D73] rounded-lg hidden sm:flex items-center font-medium transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5 rotate-180" strokeWidth="2.5"><path fill="none" stroke="currentColor" d="M5 12h14m-7-7 7 7-7 7" /></svg><span className="ml-1.5">BACK</span></button><button type="button" aria-label="Close" onClick={onClose} className="text-accent cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3"><path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" /></svg></button></div>
+    </div>
+    <div className="w-full h-0.5 bg-[#253361] rounded-full shrink-0" />
+    <form className="flex flex-col sm:flex-row w-full gap-2" onSubmit={redeemGiftcard}>
+      <div className="w-full"><label htmlFor="kinguin-giftcard-code" className="text-sm font-semibold text-accent mb-1.75 block w-fit">REDEEM YOUR GIFTCARD</label><div className="relative flex group rounded-lg items-center justify-center bg-[#151C35] h-12 pl-3 pr-1 w-full"><div className="absolute inset-0.25 ring-2 ring-transparent rounded-lg transition-shadow pointer-events-none" /><input id="kinguin-giftcard-code" value={giftcardCode} onChange={(event) => setGiftcardCode(event.target.value)} placeholder="XXXX-XXXX-XXXXXX-XXXXXX" className="bg-transparent outline-none size-full peer placeholder:text-accent font-medium text-sm" /><button type="submit" disabled={!giftcardCode.trim() || isRedeeming} aria-busy={isRedeeming} className={`relative w-[130px] cursor-pointer outline-none select-none transition-opacity group/button h-9 shrink-0 hidden sm:flex ${giftcardCode.trim() ? "" : "opacity-40 pointer-events-none"}`}><div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} /><div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}><div className="transition-opacity flex items-center justify-center size-full whitespace-nowrap" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>{isRedeeming ? <RedeemSpinner /> : "REDEEM CODE"}</div></div></button></div></div>
+      <button type="submit" disabled={!giftcardCode.trim() || isRedeeming} aria-busy={isRedeeming} className={`relative w-full cursor-pointer outline-none flex select-none transition-opacity group/button h-11 shrink-0 sm:hidden ${giftcardCode.trim() ? "" : "opacity-40 pointer-events-none"}`}><div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(15, 195, 101)" }} /><div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(92, 223, 154)", color: "rgb(58, 56, 105)" }}><div className="transition-opacity flex items-center justify-center size-full whitespace-nowrap" style={{ filter: "drop-shadow(rgb(15, 195, 101) 0px 2px 0px)" }}>{isRedeeming ? <RedeemSpinner /> : "REDEEM CODE"}</div></div></button>
+    </form>
+    <div className="flex flex-col gap-4">
+      <p className="font-medium text-accent">Buy a gift card from Kinguin. After purchase, you&apos;ll get a code you can redeem here. Click on a card to be redirected to Kinguin.com.</p>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">{kinguinGiftCards.map((card) => <a key={card.coins} href={card.href} rel="noopener noreferrer" target="_blank" className="group h-18 rounded-xl flex flex-col relative justify-center p-3.5 cursor-pointer bg-[#24315D]"><div className="size-full absolute inset-0 overflow-hidden"><div className="w-40 h-20 left-1/2 -translate-x-1/2 -bottom-12 absolute bg-[#DA4726]/20 blur-2xl rounded-xl transition-all group-hover:scale-110 group-hover:bg-[#DA4726]/30" /></div><div className="flex items-center gap-1.5"><img src="/coin.webp" alt="" className="bg-cover bg-center size-5.5" /><span className="tabular-nums font-medium">{card.coins.toLocaleString("en-US")}</span></div><p className="text-sm text-accent font-medium"> for <span className="tabular-nums">${card.price}</span></p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="size-5 text-[#DA4726]/80 opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-2 right-2"><g fill="currentColor"><path d="M6.22 8.72a.75.75 0 0 0 1.06 1.06l5.22-5.22v1.69a.75.75 0 0 0 1.5 0v-3.5a.75.75 0 0 0-.75-.75h-3.5a.75.75 0 0 0 0 1.5h1.69z" /><path d="M3.5 6.75c0-.69.56-1.25 1.25-1.25H7A.75.75 0 0 0 7 4H4.75A2.75 2.75 0 0 0 2 6.75v4.5A2.75 2.75 0 0 0 4.75 14h4.5A2.75 2.75 0 0 0 12 11.25V9a.75.75 0 0 0-1.5 0v2.25c0 .69-.56 1.25-1.25 1.25h-4.5c-.69 0-1.25-.56-1.25-1.25z" /></g></svg></a>)}</div>
+    </div>
+    <div className="flex flex-col gap-3 bg-[#253361] rounded-xl p-4"><p className="font-medium text-accent">CONVERSION RATE</p><div className="flex flex-col sm:flex-row items-center gap-3"><div className="bg-[#151C35] h-12 px-3 flex items-center gap-3 rounded-[10px] sm:flex-1 min-w-0 w-full"><img src="/coin.webp" alt="" className="bg-cover bg-center size-6 shrink-0" /><div className="w-full"><div className="w-full relative flex group rounded-lg items-center justify-center"><div className="absolute inset-0.25 ring-2 ring-transparent rounded-lg transition-shadow pointer-events-none" /><input id="kinguin-coins" type="text" value={coinValue} onFocus={() => setCoinValue((value) => value.replace(/,/g, ""))} onChange={(event) => updateCoins(event.target.value)} onBlur={formatValues} className="bg-transparent text-white outline-none font-medium text-sm sm:text-right sm:ml-auto size-full peer text-[15px] placeholder:text-accent" inputMode="decimal" /></div></div></div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-5 text-accent hidden sm:block" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"><path fill="none" stroke="currentColor" d="M5 9h14M5 15h14" /></svg><div className="bg-[#151C35] h-12 px-3 flex items-center gap-3 rounded-[10px] sm:flex-1 min-w-0 w-full"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-5 text-accent block sm:hidden" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"><path fill="none" stroke="currentColor" d="M5 9h14M5 15h14" /></svg><DollarIcon /><div className="w-full"><div className="w-full relative flex group rounded-lg items-center justify-center"><div className="absolute inset-0.25 ring-2 ring-transparent rounded-lg transition-shadow pointer-events-none" /><input id="kinguin-usd" type="text" value={usdValue} onFocus={() => setUsdValue((value) => value.replace(/,/g, ""))} onChange={(event) => updateUsd(event.target.value)} onBlur={formatUsd} className="bg-transparent text-white outline-none font-medium text-sm sm:text-right sm:ml-auto size-full peer text-[15px] placeholder:text-accent" inputMode="decimal" /></div></div></div></div></div>
+  </div>;
+}
+
 export default function WalletModal({ onClose, initialTab = "deposit" }) {
   const [dialogState, setDialogState] = useState("open");
   const [walletView, setWalletView] = useState("wallet");
@@ -192,6 +280,20 @@ export default function WalletModal({ onClose, initialTab = "deposit" }) {
     }, 150);
   };
 
+  const openKinguinDeposit = () => {
+    if (tabTransition !== "idle") return;
+    setTabTransition("leaving");
+    viewTimerRef.current = window.setTimeout(() => {
+      setWalletView("loading");
+      setTabTransition("idle");
+      viewTimerRef.current = window.setTimeout(() => {
+        setWalletView("kinguin");
+        setTabTransition("entering");
+        viewTimerRef.current = window.setTimeout(() => setTabTransition("idle"), 150);
+      }, 700);
+    }, 150);
+  };
+
   const returnToWallet = () => {
     if (tabTransition !== "idle") return;
     setTabTransition("leaving");
@@ -232,7 +334,7 @@ export default function WalletModal({ onClose, initialTab = "deposit" }) {
   return <div className="fixed inset-0 z-[9998] bg-[#0C1535]/65 transition-opacity duration-200 data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0" data-state={dialogState} onPointerDown={(event) => event.target === event.currentTarget && requestClose()}>
     <div data-v-8ead2f23="" data-dismissable-layer="" tabIndex={-1} className="dialog-content fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full outline-none flex flex-col data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95" role="dialog" aria-describedby="reka-dialog-description-v-3" aria-labelledby="reka-dialog-title-v-2" data-state={dialogState} style={{ maxWidth: "min(100dvw - 24px, 660px)", maxHeight: "calc(100% - 24px)", zIndex: 9999, pointerEvents: "auto" }} onPointerDown={(event) => event.stopPropagation()}>
       <div data-v-8ead2f23="" className={walletView === "loading" ? "flex items-center justify-center" : `bg-[#1D284E] rounded-2xl shadow-lg flex flex-col gap-5.5 max-h-[calc(100vh-24px)] overflow-hidden relative ${tabTransition === "leaving" ? "wallet-tab-leaving" : tabTransition === "entering" ? "wallet-tab-entering" : ""}`}>
-        {walletView === "loading" ? <SquircleLoader /> : walletView === "mm2" ? <Mm2DepositView onBack={returnToWallet} onClose={requestClose} /> : <div className="flex flex-col gap-6 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80">
+        {walletView === "loading" ? <SquircleLoader /> : walletView === "mm2" ? <Mm2DepositView onBack={returnToWallet} onClose={requestClose} /> : walletView === "kinguin" ? <KinguinDepositView onBack={returnToWallet} onClose={requestClose} /> : <div className="flex flex-col gap-6 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80">
           <h2 id="reka-dialog-title-v-2" className="sr-only">Wallet</h2>
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-1.5"><h2 id="reka-dialog-title-v-2" className="text-lg xs:text-xl font-semibold flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-7 text-[#E5AD4E]"><g fill="none" fillRule="evenodd"><path d="m12.593 23.258-.011.002-.071.035-.02.004-.014-.004-.071-.035q-.016-.005-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427q-.004-.016-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093q.019.005.029-.008l.004-.014-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014-.034.614q.001.018.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z" /><path fill="currentColor" d="M5 6.5a.5.5 0 0 1 .5-.5H16a1 1 0 1 0 0-2H5.5A2.5 2.5 0 0 0 3 6.5V18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H5.5a.5.5 0 0 1-.5-.5M15.5 15a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3" /></g></svg> WALLET </h2><button type="button" aria-label="Close" className="text-accent ml-auto cursor-pointer" onClick={requestClose}><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3"><path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" /></svg></button></div>
@@ -253,7 +355,7 @@ export default function WalletModal({ onClose, initialTab = "deposit" }) {
           <div className="w-full h-0.5 bg-[#253361] rounded-full shrink-0" />
           <div data-v-97a3b0ca="" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button type="button" onClick={openMm2Deposit} className="h-30 relative rounded-2xl overflow-hidden group cursor-pointer sm:col-span-2" style={{ background: "linear-gradient(100deg, rgba(37, 51, 97, 0) 0%, rgba(243, 178, 57, 0.8) 100%), rgb(46, 63, 119)" }}><div className="absolute inset-0" style={{ maskImage: "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)" }}><img src="/wallet/mm2-illustration.webp" alt="Murder Mystery 2" className="size-full object-cover pointer-events-none" onError={hiddenIfMissing} /></div><img src="/wallet/blossom-illustration.webp" alt="Blossom" className="hidden sm:block w-[65px] h-[64px] object-cover pointer-events-none ml-auto mr-2 drop-shadow-[0_3px_2px_rgba(0,0,0,0.25)] absolute bottom-0 right-24 rotate-45 float-anim transition-transform duration-500 group-hover:rotate-[48deg]" style={{ animationDelay: "0s" }} onError={hiddenIfMissing} /><img src="/wallet/gingerscope-illustration.webp" alt="Gingerscope" className="w-[147px] h-[78px] object-cover pointer-events-none ml-auto mr-2 drop-shadow-[0_3px_2px_rgba(0,0,0,0.25)] absolute bottom-3 right-4 float-anim transition-transform duration-500 group-hover:rotate-3" style={{ animationDelay: "2s" }} onError={hiddenIfMissing} /><img src="/wallet/corrupt-illustration.webp" alt="Corrupt" className="w-[60px] h-[70px] object-cover pointer-events-none ml-auto mr-2 drop-shadow-[0_3px_2px_rgba(0,0,0,0.25)] absolute bottom-9 right-0 float-anim transition-transform duration-500 group-hover:-rotate-3" style={{ animationDelay: "3s" }} onError={hiddenIfMissing} /><p className="font-semibold absolute bottom-4 left-4">MURDER MYSTERY 2</p></button>
-            <button className="h-30 relative rounded-2xl overflow-hidden group cursor-pointer" style={{ background: "linear-gradient(100deg, rgba(87, 87, 87, 0) 0%, rgba(255, 165, 0, 0.8) 100%), rgb(119, 53, 46)" }}><div className="absolute inset-0" style={{ maskImage: "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)" }}><img src="/wallet/kinguin.webp" alt="Kinguin" className="w-50 h-73 object-contain pointer-events-none absolute -top-4 left-1/2 -translate-x-1/2" onError={hiddenIfMissing} /></div><img src="/wallet/kinguin.webp" alt="Penguin" className="w-[84px] h-[122px] object-cover pointer-events-none ml-auto mr-2 drop-shadow-[0_3px_2px_rgba(0,0,0,0.25)] absolute -bottom-5 right-4 float-anim rotate-anim transition-transform duration-500 group-hover:rotate-3" style={{ animationDelay: "1s" }} onError={hiddenIfMissing} /><p className="font-semibold absolute top-4 left-4">KINGUIN</p></button>
+            <button type="button" onClick={openKinguinDeposit} className="h-30 relative rounded-2xl overflow-hidden group cursor-pointer" style={{ background: "linear-gradient(100deg, rgba(87, 87, 87, 0) 0%, rgba(255, 165, 0, 0.8) 100%), rgb(119, 53, 46)" }}><div className="absolute inset-0" style={{ maskImage: "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)" }}><img src="/wallet/kinguin.webp" alt="Kinguin" className="w-50 h-73 object-contain pointer-events-none absolute -top-4 left-1/2 -translate-x-1/2" onError={hiddenIfMissing} /></div><img src="/wallet/kinguin.webp" alt="Penguin" className="w-[84px] h-[122px] object-cover pointer-events-none ml-auto mr-2 drop-shadow-[0_3px_2px_rgba(0,0,0,0.25)] absolute -bottom-5 right-4 float-anim rotate-anim transition-transform duration-500 group-hover:rotate-3" style={{ animationDelay: "1s" }} onError={hiddenIfMissing} /><p className="font-semibold absolute top-4 left-4">KINGUIN</p></button>
             <button className="h-30 relative rounded-2xl overflow-hidden group no-interaction opacity-40" style={{ background: "linear-gradient(100deg, rgba(37, 51, 97, 0) 0%, rgba(243, 178, 57, 0.8) 100%), rgb(43, 41, 136)" }}><div className="absolute inset-0 bg-[#2E3F77] opacity-50" /><SwappedCardArtwork /><p className="font-semibold absolute top-4 left-4">CARD</p></button>
           </div>
           <div className="flex flex-col gap-3"><p className="font-medium">CRYPTO CURRENCIES</p><div className="grid grid-cols-2 sm:grid-cols-3 gap-3">{cryptoOptions.map((option) => <CryptoOption key={option.id} option={option} />)}</div></div>

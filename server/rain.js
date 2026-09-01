@@ -1,6 +1,7 @@
-export const RAIN_INITIAL_POOL = 300;
-export const RAIN_DURATION_MS = 60 * 60 * 1000;
-export const RAIN_JOIN_DURATION_MS = 60 * 1000;
+export const RAIN_INITIAL_POOL = 250;
+export const RAIN_DURATION_MS = (58 * 60 + 30) * 1000;
+export const RAIN_JOIN_DURATION_MS = (1 * 60 + 30) * 1000;
+export const RAIN_COOLDOWN_DURATION_MS = 20 * 1000;
 
 function newRain(startedAt) {
   return {
@@ -10,6 +11,7 @@ function newRain(startedAt) {
     startedAt,
     endsAt: startedAt + RAIN_DURATION_MS,
     joinEndsAt: startedAt + RAIN_DURATION_MS + RAIN_JOIN_DURATION_MS,
+    cooldownEndsAt: startedAt + RAIN_DURATION_MS + RAIN_JOIN_DURATION_MS + RAIN_COOLDOWN_DURATION_MS,
     participantIds: new Set(),
   };
 }
@@ -27,7 +29,7 @@ export function createSupabaseRainStore(env) {
   return {
     async loadCurrent() {
       const query = new URLSearchParams({
-        status: "in.(active,joining)",
+        status: "in.(active,joining,cooldown)",
         select: "id,pool,status,starts_at,ends_at,join_ends_at",
         order: "starts_at.desc",
         limit: "1",
@@ -115,18 +117,36 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
       startedAt: Number.isFinite(startedAt) ? startedAt : now(),
       endsAt: Number.isFinite(endsAt) ? endsAt : now() + RAIN_DURATION_MS,
       joinEndsAt: Number.isFinite(joinEndsAt) ? joinEndsAt : now() + RAIN_DURATION_MS + RAIN_JOIN_DURATION_MS,
+      cooldownEndsAt: (Number.isFinite(joinEndsAt) ? joinEndsAt : now() + RAIN_DURATION_MS + RAIN_JOIN_DURATION_MS) + RAIN_COOLDOWN_DURATION_MS,
       participantIds: new Set(row.participantIds || []),
     };
+    if (row.status === "cooldown") rain.phase = "cooldown";
+  }
+
+  async function saveNewRain(candidate) {
+    try {
+      await store.save(candidate);
+    } catch (error) {
+      // Another server may have created the next rain between our load and
+      // save. Adopt that row instead of running a second in-memory rain.
+      const stored = await store.loadCurrent();
+      if (!stored) throw error;
+      load(stored);
+    }
   }
 
   function updatePhase() {
     const timestamp = now();
-    if (timestamp >= rain.joinEndsAt) {
+    if (timestamp >= rain.cooldownEndsAt) {
       const previousId = rain.id;
       rain = newRain(timestamp);
+      const nextRain = rain;
       transitionPromise = (store
-        ? store.complete(previousId).then(() => store.save(rain))
+        ? store.complete(previousId).then(() => saveNewRain(nextRain))
         : Promise.resolve()).catch(() => {});
+    } else if (timestamp >= rain.joinEndsAt && rain.phase !== "cooldown") {
+      rain.phase = "cooldown";
+      transitionPromise = (store ? store.save(rain) : Promise.resolve()).catch(() => {});
     } else if (timestamp >= rain.endsAt && rain.phase === "active") {
       rain.phase = "joining";
       transitionPromise = (store ? store.save(rain) : Promise.resolve()).catch(() => {});
@@ -142,6 +162,7 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
       pool: rain.pool,
       phase: rain.phase,
       canJoin: rain.phase === "joining",
+      visible: rain.phase !== "cooldown",
       participantCount: rain.participantIds.size,
       joined: Boolean(userUuid && rain.participantIds.has(userUuid)),
       remaining,
@@ -159,7 +180,7 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
           if (!store) return;
           const stored = await store.loadCurrent();
           if (stored) load(stored);
-          else await store.save(rain);
+          else await saveNewRain(rain);
           updatePhase();
           if (transitionPromise) await transitionPromise;
         })().catch(() => {});
@@ -179,6 +200,7 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
     async tip(amount) {
       await api.ready();
       updatePhase();
+      if (rain.phase === "cooldown") return { ok: false, error: "This rain has ended." };
       if (rain.phase !== "active") return { ok: false, error: "This rain is already open for joining." };
       const value = Math.max(0, Math.floor(Number(amount) || 0));
       if (!value) return { ok: false, error: "Enter a valid amount." };
@@ -208,8 +230,12 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
     },
 
     reset() {
+      const previousId = rain.id;
       rain = newRain(now());
-      transitionPromise = (store ? store.save(rain) : Promise.resolve()).catch(() => {});
+      const nextRain = rain;
+      transitionPromise = (store
+        ? store.complete(previousId).then(() => saveNewRain(nextRain))
+        : Promise.resolve()).catch(() => {});
     },
   };
 

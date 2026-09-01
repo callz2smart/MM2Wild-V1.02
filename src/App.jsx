@@ -1,20 +1,34 @@
-import { useEffect, useState, startTransition } from "react";
+import { useCallback, useEffect, useState, startTransition } from "react";
 import Header from "./components/Header";
 import Subheader from "./components/Subheader";
 import ChatSidebar from "./components/ChatSidebar";
-import HomePage from "./components/HomePage";
-import ProfilePage from "./components/ProfilePage";
-import TermsPage from "./components/TermsPage";
-import LeaderboardPage from "./components/LeaderboardPage";
-import FairnessPage from "./components/FairnessPage";
-import RewardsPage from "./components/RewardsPage";
+import HomePage from "./pages/HomePage";
+import ProfilePage from "./pages/ProfilePage";
+import TermsPage from "./pages/TermsPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import FairnessPage from "./pages/FairnessPage";
+import RewardsPage from "./pages/RewardsPage";
 import LoadingScreen from "./components/LoadingScreen";
-import AffiliatesPage from "./components/AffiliatesPage";
+import AffiliatesPage from "./pages/AffiliatesPage";
 import NotificationCenter from "./components/NotificationCenter";
 import RoulettePage from "./components/RoulettePage";
+import CoinflipPage from "./pages/CoinflipPage";
 
 export default function App() {
   const [pathname, setPathname] = useState(() => window.location.pathname);
+  const [isHeaderReady, setIsHeaderReady] = useState(false);
+  const [isChatPresenceReady, setIsChatPresenceReady] = useState(false);
+  const [selectedBalanceType, setSelectedBalanceType] = useState(() => (
+    localStorage.getItem("mm2wild_balance_type") === "crypto" ? "crypto" : "mm2"
+  ));
+
+  const markHeaderReady = useCallback(() => setIsHeaderReady(true), []);
+  const markChatPresenceReady = useCallback(() => setIsChatPresenceReady(true), []);
+  const selectBalanceType = useCallback((balanceType) => {
+    const nextBalanceType = balanceType === "crypto" ? "crypto" : "mm2";
+    localStorage.setItem("mm2wild_balance_type", nextBalanceType);
+    setSelectedBalanceType(nextBalanceType);
+  }, []);
 
   useEffect(() => {
     const updateRoute = () => {
@@ -74,14 +88,22 @@ export default function App() {
   const isRewardsPage = pathname === "/rewards";
   const isAffiliatesPage = pathname === "/affiliates";
   const isRoulettePage = pathname === "/games/roulette";
+  const isCoinflipPage = pathname === "/games/coinflip";
 
   return (
     <>
       <div className="app-background fixed inset-0 size-full bg-linear-to-br from-[#131C2F] to-[#212A53] z-0" />
       <main className="relative z-1">
-        <Header />
+        <Header
+          onInitialRenderReady={markHeaderReady}
+          selectedBalanceType={selectedBalanceType}
+          onBalanceTypeChange={selectBalanceType}
+        />
         <Subheader />
-        <ChatSidebar />
+        <ChatSidebar
+          onInitialRenderReady={markChatPresenceReady}
+          selectedBalanceType={selectedBalanceType}
+        />
         {isAccountPage ? (
           <ProfilePage activeTab={activeTab} />
         ) : isTermsPage ? (
@@ -96,12 +118,15 @@ export default function App() {
           <AffiliatesPage />
         ) : isRoulettePage ? (
           <RoulettePage />
+        ) : isCoinflipPage ? (
+          <CoinflipPage />
+        )
         ) : (
           <HomePage />
         )}
       </main>
       <NotificationCenter />
-      <LoadingScreen />
+      <LoadingScreen appReady={isHeaderReady && isChatPresenceReady} />
     </>
   );
 }

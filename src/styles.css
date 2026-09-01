@@ -74,6 +74,133 @@ body {
   background: #0d1429;
 }
 
+.coinflip-route .coinflip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.coinflip-route .coinflip-list.is-price-descending {
+  flex-direction: column-reverse;
+}
+
+.coinflip-route .coinflip-list-item {
+  position: relative;
+}
+
+.coinflip-route .coinflip-avatar-frame {
+  border-width: 1.5px !important;
+}
+
+.coinflip-route
+  .coinflip-avatar-frame:not(.coinflip-winner-indicator) {
+  border-color: #314274 !important;
+}
+
+.coinflip-route .coinflip-winner-indicator {
+  border-color: #5cdf9a !important;
+  border-style: solid !important;
+  border-width: 2px !important;
+}
+
+.coinflip-route
+  .coinflip-winner-indicator
+  > [data-grace-area-trigger] {
+  --level-border-start: #222c3b !important;
+  --level-border-end: #abf339 !important;
+  --level-text: #abf339 !important;
+}
+
+.coinflip-route .coinflip-row-item {
+  box-sizing: border-box;
+  position: relative;
+  width: 3.625rem;
+  height: 3.625rem;
+  flex: 0 0 auto;
+  border: 5px solid #243157;
+  border-radius: 9999px;
+  background-color: #1b2542;
+  transition: border-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.coinflip-route .coinflip-row-item:hover {
+  border-color: #314274;
+}
+
+.coinflip-route .coinflip-row-item-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  will-change: transform;
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.coinflip-route .coinflip-row-item:hover .coinflip-row-item-image {
+  transform: scale(1.1);
+}
+
+@media (min-width: 48rem) {
+  .coinflip-route .coinflip-row-item {
+    width: 4.25rem;
+    height: 4.25rem;
+  }
+}
+
+.coinflip-create-items-grid > .coinflip-item-selected {
+  transform: none !important;
+}
+
+.coinflip-create-items-grid > .coinflip-item-selected > :first-child {
+  transform: none !important;
+}
+
+.coinflip-create-items-grid > .coinflip-item-selected > :nth-child(2) {
+  opacity: 1 !important;
+}
+
+.coinflip-create-items-grid
+  > .coinflip-item-selected
+  > :nth-child(3)
+  > div
+  > div:last-child {
+  opacity: 1 !important;
+}
+
+.coinflip-route .transform-3d {
+  transform-style: preserve-3d;
+}
+
+.coinflip-route .backface-hidden {
+  backface-visibility: hidden;
+}
+
+.coinflip-route .translate-z-0\.5 {
+  transform: translateZ(0.5px);
+}
+
+.coinflip-route .-translate-z-0\.5 {
+  transform: translateZ(-0.5px);
+}
+
+.coinflip-route .rotate-y-180 {
+  transform: rotateY(180deg) translateZ(-0.5px);
+}
+
+.coinflip-route .group\/coinflip-card:hover .group-hover\/coinflip-card\:rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 .line-wobble-loader {
   align-items: center;
   border-radius: calc(var(--uib-stroke) / 2);
@@ -343,6 +470,24 @@ a {
   animation: copied-notification-leave 0.35s ease forwards;
 }
 
+.Progress {
+  width: 100%;
+  height: 2px;
+  background-color: color-mix(in srgb, var(--toast-color) 35%, transparent);
+  transform-origin: left;
+  animation: notification-progress var(--duration) linear forwards;
+}
+
+@keyframes notification-progress {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
 @keyframes copied-notification-enter {
   from {
     opacity: 0;
@@ -369,7 +514,8 @@ a {
 
 @media (prefers-reduced-motion: reduce) {
   .copied-notification-enter,
-  .copied-notification-leave {
+  .copied-notification-leave,
+  .Progress {
     animation: none;
   }
 

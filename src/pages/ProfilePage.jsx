@@ -6,15 +6,15 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import LineWobbleLoader from "./LineWobbleLoader";
+import LineWobbleLoader from "../components/LineWobbleLoader";
 import ProfileGameDropdown, {
   ProfileGameIcon,
   profileGames,
-} from "./ProfileGameDropdown";
-import FairnessPanel, { preloadFairnessData } from "./FairnessPanel";
-import GameHistoryPanel from "./GameHistoryPanel";
-import TransactionsPanel from "./TransactionsPanel";
-import SecurityPanel from "./SecurityPanel";
+} from "../components/ProfileGameDropdown";
+import FairnessPanel, { preloadFairnessData } from "../components/FairnessPanel";
+import GameHistoryPanel from "../components/GameHistoryPanel";
+import TransactionsPanel from "../components/TransactionsPanel";
+import SecurityPanel from "../components/SecurityPanel";
 
 const formatNumber = (value, maximumFractionDigits = 2) =>
   Number(value || 0).toLocaleString("en-US", { maximumFractionDigits });

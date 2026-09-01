@@ -1,10 +1,273 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { showNotification } from "./NotificationCenter";
 
 const TURNSTILE_PRODUCTION_SITE_KEY = "0x4AAAAAACO5aJWBw_BqLmoe";
 const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
 let turnstileScriptPromise;
+
+const chatRanks = {
+  chillguy: { label: "Chill Guy", image: "/ranks/ChillGuy.webp", color: "#C69D72", priority: 0 },
+  highroller: { label: "High Roller", image: "/ranks/Highroller.webp", color: "#5CDF9A", priority: 1 },
+  lucky: { label: "Lucky", image: "/ranks/Lucky.webp", color: "#6CDE07", priority: 0 },
+  unlucky: { label: "Unlucky", image: "/ranks/Unlucky.webp", color: "#FFFFFF", priority: 0 },
+  whale: { label: "Whale", image: "/ranks/Whale.webp", color: "#43B6EF", priority: 2 },
+};
+
+const chatEmojis = [
+  ["giga.webp", "GIGACHAD"], ["speed.avif", "speedLaugh"], ["stfu.webp", "STFU"],
+  ["richy.webp", "richy"], ["cantprove.webp", "cantprove"], ["nooo.webp", "NOOO"],
+  ["catkiss.gif", "kiss"], ["icant.webp", "icant"], ["nerd.webp", "nerd"],
+  ["amogus.webp", "amogus"], ["cinema.webp", "cinema"], ["depressed.webp", "cry"],
+  ["sussy.webp", "sussy"], ["prayge.webp", "prayge"], ["pog.webp", "pog"],
+  ["bruh.webp", "bruh"], ["flushed.webp", "flushed"], ["wajaja.webp", "wajaja"],
+  ["BoneZone-1x.webp", "bonezone"], ["peepoFAT-1x.webp", "peepoFAT"],
+  ["WHAT-1x.webp", "WHAT"], ["RIPBOZO-1x.webp", "RIPBOZO"],
+  ["RAGEY-1x.webp", "RAGEY"], ["POLICE-1x.webp", "POLICE"],
+  ["!gamble-1x.webp", "gamble"], ["Jerry-1x.webp", "Jerry"],
+  ["Nerdge-1x.webp", "Nerdge"], ["PeepoFinger-1x.webp", "PeepoFinger"],
+  ["SAJ-1x.webp", "SAJ"], ["gg-1x.webp", "gg"], ["ohno-1x.webp", "ohno"],
+  ["peepoClap-1x.webp", "peepoClap"], ["peepoGiggles-1x.webp", "peepoGiggles"],
+  ["peepoLove-1x.webp", "peepoLove"], ["BASED-1x.webp", "BASED"],
+  ["BUSSERS-1x.webp", "BUSSERS"], ["Chadge-1x.webp", "Chadge"],
+  ["Cheergi-1x.webp", "Cheergi"], ["NOPERS-1x.webp", "NOPERS"],
+  ["NoThanks-1x.webp", "NoThanks"], ["Offline-1x.webp", "Offline"],
+  ["PausersHype-1x.webp", "PausersHype"], ["PepeHands-1x.webp", "PepeHands"],
+  ["PepegaCard-1x.webp", "PepegaCard"],
+].map(([file, name]) => ({
+  name,
+  src: `/emojis/${file}`,
+}));
+
+const chatEmojiByName = new Map(chatEmojis.map((emoji) => [emoji.name.toLowerCase(), emoji]));
+
+function rankValues(value) {
+  if (Array.isArray(value)) return value;
+
+  const text = String(value || "").trim();
+  if (!text) return [];
+  if (text.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // Fall back to the delimited text format below.
+    }
+  }
+  return text.split(/[,;|]/);
+}
+
+function rankDetails(ranks) {
+  return rankValues(ranks)
+    .map((value) => String(value).toLowerCase().replace(/[^a-z0-9]/g, ""))
+    .map((key) => chatRanks[key])
+    .filter((rank, index, allRanks) => rank && allRanks.indexOf(rank) === index);
+}
+
+function RankBadge({ rank }) {
+  const tooltipId = useId();
+  const [tooltipState, setTooltipState] = useState(null);
+  const openTimerRef = useRef(null);
+  const closeTimerRef = useRef(null);
+
+  useEffect(() => () => {
+    clearTimeout(openTimerRef.current);
+    clearTimeout(closeTimerRef.current);
+  }, []);
+
+  const showTooltip = () => {
+    clearTimeout(closeTimerRef.current);
+    clearTimeout(openTimerRef.current);
+    openTimerRef.current = setTimeout(() => setTooltipState("delayed-open"), 100);
+  };
+
+  const hideTooltip = () => {
+    clearTimeout(openTimerRef.current);
+    if (!tooltipState) return;
+    setTooltipState("closed");
+    closeTimerRef.current = setTimeout(() => setTooltipState(null), 150);
+  };
+
+  return (
+    <span
+      className="relative flex items-center"
+      aria-describedby={tooltipState ? tooltipId : undefined}
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+      onFocus={showTooltip}
+      onBlur={hideTooltip}
+    >
+      <img src={rank.image} alt="" className="size-4 object-contain no-interaction" />
+      {tooltipState && (
+      <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-2000 -translate-x-1/2 whitespace-nowrap">
+        <div
+          data-dismissable-layer=""
+          className="bg-[#314175] overflow-hidden rounded-lg px-2.5 py-1.5 shadow-xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=bottom]:slide-out-to-top-2 data-[side=left]:slide-in-from-right-2 data-[side=left]:slide-out-to-right-2 data-[side=right]:slide-in-from-left-2 data-[side=right]:slide-out-to-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=top]:slide-out-to-bottom-2 z-2000 text-xs font-semibold"
+          data-state={tooltipState}
+          data-side="top"
+          data-align="center"
+          style={{
+            "--reka-popper-transform-origin": "50% 27.9844px",
+            "--reka-popper-available-width": "1203px",
+            "--reka-popper-available-height": "383.453125px",
+            "--reka-popper-anchor-width": "16px",
+            "--reka-popper-anchor-height": "16px",
+            "--reka-tooltip-content-transform-origin": "var(--reka-popper-transform-origin)",
+            "--reka-tooltip-content-available-width": "var(--reka-popper-available-width)",
+            "--reka-tooltip-content-available-height": "var(--reka-popper-available-height)",
+            "--reka-tooltip-trigger-width": "var(--reka-popper-anchor-width)",
+            "--reka-tooltip-trigger-height": "var(--reka-popper-anchor-height)",
+          }}
+        >
+          {rank.label}
+          <span
+            aria-hidden="true"
+            id={tooltipId}
+            role="tooltip"
+            style={{
+              position: "absolute",
+              border: 0,
+              width: "1px",
+              height: "1px",
+              padding: 0,
+              margin: "-1px",
+              overflow: "hidden",
+              clip: "rect(0px, 0px, 0px, 0px)",
+              clipPath: "inset(50%)",
+              whiteSpace: "nowrap",
+              overflowWrap: "normal",
+              top: "-1px",
+              left: "-1px",
+            }}
+          >
+            {rank.label}
+          </span>
+        </div>
+      </span>
+      )}
+    </span>
+  );
+}
+
+function RankBadges({ ranks }) {
+  const details = rankDetails(ranks);
+
+  if (!details.length) return null;
+
+  return (
+    <span className="ml-1 flex shrink-0 items-center gap-0.5">
+      {details.map((rank) => <RankBadge key={rank.label} rank={rank} />)}
+    </span>
+  );
+}
+
+function EmojiPicker({ activeEmoji, onActiveEmoji, onSelectEmoji, popupRef, state, style }) {
+  const contentId = useId();
+
+  return createPortal(
+    <div data-reka-popper-content-wrapper="" ref={popupRef} style={style}>
+      <div
+        data-dismissable-layer=""
+        tabIndex={-1}
+        className="shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-100 bg-[#202D5B] w-(--reka-popper-anchor-width) rounded-lg font-medium flex flex-col gap-2 mb-[8px] p-0"
+        id={contentId}
+        data-state={state}
+        aria-labelledby=""
+        role="dialog"
+        data-side="top"
+        data-align="center"
+        style={{
+          "--reka-popover-content-transform-origin": "var(--reka-popper-transform-origin)",
+          "--reka-popover-content-available-width": "var(--reka-popper-available-width)",
+          "--reka-popover-content-available-height": "var(--reka-popper-available-height)",
+          "--reka-popover-trigger-width": "var(--reka-popper-anchor-width)",
+          "--reka-popover-trigger-height": "var(--reka-popper-anchor-height)",
+        }}
+      >
+        <div className="overflow-hidden rounded-lg p-2.5">
+          <div className="grid grid-cols-6 max-h-[200px] overflow-y-auto scrollbar-hide">
+            {chatEmojis.map((emoji) => (
+              <button
+                key={emoji.name}
+                type="button"
+                className="rounded-lg aspect-square hover:opacity-60 transition-opacity cursor-pointer p-1"
+                onMouseEnter={() => onActiveEmoji(emoji)}
+                onFocus={() => onActiveEmoji(emoji)}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => onSelectEmoji(emoji)}
+              >
+                <img
+                  src={emoji.src}
+                  className="inline align-middle object-contain object-center opacity-0 transition-opacity w-9 h-9"
+                  alt={emoji.name}
+                  style={{ opacity: 1 }}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center px-4 py-2 bg-[#2A3C74] rounded-b-lg gap-2.5">
+          <div className="size-8 relative">
+            <img
+              className="relative object-contain object-center opacity-0 transition-opacity w-full h-full"
+              src={activeEmoji.src}
+              alt={activeEmoji.name}
+              style={{ opacity: 1 }}
+            />
+          </div>
+          <p className="text-white font-semibold">:{activeEmoji.name}:</p>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function ChatMessageBody({ body }) {
+  return String(body || "").split(/(:[A-Za-z0-9!_-]+:)/g).map((part, index) => {
+    const match = part.match(/^:([A-Za-z0-9!_-]+):$/);
+    const emoji = match ? chatEmojiByName.get(match[1].toLowerCase()) : null;
+    if (!emoji) return <span key={`${part}-${index}`}>{part}</span>;
+    return (
+      <img
+        key={`${emoji.name}-${index}`}
+        src={emoji.src}
+        alt={`:${emoji.name}:`}
+        title={`:${emoji.name}:`}
+        className="inline size-7 object-contain object-center align-middle"
+      />
+    );
+  });
+}
+
+function ReplyPreview({ reply }) {
+  const replyColor = reply.user?.color || "#7C8CB7";
+
+  return (
+    <div className="ml-5 flex h-6 min-w-0 items-center">
+      <div className="h-3 w-5 shrink-0 rounded-tl-lg border-l border-t border-accent/80" />
+      {reply.user?.avatar && (
+        <div
+          className="ml-1.5 size-4 shrink-0 rounded-[5px] p-0.5"
+          style={{ background: `linear-gradient(${replyColor}55, ${replyColor})` }}
+        >
+          <div className="flex size-full items-center justify-center rounded-[3px] bg-[#1A2339]">
+            <img
+              src={reply.user.avatar}
+              className="size-9/12 rounded-sm object-contain object-center no-interaction"
+              alt=""
+              loading="lazy"
+            />
+          </div>
+        </div>
+      )}
+      <p className="ml-1 min-w-0 truncate text-[11px] font-medium text-accent">
+        <span className="font-semibold text-white">@{reply.name}:</span>{" "}
+        {reply.body}
+      </p>
+    </div>
+  );
+}
 
 function loadTurnstile() {
   if (window.turnstile) return Promise.resolve(window.turnstile);
@@ -47,7 +310,7 @@ function TipIcon() {
   );
 }
 
-function ProfileModal({ user, name, onClose, closing }) {
+function ProfileModal({ user, name, onClose, onTip, closing }) {
   if (!user) return null;
   const profile = user;
 
@@ -147,7 +410,11 @@ function ProfileModal({ user, name, onClose, closing }) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => onTip?.({ user, name })}
+                    className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 flex-1"
+                  >
                     <div
                       className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
                       style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(211, 133, 2)" }}
@@ -321,6 +588,209 @@ function TipRainModal({ onClose, onSubmit }) {
   );
 }
 
+function TipUserModal({ initialUsername, balanceType, onClose }) {
+  const [dialogState, setDialogState] = useState("open");
+  const [username, setUsername] = useState(initialUsername || "");
+  const [amount, setAmount] = useState("");
+  const [showInChat, setShowInChat] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const closeTimerRef = useRef(null);
+
+  const requestClose = useCallback(() => {
+    if (dialogState === "closed") return;
+    setDialogState("closed");
+    closeTimerRef.current = window.setTimeout(onClose, 150);
+  }, [dialogState, onClose]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (submitting) return;
+    const nextErrors = {};
+    const trimmedUsername = username.trim();
+    const decimalPlaces = balanceType === "crypto" ? 8 : 2;
+    const amountPattern = new RegExp(`^\\d+(?:\\.\\d{1,${decimalPlaces}})?$`);
+    if (!trimmedUsername) nextErrors.username = "Username is required.";
+    else if (!/^[A-Za-z0-9_]{3,20}$/.test(trimmedUsername)) {
+      nextErrors.username = "Enter a valid username.";
+    }
+    if (!amount) nextErrors.amount = "Amount is required.";
+    else if (!amountPattern.test(amount) || Number(amount) <= 0) {
+      nextErrors.amount = `Enter a valid amount with no more than ${decimalPlaces} decimal places.`;
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      return;
+    }
+
+    setFieldErrors({});
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/tips", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          username: trimmedUsername,
+          amount,
+          balanceType,
+          showInChat,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(payload?.error || "The tip could not be sent.");
+
+      window.dispatchEvent(new CustomEvent("mm2wild:balance-updated"));
+      showNotification({
+        type: "success",
+        title: "Tip Sent!",
+        message: `You sent ${Number(payload.tip?.amount || amount).toLocaleString("en-US", {
+          maximumFractionDigits: balanceType === "crypto" ? 8 : 2,
+        })} ${balanceType === "crypto" ? "crypto" : "MM2"} coins to ${payload.tip?.recipient_username || username}.`,
+        duration: 5000,
+      });
+      requestClose();
+    } catch (error) {
+      const message = error.message || "The tip could not be sent.";
+      const usernameError = /user|username|yourself/i.test(message);
+      setFieldErrors(usernameError ? { username: message } : { amount: message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") requestClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [requestClose]);
+
+  useEffect(() => () => window.clearTimeout(closeTimerRef.current), []);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9998] bg-[#0C1535]/65 transition-opacity duration-150 data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0"
+      data-state={dialogState}
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) requestClose();
+      }}
+    >
+      <div
+        data-v-8ead2f23=""
+        data-dismissable-layer=""
+        tabIndex={-1}
+        className="dialog-content fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full outline-none flex flex-col data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95"
+        role="dialog"
+        aria-modal="true"
+        aria-describedby="tip-user-description"
+        aria-labelledby="tip-user-title"
+        data-state={dialogState}
+        style={{
+          maxWidth: "min(100dvw - 24px, 480px)",
+          maxHeight: "calc(100% - 24px)",
+          zIndex: 9999,
+          pointerEvents: "auto",
+        }}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <div data-v-8ead2f23="" className="bg-[#1D284E] rounded-2xl shadow-lg flex flex-col gap-5.5 max-h-[calc(100vh-24px)] overflow-hidden">
+          <form
+            className="relative flex flex-col items-center gap-5.5 max-h-full overflow-y-auto p-4.5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-primary/80"
+            onSubmit={handleSubmit}
+          >
+            <div className="absolute left-1/2 h-12 w-32 blur-3xl -translate-x-1/2 -top-3 rounded-lg bg-[#FFC055]/70" />
+            <div className="size-17 bg-[#FFC055]/10 text-[#FFC055] flex items-center justify-center rounded-full shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-10 drop-shadow-[0_2px_0_#826432]">
+                <path fill="currentColor" d="M16 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5m5.45 5.6c-.39-.4-.88-.6-1.45-.6h-7l-2.08-.73.33-.94L13 16h2.8c.35 0 .63-.14.86-.37s.34-.51.34-.82c0-.54-.26-.91-.78-1.12L8.95 11H7v9l7 2 8.03-3c.01-.53-.19-1-.58-1.4M5 11H.984v11H5z" />
+              </svg>
+            </div>
+            <h2 id="tip-user-title" className="text-xl font-bold">Tip User</h2>
+            <p id="tip-user-description" className="sr-only">Send coins to another MM2Wild user.</p>
+            <div className="w-full h-0.5 bg-[#2F3C68] rounded-full shrink-0" />
+            <div className="w-full">
+              <label htmlFor="tip-user-username" className="text-sm font-semibold text-accent mb-1.75 block w-fit uppercase">SEND TO</label>
+              <div className="w-full relative flex group rounded-lg items-center justify-center bg-[#0F1222]/55 h-11 px-3">
+                <div className={`absolute inset-0.25 ring-2 rounded-lg transition-shadow pointer-events-none ${fieldErrors.username ? "ring-error" : "ring-transparent"}`} />
+                <input
+                  id="tip-user-username"
+                  name="username"
+                  value={username}
+                  onChange={(event) => {
+                    setUsername(event.target.value);
+                    setFieldErrors((current) => ({ ...current, username: undefined }));
+                  }}
+                  placeholder="Enter username..."
+                  className="bg-transparent outline-none size-full font-medium peer text-[15px] placeholder:text-accent"
+                  autoComplete="off"
+                  aria-invalid={Boolean(fieldErrors.username)}
+                  aria-describedby={fieldErrors.username ? "tip-user-username-error" : undefined}
+                />
+              </div>
+              {fieldErrors.username && (
+                <p id="tip-user-username-error" role="alert" className="mt-1.75 text-[13px] font-medium text-error">{fieldErrors.username}</p>
+              )}
+            </div>
+            <div className="w-full">
+              <label htmlFor="tip-user-amount" className="text-sm font-semibold text-accent mb-1.75 block w-fit uppercase">AMOUNT</label>
+              <div className="w-full relative flex group rounded-lg items-center justify-center bg-[#0F1222]/55 h-11 px-3">
+                <div className={`absolute inset-0.25 ring-2 rounded-lg transition-shadow pointer-events-none ${fieldErrors.amount ? "ring-error" : "ring-transparent"}`} />
+                <img src="/coin.webp" alt="" className="bg-cover bg-center size-5 shrink-0 my-auto" />
+                <input
+                  id="tip-user-amount"
+                  type="text"
+                  value={amount}
+                  onChange={(event) => {
+                    setAmount(event.target.value.replace(/[^0-9.]/g, ""));
+                    setFieldErrors((current) => ({ ...current, amount: undefined }));
+                  }}
+                  placeholder="Enter amount..."
+                  className="bg-transparent outline-none size-full font-medium peer text-[15px] placeholder:text-accent pl-2"
+                  inputMode="decimal"
+                  aria-invalid={Boolean(fieldErrors.amount)}
+                  aria-describedby={fieldErrors.amount ? "tip-user-amount-error" : undefined}
+                />
+              </div>
+              {fieldErrors.amount && (
+                <p id="tip-user-amount-error" role="alert" className="mt-1.75 text-[13px] font-medium text-error">{fieldErrors.amount}</p>
+              )}
+            </div>
+            <div className="w-full">
+              <div className="flex items-center gap-2">
+                <button
+                  className="cursor-pointer peer shrink-0 rounded-md ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-[#0F1222]/55 data-[state=checked]:bg-[#E5AD4E] size-5 text-[#1D284E]"
+                  id="tip-user-show-chat"
+                  role="checkbox"
+                  type="button"
+                  aria-checked={showInChat}
+                  data-state={showInChat ? "checked" : "unchecked"}
+                  aria-label="SHOW IN CHAT AS A MESSAGE"
+                  onClick={() => setShowInChat((current) => !current)}
+                >
+                  {showInChat && (
+                    <span data-state="checked" className="flex h-full w-full items-center justify-center text-current pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-[60%]" strokeWidth="4.5">
+                        <path fill="none" stroke="currentColor" d="M20 6 9 17l-5-5" />
+                      </svg>
+                    </span>
+                  )}
+                </button>
+                <label htmlFor="tip-user-show-chat" className="font-semibold cursor-pointer text-accent uppercase text-sm">SHOW IN CHAT AS A MESSAGE</label>
+              </div>
+            </div>
+            <button type="submit" disabled={submitting} className="relative cursor-pointer disabled:cursor-wait disabled:opacity-70 outline-none flex select-none transition-opacity group/button h-10.5 w-full">
+              <div className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none" style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: "rgb(211, 133, 2)" }} />
+              <div className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0" style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: "rgb(243, 178, 57)", color: "rgb(58, 56, 105)" }}>
+                <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)" }}>SEND TIP</div>
+              </div>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RainVerificationModal({ onClose, onVerified }) {
   const [dialogState, setDialogState] = useState("open");
   const [challengeError, setChallengeError] = useState(false);
@@ -423,9 +893,26 @@ function RainVerificationModal({ onClose, onVerified }) {
 
 function RainPot({ onTip, onJoin, rain }) {
   const isJoining = rain.phase === "joining";
+  const [displayedPool, setDisplayedPool] = useState(0);
+
+  useEffect(() => {
+    const targetPool = Math.max(0, Number(rain.pool) || 0);
+    const startingPool = displayedPool;
+    const startedAt = performance.now();
+    let animationFrame;
+    const animatePool = (timestamp) => {
+      const progress = Math.min(1, (timestamp - startedAt) / 750);
+      const easedProgress = 1 - ((1 - progress) ** 3);
+      setDisplayedPool(Math.round(startingPool + ((targetPool - startingPool) * easedProgress)));
+      if (progress < 1) animationFrame = requestAnimationFrame(animatePool);
+    };
+    animationFrame = requestAnimationFrame(animatePool);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [rain.pool, rain.rainId]);
+
   return (
     <div
-      className="flex flex-col top-0 left-3 right-3 rounded-xl absolute z-10 overflow-hidden p-3.5 shadow-xl min-h-[80px]"
+      className="flex flex-col top-0 left-3 right-3 rounded-xl absolute z-10 overflow-hidden p-3.5 shadow-xl min-h-[80px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
       style={{
         background:
           "radial-gradient(84% 582% at 100% 50%, rgba(229,173,78,.45) 0%, rgba(54,70,119,0) 100%), rgb(54,70,119)",
@@ -482,7 +969,7 @@ function RainPot({ onTip, onJoin, rain }) {
                 alt=""
                 className="bg-cover bg-center size-4.5"
               />
-              <span className="font-semibold">{rain.pool}</span>
+              <span className="font-semibold">{displayedPool}</span>
             </div>
           </div>
           <button
@@ -572,13 +1059,19 @@ function ChatMessage({
 }) {
   if (!user) return null;
   const profile = user;
+  const usernameRank = rankDetails(profile.rank).reduce(
+    (highest, rank) => (!highest || rank.priority > highest.priority ? rank : highest),
+    null,
+  );
+  const usernameColor = usernameRank?.color || "#FFFFFF";
   return (
     <div
-      className={`relative flex flex-col group/message ${
+      className={`relative flex flex-col group/message hover:z-50 focus-within:z-50 ${
         animate ? "chat-message-enter" : ""
       }`}
       data-highlight="false"
     >
+      {reply && <ReplyPreview reply={reply} />}
       <div className="flex gap-1.75 relative group z-1">
         <div
           className="size-10 rounded-[9px] cursor-pointer flex shrink-0 flex-col items-center relative bg-linear-to-b from-[#1D2A53] from-5% p-0.5"
@@ -610,46 +1103,27 @@ function ChatMessage({
               </div>
             </div>
             <span
-              className="font-semibold text-[13px] ml-1 cursor-pointer truncate hover:text-primary transition-colors"
+              className="font-semibold text-[13px] ml-1 cursor-pointer truncate text-(--chat-username-color)"
+              style={{ "--chat-username-color": usernameColor }}
               onClick={() => onProfileClick?.(name, user)}
             >
               {name}
             </span>
+            <RankBadges ranks={profile.rank} />
             <p className="text-[13px] font-semibold ml-auto pl-1 text-accent">
               {time}
             </p>
           </div>
           <div className="message-body p-1.75 rounded-lg bg-[#223263]">
-            {reply && (
-              <div className="mb-1 flex min-w-0 items-center gap-1 text-[11px] text-accent/75">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  className="size-3.5 -scale-x-100 shrink-0 text-primary"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                >
-                  <g fill="none" stroke="currentColor">
-                    <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
-                    <path d="m9 17-5-5 5-5" />
-                  </g>
-                </svg>
-                <p className="min-w-0 truncate font-medium">
-                  <span className="font-semibold text-white">@{reply.name}:</span>{" "}
-                  {reply.body}
-                </p>
-              </div>
-            )}
             <div className="text-sm font-medium text-accent [word-break:break-word]">
-              <span>{body}</span>
+              <ChatMessageBody body={body} />
             </div>
           </div>
         </div>
         <button
           type="button"
           aria-label={`Reply to ${name}`}
-          onClick={() => onReply?.({ name, body })}
+          onClick={() => onReply?.({ name, body, user })}
           className="cursor-pointer flex items-center justify-center group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 opacity-0 transition-all duration-175 bg-[#31478D] hover:bg-[#3B54A4] size-6.5 rounded-md absolute right-0 top-0"
         >
           <svg
@@ -671,7 +1145,7 @@ function ChatMessage({
   );
 }
 
-export default function ChatSidebar() {
+export default function ChatSidebar({ onInitialRenderReady, selectedBalanceType = "mm2" }) {
   const [message, setMessage] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -679,20 +1153,114 @@ export default function ChatSidebar() {
   const [connected, setConnected] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isTipRainOpen, setIsTipRainOpen] = useState(false);
+  const [tipUserModal, setTipUserModal] = useState(null);
   const [isRainVerificationOpen, setIsRainVerificationOpen] = useState(false);
   const [profileModal, setProfileModal] = useState(null);
   const [modalClosing, setModalClosing] = useState(false);
+  const [emojiPopupState, setEmojiPopupState] = useState(null);
+  const [activeEmoji, setActiveEmoji] = useState(chatEmojis[5]);
+  const [emojiPopupStyle, setEmojiPopupStyle] = useState({});
   const [rainState, setRainState] = useState({
-    pool: 300,
-    countdown: "60:00",
+    pool: 250,
+    countdown: "58:30",
     progress: 100,
     phase: "active",
+    visible: true,
     participantCount: 0,
     joined: false,
   });
   const socketRef = useRef(null);
   const viewportRef = useRef(null);
   const inputRef = useRef(null);
+  const chatFormRef = useRef(null);
+  const emojiPopupRef = useRef(null);
+  const emojiPopupStateRef = useRef(null);
+  const emojiCloseTimerRef = useRef(null);
+
+  const positionEmojiPopup = useCallback(() => {
+    const anchor = chatFormRef.current;
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    const popupHeight = emojiPopupRef.current?.offsetHeight || 284;
+    // The popup's 8px bottom margin creates the visible gap above the form.
+    const popupTop = Math.max(8, rect.top - popupHeight);
+    setEmojiPopupStyle({
+      position: "fixed",
+      left: "0px",
+      top: "0px",
+      transform: `translate(${rect.left}px, ${popupTop}px)`,
+      minWidth: "max-content",
+      "--reka-popper-transform-origin": `${rect.width / 2}px ${popupHeight}px`,
+      zIndex: 100,
+      "--reka-popper-available-width": `${window.innerWidth - rect.left}px`,
+      "--reka-popper-available-height": `${rect.top}px`,
+      "--reka-popper-anchor-width": `${rect.width}px`,
+      "--reka-popper-anchor-height": `${rect.height}px`,
+    });
+  }, []);
+
+  const closeEmojiPopup = useCallback(() => {
+    if (emojiPopupStateRef.current !== "open") return;
+    clearTimeout(emojiCloseTimerRef.current);
+    emojiPopupStateRef.current = "closed";
+    setEmojiPopupState("closed");
+    emojiCloseTimerRef.current = setTimeout(() => {
+      if (emojiPopupStateRef.current !== "closed") return;
+      emojiPopupStateRef.current = null;
+      setEmojiPopupState(null);
+    }, 150);
+  }, []);
+
+  const toggleEmojiPopup = () => {
+    if (emojiPopupStateRef.current === "open") {
+      closeEmojiPopup();
+      return;
+    }
+    clearTimeout(emojiCloseTimerRef.current);
+    emojiPopupStateRef.current = "open";
+    setActiveEmoji(chatEmojis[5]);
+    positionEmojiPopup();
+    setEmojiPopupState("open");
+  };
+
+  useLayoutEffect(() => {
+    if (!emojiPopupState) return undefined;
+    positionEmojiPopup();
+    const animationFrame = requestAnimationFrame(positionEmojiPopup);
+    window.addEventListener("resize", positionEmojiPopup);
+    window.addEventListener("scroll", positionEmojiPopup, true);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      window.removeEventListener("resize", positionEmojiPopup);
+      window.removeEventListener("scroll", positionEmojiPopup, true);
+    };
+  }, [emojiPopupState, positionEmojiPopup]);
+
+  useEffect(() => {
+    if (emojiPopupState !== "open") return undefined;
+    const closeOnOutsidePress = (event) => {
+      if (emojiPopupRef.current?.contains(event.target) || chatFormRef.current?.contains(event.target)) return;
+      closeEmojiPopup();
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") closeEmojiPopup();
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [closeEmojiPopup, emojiPopupState]);
+
+  useEffect(() => () => {
+    clearTimeout(emojiCloseTimerRef.current);
+    emojiPopupStateRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (!isChatOpen) closeEmojiPopup();
+  }, [closeEmojiPopup, isChatOpen]);
 
   useLayoutEffect(() => {
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
@@ -735,6 +1303,12 @@ export default function ChatSidebar() {
     if (!user) return;
     setModalClosing(false);
     setProfileModal({ name, user });
+  };
+
+  const openTipUser = ({ name, user }) => {
+    setProfileModal(null);
+    setModalClosing(false);
+    setTipUserModal({ name, user });
   };
 
   const closeProfile = () => {
@@ -827,12 +1401,20 @@ export default function ChatSidebar() {
       const socket = new WebSocket(socketUrl);
       socketRef.current = socket;
 
-      socket.addEventListener("open", () => setConnected(true));
+      socket.addEventListener("open", () => {
+        if (disposed) {
+          socket.close();
+          return;
+        }
+        setConnected(true);
+      });
       socket.addEventListener("message", handleMessage);
       socket.addEventListener("close", () => {
+        if (disposed) return;
         setConnected(false);
+        setOnlineCount((current) => current ?? 0);
         if (socketRef.current === socket) socketRef.current = null;
-        if (!disposed) reconnectTimer = setTimeout(connect, 1500);
+        reconnectTimer = setTimeout(connect, 1500);
       });
       socket.addEventListener("error", () => {
         // The close event always fires after an error, which handles cleanup.
@@ -845,10 +1427,14 @@ export default function ChatSidebar() {
       disposed = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       const socket = socketRef.current;
-      if (socket) socket.close();
+      if (socket?.readyState === WebSocket.OPEN) socket.close();
       socketRef.current = null;
     };
   }, [showSlowModeNotification]);
+
+  useEffect(() => {
+    if (onlineCount !== null) onInitialRenderReady?.();
+  }, [onlineCount, onInitialRenderReady]);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -871,6 +1457,21 @@ export default function ChatSidebar() {
       setReplyingTo(null);
     }
     setMessage("");
+    closeEmojiPopup();
+  };
+
+  const insertEmoji = (emoji) => {
+    const input = inputRef.current;
+    const selectionStart = input?.selectionStart ?? message.length;
+    const selectionEnd = input?.selectionEnd ?? selectionStart;
+    const token = `:${emoji.name}:`;
+    const nextMessage = `${message.slice(0, selectionStart)}${token}${message.slice(selectionEnd)}`;
+    const nextCursor = selectionStart + token.length;
+    setMessage(nextMessage);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.setSelectionRange(nextCursor, nextCursor);
+    });
   };
 
   const startReply = (reply) => {
@@ -924,11 +1525,13 @@ export default function ChatSidebar() {
         </div>
 
         <div className="flex relative flex-1 min-h-0">
-          <RainPot
-            onTip={() => setIsTipRainOpen(true)}
-            onJoin={() => setIsRainVerificationOpen(true)}
-            rain={rainState}
-          />
+          {rainState.visible !== false && (
+            <RainPot
+              onTip={() => setIsTipRainOpen(true)}
+              onJoin={() => setIsRainVerificationOpen(true)}
+              rain={rainState}
+            />
+          )}
           <div className="flex flex-col justify-end flex-1 relative min-h-0">
             <div
               className="z-2 absolute top-0 left-0 right-1 h-20 bg-linear-to-r from-[#152340] to-[#212A53] pointer-events-none"
@@ -938,7 +1541,7 @@ export default function ChatSidebar() {
             />
             <div
               ref={viewportRef}
-              className="chat-scrollbar size-full overflow-y-auto outline-none pt-[108px] pb-3"
+              className={`chat-scrollbar size-full overflow-y-auto outline-none pb-3 transition-[padding] duration-200 ${rainState.visible === false ? "pt-3" : "pt-[108px]"}`}
               tabIndex={0}
             >
               <div className="flex-1 flex flex-col gap-5 px-3.5">
@@ -1002,6 +1605,7 @@ export default function ChatSidebar() {
             </div>
           )}
           <form
+            ref={chatFormRef}
             onSubmit={sendMessage}
             className="bg-[#1D2A53] flex items-center py-2.5 pl-3.5 pr-2 gap-2.25 rounded-xl relative"
           >
@@ -1020,6 +1624,10 @@ export default function ChatSidebar() {
               type="button"
               className="shrink-0 cursor-pointer text-accent hover:text-accent-light transition-colors"
               aria-label="Choose emoji"
+              aria-haspopup="dialog"
+              aria-expanded={emojiPopupState === "open"}
+              disabled={!connected}
+              onClick={toggleEmojiPopup}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -1063,15 +1671,34 @@ export default function ChatSidebar() {
         </div>
       </div>
 
+      {emojiPopupState && (
+        <div
+          aria-hidden="true"
+          data-state={emojiPopupState}
+          className="absolute inset-0 z-90 bg-[#0D1429]/50 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0"
+        />
+      )}
+
       {profileModal && (
         <ProfileModal
           user={profileModal.user}
           name={profileModal.name}
           onClose={closeProfile}
+          onTip={openTipUser}
           closing={modalClosing}
         />
       )}
     </aside>
+    {emojiPopupState && (
+      <EmojiPicker
+        activeEmoji={activeEmoji}
+        onActiveEmoji={setActiveEmoji}
+        onSelectEmoji={insertEmoji}
+        popupRef={emojiPopupRef}
+        state={emojiPopupState}
+        style={emojiPopupStyle}
+      />
+    )}
     <button
       type="button"
       aria-label={isChatOpen ? "Close chat" : "Open chat"}
@@ -1091,6 +1718,16 @@ export default function ChatSidebar() {
                 socket.send(JSON.stringify({ type: "rain_tip", amount: value }));
               }
             }}
+          />,
+          document.body,
+        )
+      : null}
+    {tipUserModal
+      ? createPortal(
+          <TipUserModal
+            initialUsername={tipUserModal.name}
+            balanceType={selectedBalanceType}
+            onClose={() => setTipUserModal(null)}
           />,
           document.body,
         )

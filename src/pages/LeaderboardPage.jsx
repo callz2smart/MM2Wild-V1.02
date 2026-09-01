@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Footer, footerLogoInnerMarkup } from "./HomePage";
-import LeaderboardRulesModal from "./LeaderboardRulesModal";
-import LineWobbleLoader from "./LineWobbleLoader";
+import LeaderboardRulesModal from "../components/LeaderboardRulesModal";
+import LineWobbleLoader from "../components/LineWobbleLoader";
 
 const winnersByPeriod = {
   daily: [

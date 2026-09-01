@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mm2:check": "node scripts/mm2_items.js --source-only",
+    "mm2:sync": "node scripts/mm2_items.js --apply"
   },
   "dependencies": {
     "@fontsource/rubik": "^5.2.6",

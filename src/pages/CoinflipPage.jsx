@@ -1,0 +1,5091 @@
+import { useEffect, useState } from "react";
+import { createPortal, flushSync } from "react-dom";
+import LineWobbleLoader from "../components/LineWobbleLoader";
+import CoinflipCreateModal from "../components/CoinflipCreateModal";
+import CoinflipViewModal from "../components/CoinflipViewModal";
+
+function CoinflipPlayerTooltip({ tooltip }) {
+  if (!tooltip) return null;
+
+  return createPortal(
+    <div
+      className="fixed z-50 min-w-max pointer-events-none"
+      style={{
+        left: tooltip.left,
+        top: tooltip.top,
+        transform: "translate(-50%, calc(-100% - 8px))",
+      }}
+      role="presentation"
+    >
+      <div className="z-50 bg-[#314175] rounded-lg px-2.5 py-1.5 shadow-xl animate-in fade-in-0 zoom-in-95 overflow-visible text-xs font-semibold relative">
+        {tooltip.label}
+        <svg
+          className="absolute left-1/2 top-full -translate-x-1/2 -mt-1"
+          width="8"
+          height="12"
+          viewBox="0 0 14 8"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path d="M0,0 Q7,14 14,0 Z" fill="#314175" />
+        </svg>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function CoinflipContent({
+  isPriceAscending,
+  onTogglePrice,
+  onCreateCoinflip,
+  onViewCoinflip,
+}) {
+  const [playerTooltip, setPlayerTooltip] = useState(null);
+
+  const showPlayerTooltip = (event) => {
+    const trigger = event.target.closest("[data-grace-area-trigger]");
+    if (!trigger) return;
+
+    const playerFrame = trigger.parentElement;
+    const playerCoin = playerFrame?.querySelector(
+      'img[src*="/coinflip/heads"], img[src*="/coinflip/tails"]',
+    );
+    const label = playerCoin?.alt?.trim();
+    if (!label) return;
+
+    const rect = trigger.getBoundingClientRect();
+    setPlayerTooltip({
+      label,
+      left: rect.left + rect.width / 2,
+      top: rect.top,
+    });
+  };
+
+  const hidePlayerTooltip = (event) => {
+    const trigger = event.target.closest("[data-grace-area-trigger]");
+    if (!trigger || trigger.contains(event.relatedTarget)) return;
+    setPlayerTooltip(null);
+  };
+
+  return (
+    <>
+      <div
+        data-v-e7c3a4a2=""
+        className="max-w-[1660px] mx-auto flex flex-col @container/content px-4 md:px-12 min-h-[calc(100dvh-var(--layout-top))]"
+        bis_skin_checked="1"
+      >
+      <div
+        data-v-e7c3a4a2=""
+        className="page-content coinflip-page py-6 flex flex-col gap-6"
+        bis_skin_checked="1"
+      >
+        <div
+          data-v-e7c3a4a2=""
+          className="flex flex-wrap gap-4 items-center"
+          bis_skin_checked="1"
+        >
+          <div
+            data-v-e7c3a4a2=""
+            className="flex items-center justify-between w-full sm:w-auto sm:flex-1"
+            bis_skin_checked="1"
+          >
+            <h1 data-v-e7c3a4a2="" className="text-2xl font-bold">
+              COINFLIP
+            </h1>
+            <div
+              data-v-e7c3a4a2=""
+              className="h-10.5 relative"
+              bis_skin_checked="1"
+            >
+              <div
+                data-v-e7c3a4a2=""
+                className="absolute top-1/2 left-0 right-0 bottom-0 bg-[#171F37] rounded-lg"
+                bis_skin_checked="1"
+              ></div>
+              <button
+                data-v-e7c3a4a2=""
+                type="button"
+                onClick={onTogglePrice}
+                aria-label={`Sort by price ${isPriceAscending ? "descending" : "ascending"}`}
+                aria-pressed={isPriceAscending}
+                className="px-3.5 h-[calc(100%-3px)] bg-[#222D4E] rounded-lg flex items-center relative cursor-pointer outline-none font-medium"
+              >
+                {" "}
+                PRICE{" "}
+                <svg
+                  data-v-e7c3a4a2=""
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className={`size-4.5 ml-1.5 transition-transform duration-200 ${
+                    isPriceAscending ? "rotate-180" : ""
+                  }`}
+                  strokeWidth="2.5"
+                >
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    d="m6 9 6 6 6-6"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button
+            data-v-e7c3a4a2=""
+            type="button"
+            onClick={onCreateCoinflip}
+            className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full sm:w-auto"
+          >
+            <div
+              className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+              style={{
+                top: "var(--sb-shadow-size,3px)",
+                backgroundColor: "rgb(211, 133, 2)",
+              }}
+              bis_skin_checked="1"
+            ></div>
+            <div
+              className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 w-full sm:w-auto px-3 rounded-lg"
+              style={{
+                height: "calc(100% - var(--sb-shadow-size,3px))",
+                backgroundColor: "rgb(243, 178, 57)",
+                color: "rgb(58, 56, 105)",
+              }}
+              bis_skin_checked="1"
+            >
+              <div
+                className="transition-opacity flex items-center justify-center size-full"
+                style={{ filter: "drop-shadow(rgb(211, 133, 2) 0px 2px 0px)" }}
+                bis_skin_checked="1"
+              >
+                <svg
+                  data-v-e7c3a4a2=""
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className="size-4.5 mr-1.5"
+                  strokeWidth="3.5"
+                >
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    d="M5 12h14m-7-7v14"
+                  ></path>
+                </svg>
+                <p data-v-e7c3a4a2="" className="font-bold">
+                  CREATE COINFLIP
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+        <div
+          data-v-e7c3a4a2=""
+          className={`coinflip-list relative ${isPriceAscending ? "" : "is-price-descending"}`}
+          onMouseOver={showPlayerTooltip}
+          onMouseOut={hidePlayerTooltip}
+          onClick={(event) => {
+            const coinflipRow = event.target.closest(".coinflip-list-item");
+            if (coinflipRow && event.currentTarget.contains(coinflipRow)) {
+              onViewCoinflip();
+            }
+          }}
+          bis_skin_checked="1"
+        >
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#2369FF]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/messi.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/messi.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="Messi"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div className="size-10 relative" bis_skin_checked="1">
+                      <img
+                        src="/coinflip/heads.webp"
+                        alt="heads"
+                        className="size-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/55.webp"
+                      alt="Eternal"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/55.webp"
+                      alt="Eternal"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">20</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      10
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">11</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#2369FF] to-[#2369FF]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/bots/messi.webp"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="bots/messi.webp"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#F38A39]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/ronaldo.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/ronaldo.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="Ronaldo"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      bis_skin_checked="1"
+                    >
+                      <video
+                        playsInline="false"
+                        autoPlay
+                        className="size-full object-cover"
+                      >
+                        <source
+                          src="/flips/t2t.webm"
+                          type='video/webm; codecs="vp8, vorbis"'
+                        />
+                      </video>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/126.webp"
+                      alt="Bioblade"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/126.webp"
+                      alt="Bioblade"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">30</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      15
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">16</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#F38A39] to-[#F38A39]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/bots/ronaldo.webp"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="bots/ronaldo.webp"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#2369FF]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/drake.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/drake.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="Drake"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div className="size-10 relative" bis_skin_checked="1">
+                      <img
+                        src="/coinflip/heads.webp"
+                        alt="heads"
+                        className="size-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/273.webp"
+                      alt="Icebeam"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/273.webp"
+                      alt="Icebeam"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">50</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      24
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">27</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#2369FF] to-[#2369FF]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/bots/drake.webp"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="bots/drake.webp"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#2369FF]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/drake.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/drake.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="Drake"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      bis_skin_checked="1"
+                    >
+                      <video
+                        playsInline="false"
+                        autoPlay
+                        className="size-full object-cover"
+                      >
+                        <source
+                          src="/flips/h2h.webm"
+                          type='video/webm; codecs="vp8, vorbis"'
+                        />
+                      </video>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/81.webp"
+                      alt="Nightblade"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/81.webp"
+                      alt="Nightblade"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">50</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      24
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">27</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#2369FF] to-[#2369FF]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#2369FF]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/diddy.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/diddy.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="Diddy"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      bis_skin_checked="1"
+                    >
+                      <video
+                        playsInline="false"
+                        autoPlay
+                        className="size-full object-cover"
+                      >
+                        <source
+                          src="/flips/t2h.webm"
+                          type='video/webm; codecs="vp8, vorbis"'
+                        />
+                      </video>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/97.webp"
+                      alt="Gemstone"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/97.webp"
+                      alt="Gemstone"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">50</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      24
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">27</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#2369FF] to-[#2369FF]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#2369FF]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/drake.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/drake.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="Drake"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      bis_skin_checked="1"
+                    >
+                      <video
+                        playsInline="false"
+                        autoPlay
+                        className="size-full object-cover"
+                      >
+                        <source
+                          src="/flips/t2h.webm"
+                          type='video/webm; codecs="vp8, vorbis"'
+                        />
+                      </video>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/4.webp"
+                      alt="C. Fang"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/4.webp"
+                      alt="C. Fang"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">110</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      53
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">58</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#2369FF] to-[#2369FF]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#F38A39]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/diddy.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/diddy.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="Diddy"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      bis_skin_checked="1"
+                    >
+                      <video
+                        playsInline="false"
+                        autoPlay
+                        className="size-full object-cover"
+                      >
+                        <source
+                          src="/flips/t2t.webm"
+                          type='video/webm; codecs="vp8, vorbis"'
+                        />
+                      </video>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/4.webp"
+                      alt="C. Fang"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/4.webp"
+                      alt="C. Fang"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">110</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      53
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">58</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#F38A39] to-[#F38A39]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#F38A39]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/travis.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/travis.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="Travis"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div className="size-10 relative" bis_skin_checked="1">
+                      <img
+                        src="/coinflip/tails.webp"
+                        alt="tails"
+                        className="size-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/178.webp"
+                      alt="Silver Minty"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/178.webp"
+                      alt="Silver Minty"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">204</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      97
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">108</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#F38A39] to-[#F38A39]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#F38A39]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/speed.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/speed.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="Speed"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div className="size-10 relative" bis_skin_checked="1">
+                      <img
+                        src="/coinflip/tails.webp"
+                        alt="tails"
+                        className="size-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/32.webp"
+                      alt="Australis"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/32.webp"
+                      alt="Australis"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">210</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      100
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">111</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#F38A39] to-[#F38A39]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#2369FF]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/diddy.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/diddy.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="Diddy"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div className="size-10 relative" bis_skin_checked="1">
+                      <img
+                        src="/coinflip/heads.webp"
+                        alt="heads"
+                        className="size-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/83.webp"
+                      alt="Sunset"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/83.webp"
+                      alt="Sunset"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">250</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      119
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">132</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#2369FF] to-[#2369FF]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/bots/diddy.webp"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="bots/diddy.webp"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#2369FF]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/travis.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/travis.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="Travis"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      bis_skin_checked="1"
+                    >
+                      <video
+                        playsInline="false"
+                        autoPlay
+                        className="size-full object-cover"
+                      >
+                        <source
+                          src="/flips/h2h.webm"
+                          type='video/webm; codecs="vp8, vorbis"'
+                        />
+                      </video>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/83.webp"
+                      alt="Sunset"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/83.webp"
+                      alt="Sunset"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">250</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      119
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">132</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#2369FF] to-[#2369FF]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#F38A39]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/messi.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/messi.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="Messi"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div className="size-10 relative" bis_skin_checked="1">
+                      <img
+                        src="/coinflip/tails.webp"
+                        alt="tails"
+                        className="size-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/10.webp"
+                      alt="Sunrise"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/10.webp"
+                      alt="Sunrise"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">400</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      190
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">210</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#F38A39] to-[#F38A39]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            style={{}}
+            bis_skin_checked="1"
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#2369FF]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/drake.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/drake.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="Drake"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      bis_skin_checked="1"
+                    >
+                      <video
+                        playsInline="false"
+                        autoPlay
+                        className="size-full object-cover"
+                      >
+                        <source
+                          src="/flips/h2h.webm"
+                          type='video/webm; codecs="vp8, vorbis"'
+                        />
+                      </video>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/10.webp"
+                      alt="Sunrise"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/10.webp"
+                      alt="Sunrise"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">400</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      190
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">210</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#2369FF] to-[#2369FF]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#F38A39]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="vxrsionates"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/trump.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/trump.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="Trump"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      bis_skin_checked="1"
+                    >
+                      <video
+                        playsInline="false"
+                        autoPlay
+                        className="size-full object-cover"
+                      >
+                        <source
+                          src="/flips/t2t.webm"
+                          type='video/webm; codecs="vp8, vorbis"'
+                        />
+                      </video>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/229.webp"
+                      alt="Xenoknife"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/229.webp"
+                      alt="Xenoknife"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">600</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      285
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">315</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#F38A39] to-[#F38A39]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-1117F5222C85C37A4DFFE832A3CBD289-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            bis_skin_checked="1"
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#2369FF]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#26293a",
+                          "--level-border-end": "#F3B239",
+                          "--level-text": "#F3B239",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-7CBD1BCD4BF78057E86080A89088C0AA-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-7CBD1BCD4BF78057E86080A89088C0AA-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="blaze_op1234F"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/putin.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/putin.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="Putin"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div className="size-10 relative" bis_skin_checked="1">
+                      <img
+                        src="/coinflip/heads.webp"
+                        alt="heads"
+                        className="size-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/33.webp"
+                      alt="Celestial"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/33.webp"
+                      alt="Celestial"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">1,950</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      927
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">1,024</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#2369FF] to-[#2369FF]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/bots/putin.webp"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="bots/putin.webp"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          data-v-e7c3a4a2=""
+          className="flex justify-center"
+          bis_skin_checked="1"
+        >
+          <button
+            data-v-e7c3a4a2=""
+            className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full sm:w-auto"
+          >
+            <div
+              className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+              style={{
+                top: "var(--sb-shadow-size,3px)",
+                backgroundColor: "rgb(34, 51, 100)",
+              }}
+              bis_skin_checked="1"
+            ></div>
+            <div
+              className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 w-full sm:w-auto px-6 rounded-lg"
+              style={{
+                height: "calc(100% - var(--sb-shadow-size,3px))",
+                backgroundColor: "rgb(87, 104, 154)",
+                color: "rgb(255, 255, 255)",
+              }}
+              bis_skin_checked="1"
+            >
+              <div
+                className="transition-opacity flex items-center justify-center size-full"
+                style={{ filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)" }}
+                bis_skin_checked="1"
+              >
+                <p data-v-e7c3a4a2="" className="font-bold">
+                  LOAD MORE
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+      </div>
+      <CoinflipPlayerTooltip tooltip={playerTooltip} />
+    </>
+  );
+}
+
+export default function CoinflipPage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPriceAscending, setIsPriceAscending] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  const togglePriceOrder = () => {
+    const rows = Array.from(
+      document.querySelectorAll(".coinflip-route .coinflip-list-item"),
+    );
+
+    if (
+      rows.length === 0 ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setIsPriceAscending((isAscending) => !isAscending);
+      return;
+    }
+
+    rows.forEach((row) => {
+      row.getAnimations().forEach((animation) => animation.cancel());
+    });
+    const firstPositions = new Map(
+      rows.map((row) => [row, row.getBoundingClientRect().top]),
+    );
+
+    flushSync(() => {
+      setIsPriceAscending((isAscending) => !isAscending);
+    });
+
+    rows.forEach((row) => {
+      const deltaY = firstPositions.get(row) - row.getBoundingClientRect().top;
+      if (deltaY === 0) return;
+      row.animate(
+        [
+          { transform: `translateY(${deltaY}px)` },
+          { transform: "translateY(0)" },
+        ],
+        {
+          duration: 300,
+          easing: "ease",
+        },
+      );
+    });
+  };
+
+  useEffect(() => {
+    const loadingTimer = window.setTimeout(() => setIsLoading(false), 450);
+    return () => window.clearTimeout(loadingTimer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="site-content flex items-center justify-center min-h-[calc(100dvh-var(--layout-top))]">
+        <LineWobbleLoader />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="site-content coinflip-route">
+        <CoinflipContent
+          isPriceAscending={isPriceAscending}
+          onTogglePrice={togglePriceOrder}
+          onCreateCoinflip={() => setIsCreateModalOpen(true)}
+          onViewCoinflip={() => setIsViewModalOpen(true)}
+        />
+      </div>
+      {isCreateModalOpen ? (
+        <CoinflipCreateModal onClose={() => setIsCreateModalOpen(false)} />
+      ) : null}
+      {isViewModalOpen ? (
+        <CoinflipViewModal onClose={() => setIsViewModalOpen(false)} />
+      ) : null}
+    </>
+  );
+}
