@@ -84,6 +84,22 @@ body {
   flex-direction: column-reverse;
 }
 
+.coinflip-route .coinflip-list:not(.is-price-descending) .coinflip-active-row {
+  order: 1;
+}
+
+.coinflip-route .coinflip-list.is-price-descending .coinflip-active-row {
+  order: -1;
+}
+
+.coinflip-route .coinflip-list:not(.is-price-descending) .is-joinable {
+  order: -1;
+}
+
+.coinflip-route .coinflip-list.is-price-descending .is-joinable {
+  order: 1;
+}
+
 .coinflip-route .coinflip-list-item {
   position: relative;
 }
@@ -566,6 +582,10 @@ a {
   min-height: 100dvh;
   padding-top: var(--layout-top);
   transition: padding-left 0.2s ease-in-out;
+}
+
+.roulette-item-container {
+  padding-inline: 4px;
 }
 
 .game-card {

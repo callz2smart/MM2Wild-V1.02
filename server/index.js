@@ -1094,7 +1094,7 @@ async function getBetHistory(request, env) {
     offset: String(offset),
   });
 
-  // Supabase REST API uses filter params directly, so build the query manually.
+
   const filterStr = filters.join("&");
   const dataQuery = `${filterStr}&select=id,game,status,amount,profit,multiplier,created_at&order=created_at.desc&limit=${perPage}&offset=${offset}`;
   const countQuery = `${filterStr}&select=id`;

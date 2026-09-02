@@ -1,6 +1,5 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Footer } from "./HomePage";
-
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import TripleGreenJackpotModal from "../components/TripleGreenJackpotModal";
 // Roulette colors matching the reference: blue, green, gold, purple
 const COLORS = [
   { id: "blue", label: "BLUE", multiplier: 2, gradient: "radial-gradient(50% 50%, rgb(91, 119, 246) 0%, rgb(65, 81, 218) 100%)", linearGradient: "linear-gradient(90deg, rgb(91, 119, 246) 0%, rgb(65, 81, 218) 100%)", shadow: "rgb(11, 36, 146)", text: "#7CB0FF", rgb: "91,119,246" },
@@ -37,6 +36,9 @@ const REEL_PATTERN = [
 
 const ITEM_BOX_SHADOW =
   "rgba(0, 0, 0, 0.25) 0px -4px 0px inset, rgba(255, 255, 255, 0.25) 0px 2.5px 0px inset";
+
+const BETTING_DURATION_MS = 20_000;
+const SPINNING_DURATION_MS = 6_000;
 
 const ICON_PATHS = {
   clover: (
@@ -83,9 +85,13 @@ function formatNumber(n) {
 
 function RouletteReel({ reel, offset, spinning, duration }) {
   return (
-    <div className="w-full mx-auto sm:rounded-3xl relative overflow-hidden bg-[#283057]/60 backdrop-blur-3xl shadow-[inset_0px_2px_6px_rgba(0,0,0,0.32)] sm:px-4 py-4">
+    <div className="relative">
+      <div className="absolute top-7 sm:top-14 -translate-y-full w-45 h-25 sm:w-71 sm:h-40 left-1/2 -translate-x-1/2 pointer-events-none">
+        <img src="/roulette/roulette-ilustration.svg" alt="" className="size-full no-interaction" />
+      </div>
+      <div className="w-full mx-auto sm:rounded-3xl relative overflow-hidden bg-[#283057]/60 backdrop-blur-3xl shadow-[inset_0px_2px_6px_rgba(0,0,0,0.32)] sm:px-4 py-4">
       <div
-        className="h-[100px] overflow-hidden relative"
+        className="h-25 overflow-hidden relative"
         style={{
           maskImage:
             "linear-gradient(to right, transparent, black 15%, black 85%, transparent)",
@@ -101,7 +107,7 @@ function RouletteReel({ reel, offset, spinning, duration }) {
           />
         )}
         <div
-          className="flex relative will-change-transform"
+          className="roulette-items-container flex relative will-change-transform"
           style={{
             transform: `translateX(${offset}px)`,
             transition: duration > 0
@@ -114,7 +120,7 @@ function RouletteReel({ reel, offset, spinning, duration }) {
             return (
               <div key={i} className="roulette-item-container relative shrink-0" data-item>
                 <div
-                  className="rounded-xl size-[100px] flex items-center justify-center roulette-item"
+                  className="rounded-xl size-24 flex items-center justify-center roulette-item size-[100px]"
                   style={{ background: color.gradient, boxShadow: ITEM_BOX_SHADOW }}
                 >
                   {icon(item.icon, "drop-shadow-[0px_4px_12px_rgba(0,0,0,0.34)] size-12")}
@@ -123,6 +129,7 @@ function RouletteReel({ reel, offset, spinning, duration }) {
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );
@@ -166,12 +173,10 @@ export default function RoulettePage() {
   const [history, setHistory] = useState([]);
   const [lastResult, setLastResult] = useState(null);
   const [message, setMessage] = useState(null);
-  const [potSelection, setPotSelection] = useState(0);
+  const [jackpotModalOpen, setJackpotModalOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   // Server-driven countdown state.
   const [phase, setPhase] = useState("betting");
-  const [remaining, setRemaining] = useState(20);
-  const [totalDuration, setTotalDuration] = useState(20);
   // Per-color pot info from server: { color: { players, amount } }
   const [pots, setPots] = useState(() =>
     Object.fromEntries(COLORS.map((c) => [c.id, { players: 0, amount: 0 }])),
@@ -189,8 +194,11 @@ export default function RoulettePage() {
   const spinTimeoutRef = useRef(null);
   const clientIdRef = useRef(null);
   // Smooth countdown interpolation refs.
-  const serverRemainingRef = useRef(20000); // last remaining value from server (ms)
+  const serverRemainingRef = useRef(BETTING_DURATION_MS); // last remaining value from server (ms)
   const serverUpdatedAtRef = useRef(Date.now()); // timestamp of last server update
+  const phaseRef = useRef("betting");
+  const countdownTextRef = useRef(null);
+  const countdownBarRef = useRef(null);
   const countdownRafRef = useRef(null);
 
   // ── Idle slow scroll ──────────────────────────────────────────────────────
@@ -224,7 +232,17 @@ export default function RoulettePage() {
     function tick() {
       const elapsed = Date.now() - serverUpdatedAtRef.current;
       const interpolated = Math.max(0, serverRemainingRef.current - elapsed);
-      setRemaining(interpolated);
+      if (phaseRef.current === "betting") {
+        const bettingRemaining = Math.min(BETTING_DURATION_MS, interpolated);
+        if (countdownTextRef.current) {
+          countdownTextRef.current.textContent = `${(bettingRemaining / 1000).toFixed(2)}S`;
+        }
+        if (countdownBarRef.current) {
+          countdownBarRef.current.style.width = `${(bettingRemaining / BETTING_DURATION_MS) * 100}%`;
+        }
+      } else if (countdownBarRef.current) {
+        countdownBarRef.current.style.width = "0%";
+      }
       countdownRafRef.current = requestAnimationFrame(tick);
     }
     countdownRafRef.current = requestAnimationFrame(tick);
@@ -249,6 +267,7 @@ export default function RoulettePage() {
     setMessage({ text, kind });
     window.setTimeout(() => setMessage(null), 3000);
   }, []);
+  const closeJackpotModal = useCallback(() => setJackpotModalOpen(false), []);
 
   // ── Fetch initial balance from session ────────────────────────────────────
   useEffect(() => {
@@ -278,9 +297,10 @@ export default function RoulettePage() {
     let disposed = false;
     let reconnectTimer = null;
 
-    const animateSpin = (colorId) => {
+    const animateSpin = (colorId, requestedDuration = SPINNING_DURATION_MS) => {
       const color = COLORS.find((c) => c.id === colorId);
       if (!color) return;
+      const spinDuration = Math.max(0, Math.min(SPINNING_DURATION_MS, requestedDuration));
 
       // Get the reel transform element for direct DOM manipulation.
       // This bypasses React's batched updates so the CSS transition fires.
@@ -330,11 +350,11 @@ export default function RoulettePage() {
       void reelEl.offsetHeight;
 
       // Direct DOM: enable transition and set target — the browser animates.
-      reelEl.style.transition = "transform 6000ms cubic-bezier(0.12, 0.66, 0.16, 1)";
+      reelEl.style.transition = `transform ${spinDuration}ms cubic-bezier(0.12, 0.66, 0.16, 1)`;
       reelEl.style.transform = `translateX(${targetOffset + jitter}px)`;
 
       // Keep React state in sync for after the spin ends.
-      setDuration(6000);
+      setDuration(spinDuration);
       setOffset(targetOffset + jitter);
 
       // After the spin animation, resume idle scroll.
@@ -344,7 +364,7 @@ export default function RoulettePage() {
         setLastResult(color);
         idleOffsetRef.current = 0;
         setOffset(0);
-      }, 6100);
+      }, spinDuration);
     };
 
     const handleMessage = (event) => {
@@ -358,11 +378,14 @@ export default function RoulettePage() {
       switch (payload.type) {
         case "roulette_init":
         case "roulette_state": {
-          setPhase(payload.phase || "betting");
-          serverRemainingRef.current = payload.remaining ?? 20000;
+          const nextPhase = payload.phase || "betting";
+          const fallbackDuration = nextPhase === "betting" ? BETTING_DURATION_MS : SPINNING_DURATION_MS;
+          const nextRemaining = payload.remaining
+            ?? (payload.endsAt ? Math.max(0, payload.endsAt - Date.now()) : fallbackDuration);
+          setPhase(nextPhase);
+          phaseRef.current = nextPhase;
+          serverRemainingRef.current = nextRemaining;
           serverUpdatedAtRef.current = Date.now();
-          setRemaining(payload.remaining ?? 20000);
-          setTotalDuration(payload.totalDuration ?? 20000);
           if (payload.history) setHistory(payload.history.map((h) => ({
             color: COLORS.find((c) => c.id === h.color) || { id: h.color, ...COLORS.find((c) => c.id === h.color) },
             icon: COLOR_ICON[h.color] || "clover",
@@ -373,19 +396,33 @@ export default function RoulettePage() {
           if (payload.fairness) setFairness(payload.fairness);
           if (payload.result && payload.phase === "spinning") {
             // We joined mid-spin — animate to the result.
-            animateSpin(payload.result);
+            animateSpin(payload.result, nextRemaining);
           }
           break;
         }
         case "roulette_tick": {
-          setPhase(payload.phase || "betting");
+          const nextPhase = payload.phase || "betting";
+          setPhase(nextPhase);
+          phaseRef.current = nextPhase;
           serverRemainingRef.current = payload.remaining ?? 0;
           serverUpdatedAtRef.current = Date.now();
           break;
         }
         case "roulette_phase": {
-          setPhase(payload.phase);
-          if (payload.phase === "betting") {
+          const nextPhase = payload.phase || "betting";
+          const fallbackDuration = nextPhase === "betting" ? BETTING_DURATION_MS : SPINNING_DURATION_MS;
+          const nextRemaining = payload.remaining
+            ?? (payload.endsAt ? Math.max(0, payload.endsAt - Date.now()) : fallbackDuration);
+          setPhase(nextPhase);
+          phaseRef.current = nextPhase;
+          serverRemainingRef.current = nextRemaining;
+          serverUpdatedAtRef.current = Date.now();
+          if (nextPhase === "betting") {
+            if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
+            setSpinning(false);
+            setDuration(0);
+            idleOffsetRef.current = 0;
+            setOffset(0);
             setMyBets([]);
             setPots(Object.fromEntries(COLORS.map((c) => [c.id, { players: 0, amount: 0 }])));
           }
@@ -393,12 +430,17 @@ export default function RoulettePage() {
         }
         case "roulette_spin": {
           setPhase("spinning");
+          phaseRef.current = "spinning";
+          const spinRemaining = payload.remaining
+            ?? (payload.endsAt ? Math.max(0, payload.endsAt - Date.now()) : SPINNING_DURATION_MS);
+          serverRemainingRef.current = spinRemaining;
+          serverUpdatedAtRef.current = Date.now();
           setFairness({
             serverSeedHash: payload.serverSeedHash,
             clientSeed: payload.clientSeed,
             nonce: payload.nonce,
           });
-          animateSpin(payload.color);
+          animateSpin(payload.color, spinRemaining);
           break;
         }
         case "roulette_result": {
@@ -503,15 +545,22 @@ export default function RoulettePage() {
     return counts;
   }, [history]);
 
+  const consecutiveGreenResults = useMemo(() => {
+    let count = 0;
+    for (const entry of history) {
+      if (entry.color?.id !== "green" || count === 3) break;
+      count += 1;
+    }
+    return count;
+  }, [history]);
+
   // Countdown display: remaining is in ms from server; convert to seconds.
-  const rollTime = remaining / 1000;
   const bettingLocked = phase !== "betting";
 
   return (
     <div className="site-content">
-      <div className="relative min-h-[calc(100dvh-var(--layout-top))]">
-        <div className="max-w-[1400px] mx-auto flex flex-col px-4 sm:px-6 md:px-12 pb-6 relative z-10">
-          <div className="page-content pt-6 sm:pt-8 pb-6 flex flex-col gap-6">
+      <div className="max-w-[1400px] mx-auto flex flex-col @container/content px-0 sm:px-4 md:px-12 min-h-[calc(100dvh-var(--layout-top))]">
+          <div className="page-content pt-6 sm:pt-12 pb-6 flex flex-col gap-6">
             {/* Header — pot card + sound/fairness buttons */}
             <div className="flex flex-col px-4 sm:px-0 gap-3 sm:gap-0 sm:flex-row justify-between items-center">
               <div className="w-full sm:w-auto flex items-center gap-2 justify-between text-sm font-medium p-3 bg-[#1C273F]/89 rounded-lg backdrop-blur-lg sm:p-0 sm:bg-transparent z-1">
@@ -519,14 +568,12 @@ export default function RoulettePage() {
                   <p className="text-accent text-sm">TRIPLE GREEN POT</p>
                   <div className="flex items-center gap-1.5">
                     <img src="/coin.webp" alt="" className="bg-cover bg-center size-4.5" />
-                    <span>3</span>
+                    <span>0</span>
                     <button
                       type="button"
                       className="cursor-pointer ml-1 hover:opacity-80 transition-opacity"
                       aria-label="Info"
-                      onClick={() =>
-                        showMessage("Land on the selected color to win bet x multiplier!", "info")
-                      }
+                      onClick={() => setJackpotModalOpen(true)}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="text-accent/45 size-4.5" fill="currentColor">
                         <path d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2" />
@@ -536,12 +583,12 @@ export default function RoulettePage() {
                 </div>
                 <div className="flex gap-1.25">
                   {[0, 1, 2].map((idx) => {
-                    const isActive = potSelection === idx;
+                    const isActive = idx < consecutiveGreenResults;
                     return (
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => setPotSelection(idx)}
+                        onClick={() => setJackpotModalOpen(true)}
                         className="rounded-[10px] size-10 sm:size-12.5 flex items-center justify-center cursor-pointer relative overflow-hidden"
                       >
                         <div className="absolute inset-0 bg-accent/15 rounded-[10px]" style={{ display: isActive ? "none" : "block" }} />
@@ -598,21 +645,23 @@ export default function RoulettePage() {
             <div className="flex flex-col gap-2 px-4 sm:px-0">
               <div className="min-h-6">
                 <p className="font-semibold text-accent text-center">
-                  {phase === "spinning" ? "SPINNING…" : " ROLLING IN "}
+                  {phase === "spinning" ? "ROLLING..." : " ROLLING IN "}
                   {phase === "betting" && (
-                    <span className="text-white tabular-nums">{rollTime.toFixed(2)}S</span>
+                    <span ref={countdownTextRef} className="text-white tabular-nums">20.00S</span>
                   )}
                 </p>
               </div>
               <div className="bg-[#313B6B] rounded-xl h-2 shadow-[inset_0px_2px_6px_rgba(0,0,0,0.32)] overflow-hidden">
                 <div
-                  className="h-full bg-[#E5AD4E] rounded-xl"
-                  style={{ width: `${phase === "spinning" ? 0 : Math.max(0, (rollTime / (totalDuration / 1000)) * 100)}%` }}
+                  ref={countdownBarRef}
+                  className="h-full bg-[#E5AD4E] rounded-xl will-change-[width]"
+                  style={{ width: phase === "betting" ? "100%" : "0%" }}
                 />
               </div>
+            </div>
 
               {/* History — LAST 10 + LAST 100 */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 justify-between items-center">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 justify-between items-center px-4 sm:px-0">
                 <div className="flex items-center gap-1.5">
                   <p className="font-semibold text-accent text-xs md:text-sm hidden sm:block">LAST 10</p>
                   <div className="overflow-hidden">
@@ -661,10 +710,9 @@ export default function RoulettePage() {
                   </div>
                 </div>
               </div>
-            </div>
 
             {/* Bet input */}
-            <div className="flex flex-col gap-2 px-4 sm:px-0">
+            <div className="flex-1 flex flex-col gap-2 px-4 sm:px-0">
               <div className="flex bg-[#283057] rounded-xl border-[1.5px] border-[#3E3C93] p-2">
                 <div className="flex-1 flex items-center gap-2 min-w-0">
                   <img src="/coin.webp" alt="" className="bg-cover bg-center size-5.5 shrink-0" />
@@ -736,9 +784,9 @@ export default function RoulettePage() {
                   const pot = pots[color.id] || { players: 0, amount: 0, playerList: [] };
                   const playerList = pot.playerList || [];
                   return (
-                    <div key={color.id} className="flex-1 flex flex-col bg-[#283057] rounded-xl p-4 transition-all duration-150 self-start min-w-0 gap-3">
+                    <div key={color.id} className={`flex-1 flex flex-col bg-[#283057] rounded-xl p-4 transition-all duration-150 self-start min-w-0 ${playerList.length > 0 ? "gap-3" : "gap-0"}`}>
                       <div className="flex items-center justify-between text-sm font-medium">
-                        <p className="text-accent transition-all duration-200 opacity-100">
+                        <p className={`text-accent transition-all duration-200 ${playerList.length > 0 ? "opacity-100" : "opacity-60"}`}>
                           {pot.players} {pot.players === 1 ? "PLAYER" : "PLAYERS"}
                         </p>
                         <div className="flex items-center">
@@ -804,8 +852,7 @@ export default function RoulettePage() {
             </div>
           </div>
         </div>
+        {jackpotModalOpen && <TripleGreenJackpotModal onClose={closeJackpotModal} />}
       </div>
-      <Footer />
-    </div>
   );
 }

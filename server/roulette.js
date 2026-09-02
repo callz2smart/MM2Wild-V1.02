@@ -13,7 +13,7 @@
 
 const encoder = new TextEncoder();
 
-// Must match the client REEL_PATTERN in src/components/RoulettePage.jsx.
+// Must match the client REEL_PATTERN in src/pages/RoulettePage.jsx.
 const REEL_PATTERN = [
   "green", "gold", "blue", "gold", "blue",
   "purple", "blue", "gold", "blue", "gold",

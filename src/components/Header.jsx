@@ -25,6 +25,16 @@ async function preloadImage(source) {
 
 function GamesDropdown({ style, selectedGame, onSelect }) {
   const selectGame = (event, game) => {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
     event.preventDefault();
     onSelect(game);
   };
@@ -716,7 +726,11 @@ export default function Header({ onInitialRenderReady, selectedBalanceType, onBa
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [signedInUser, setSignedInUser] = useState(null);
   const [isSessionResolved, setIsSessionResolved] = useState(false);
-  const [selectedGame, setSelectedGame] = useState(null);
+  const [selectedGame, setSelectedGame] = useState(() =>
+    window.location.pathname.startsWith("/games/")
+      ? window.location.pathname
+      : null,
+  );
   const [dropdownStyle, setDropdownStyle] = useState({});
   const gamesTriggerRef = useRef(null);
   const showSessionNotification = useCallback(() => {
@@ -730,6 +744,30 @@ export default function Header({ onInitialRenderReady, selectedBalanceType, onBa
 
   const handleSignedIn = useCallback((user) => {
     setSignedInUser(user);
+  }, []);
+
+  const navigateToGame = useCallback((game) => {
+    setSelectedGame(game);
+    setIsGamesOpen(false);
+
+    if (window.location.pathname === game) return;
+
+    window.history.pushState({}, "", game);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
+  useEffect(() => {
+    const syncSelectedGame = () => {
+      setSelectedGame(
+        window.location.pathname.startsWith("/games/")
+          ? window.location.pathname
+          : null,
+      );
+    };
+
+    window.addEventListener("popstate", syncSelectedGame);
+    return () => window.removeEventListener("popstate", syncSelectedGame);
   }, []);
 
   useEffect(() => {
@@ -1313,10 +1351,7 @@ export default function Header({ onInitialRenderReady, selectedBalanceType, onBa
           <GamesDropdown
             style={dropdownStyle}
             selectedGame={selectedGame}
-            onSelect={(game) => {
-              setSelectedGame(game);
-              setIsGamesOpen(false);
-            }}
+            onSelect={navigateToGame}
           />,
           document.body,
         )}

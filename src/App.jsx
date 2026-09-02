@@ -11,7 +11,7 @@ import RewardsPage from "./pages/RewardsPage";
 import LoadingScreen from "./components/LoadingScreen";
 import AffiliatesPage from "./pages/AffiliatesPage";
 import NotificationCenter from "./components/NotificationCenter";
-import RoulettePage from "./components/RoulettePage";
+import RoulettePage from "./pages/RoulettePage";
 import CoinflipPage from "./pages/CoinflipPage";
 
 export default function App() {
@@ -120,7 +120,6 @@ export default function App() {
           <RoulettePage />
         ) : isCoinflipPage ? (
           <CoinflipPage />
-        )
         ) : (
           <HomePage />
         )}

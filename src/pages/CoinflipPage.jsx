@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal, flushSync } from "react-dom";
 import LineWobbleLoader from "../components/LineWobbleLoader";
 import CoinflipCreateModal from "../components/CoinflipCreateModal";
 import CoinflipViewModal from "../components/CoinflipViewModal";
+
+const COINFLIP_PAGE_SIZE = 16;
 
 function CoinflipPlayerTooltip({ tooltip }) {
   if (!tooltip) return null;
@@ -35,6 +37,586 @@ function CoinflipPlayerTooltip({ tooltip }) {
   );
 }
 
+function ActiveCoinflipRow() {
+  return (
+          <div
+            data-v-e7c3a4a2=""
+            className="@container/coinflip-card will-change-transform coinflip-list-item coinflip-active-row"
+            bis_skin_checked="1"
+            style={{}}
+          >
+            <div
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764]"
+              bis_skin_checked="1"
+            >
+              <div
+                className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300 from-[#2369FF]/40 opacity-100"
+                bis_skin_checked="1"
+              ></div>
+              <div className="md:w-70" bis_skin_checked="1">
+                <div
+                  className="flex items-center gap-4.5 z-1"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300 opacity-55"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-B2EF54E3E066D91C690A43B85F79AFAA-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-B2EF54E3E066D91C690A43B85F79AFAA-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/tails.webp"
+                          alt="amirweldi"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative" bis_skin_checked="1">
+                    <div
+                      className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                      bis_skin_checked="1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 16 16"
+                        className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div
+                      className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                      bis_skin_checked="1"
+                    ></div>
+                  </div>
+                  <div
+                    className="flex items-center gap-4 transition-opacity duration-300"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="coinflip-avatar-frame coinflip-winner-indicator size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#5CDF9A]"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        data-state="closed"
+                        data-grace-area-trigger=""
+                        className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                        style={{
+                          "--level-border-start": "#222a3f",
+                          "--level-border-end": "#BEBEBE",
+                          "--level-text": "#BEBEBE",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          className="size-full flex justify-center rounded-lg items-end"
+                          style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                          bis_skin_checked="1"
+                        >
+                          <img
+                            src="/bots/travis.webp"
+                            className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                            alt="bots/travis.webp"
+                            loading="lazy"
+                            fetchPriority="low"
+                            style={{ opacity: "1" }}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/coinflip/heads.webp"
+                          alt="Travis"
+                          className="size-full object-cover no-interaction"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+                    bis_skin_checked="1"
+                  >
+                    <div className="size-10 relative" bis_skin_checked="1">
+                      <img
+                        src="/coinflip/heads.webp"
+                        alt="heads"
+                        className="size-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="items-center -space-x-5 flex"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/138.webp"
+                      alt="Winter's Edge"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    data-state="closed"
+                    data-grace-area-trigger=""
+                    className="coinflip-row-item size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17 md:hidden md:@[950px]/coinflip-card:block"
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://cdn.mm2wild.com/items/138.webp"
+                      alt="Winter's Edge"
+                      className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                  <div
+                    className="size-16 items-center justify-center rounded-full border-[5px] border-[#243157] bg-[#1B2542] text-sm z-1 hidden sm:hidden md:flex @[950px]/coinflip-card:hidden"
+                    bis_skin_checked="1"
+                  >
+                    <p className="font-semibold text-accent">+1</p>
+                  </div>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+                  bis_skin_checked="1"
+                ></div>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+                  bis_skin_checked="1"
+                >
+                  <div className="flex items-center gap-2" bis_skin_checked="1">
+                    <img
+                      src="/coin.webp"
+                      className="bg-cover bg-center size-4.5"
+                    />
+                    <span className="tabular-nums font-semibold">20</span>
+                  </div>
+                  <p className="text-accent font-semibold text-sm">
+                    <span className="normal-nums">(</span>
+                    <span className="tabular-nums font-semibold">
+                      10
+                    </span> -{" "}
+                    <span className="tabular-nums font-semibold">11</span>
+                    <span className="normal-nums">)</span>
+                  </p>
+                </div>
+                <div
+                  className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+                  bis_skin_checked="1"
+                ></div>
+                <div className="flex items-center gap-2" bis_skin_checked="1">
+                  <div
+                    className="w-30 h-10.5 rounded-lg flex items-center justify-center bg-linear-to-r from-[#2369FF] to-[#2369FF]/30"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      className="size-8 rounded-[10px] from-accent/0 to-accent/45 flex flex-col items-center relative bg-linear-to-b from-5% p-0.5 size-8 rounded-[10px] from-accent/0 to-accent/45"
+                      style={{
+                        "--level-border-start": "#222a3f",
+                        "--level-border-end": "#BEBEBE",
+                        "--level-text": "#BEBEBE",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="size-full flex items-center justify-center rounded-lg bg-[#18213A]"
+                        style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                        bis_skin_checked="1"
+                      >
+                        <img
+                          src="/bots/travis.webp"
+                          className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                          alt="bots/travis.webp"
+                          loading="lazy"
+                          fetchPriority="low"
+                          style={{ opacity: "1" }}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-semibold text-[15px] ml-1.5">WINNER</p>
+                  </div>
+                  <button className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{
+                        top: "var(--sb-shadow-size,3px)",
+                        backgroundColor: "rgb(34, 51, 100)",
+                      }}
+                      bis_skin_checked="1"
+                    ></div>
+                    <div
+                      className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                      style={{
+                        height: "calc(100% - var(--sb-shadow-size,3px))",
+                        backgroundColor: "rgb(87, 104, 154)",
+                        color: "rgb(255, 255, 255)",
+                      }}
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        className="transition-opacity flex items-center justify-center size-full"
+                        style={{
+                          filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)",
+                        }}
+                        bis_skin_checked="1"
+                      >
+                        <span className="hidden sm:block">VIEW</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="size-5 sm:hidden"
+                        >
+                          <g fill="currentColor">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+                            <path
+                              fillRule="evenodd"
+                              d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                              clipRule="evenodd"
+                            ></path>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+  );
+}
+
+function JoinableCoinflipRow() {
+  return (
+    <div
+      data-v-e7c3a4a2=""
+      className="@container/coinflip-card will-change-transform is-joinable coinflip-list-item"
+      bis_skin_checked="1"
+    >
+      <div
+        className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764]"
+        bis_skin_checked="1"
+      >
+        <div
+          className="absolute inset-0 bg-linear-91 to-transparent to-20% transition-opacity duration-300"
+          bis_skin_checked="1"
+        />
+        <div className="md:w-70" bis_skin_checked="1">
+          <div className="flex items-center gap-4.5 z-1" bis_skin_checked="1">
+            <div
+              className="flex items-center gap-4 transition-opacity duration-300"
+              bis_skin_checked="1"
+            >
+              <div
+                className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                bis_skin_checked="1"
+              >
+                <div
+                  data-state="closed"
+                  data-grace-area-trigger=""
+                  className="rounded-[10px] p-0 bg-transparent size-11.5 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end) rounded-[10px] p-0 bg-transparent size-11.5"
+                  style={{
+                    "--level-border-start": "#272539",
+                    "--level-border-end": "#F33939",
+                    "--level-text": "#F33939",
+                  }}
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="size-full flex justify-center rounded-lg items-end"
+                    style={{ backgroundColor: "rgb(26, 35, 57)" }}
+                    bis_skin_checked="1"
+                  >
+                    <img
+                      src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-B8B3B9154202AD390C4DDCB21ADC8598-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                      className="size-9/12 object-contain object-center rounded-[5px] ease-in-out opacity-0 transition-opacity no-interaction"
+                      alt="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-B8B3B9154202AD390C4DDCB21ADC8598-Png/180/180/AvatarHeadshot/Webp/noFilter"
+                      loading="lazy"
+                      fetchPriority="low"
+                      style={{ opacity: "1" }}
+                    />
+                  </div>
+                </div>
+                <div
+                  className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                  bis_skin_checked="1"
+                >
+                  <img
+                    src="/coinflip/tails.webp"
+                    alt="traroblox1236"
+                    className="size-full object-cover no-interaction"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="relative" bis_skin_checked="1">
+              <div
+                className="group-hover/coinflip-card:rotate-y-180 transform-3d td transition-transform duration-500 relative size-5"
+                bis_skin_checked="1"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 16 16"
+                  className="size-full text-accent/50 absolute inset-0 m-auto backface-hidden translate-z-0.5"
+                >
+                  <path
+                    fill="currentColor"
+                    d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                  />
+                </svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 16 16"
+                  className="size-full text-primary absolute inset-0 m-auto backface-hidden -translate-z-0.5 rotate-y-180"
+                >
+                  <path
+                    fill="currentColor"
+                    d="m4.23 13.096-1.418 1.417V16H0v-2.813h1.487l1.417-1.417 1.326 1.326Zm10.283.091H16V16h-2.813v-1.487l-1.417-1.417 1.326-1.326 1.417 1.418Zm-7.24-2.328-.761.642c.411.716.319 1.645-.292 2.257L2.242 9.78A1.862 1.862 0 0 1 4.5 9.488l.477-.564 2.296 1.935Zm4.23-1.373a1.861 1.861 0 0 1 2.255.294L9.78 13.758a1.873 1.873 0 0 1-.294-2.255L0 3.497V0h3.497l8.006 9.486ZM16 0v3.499l-4.862 4.104-2.525-2.996L12.501 0H16ZM1.67 2.334 5.018 5.68l.663-.663L2.334 1.67l-.663.663Zm8.65 2.683.663.663 3.346-3.346-.663-.663-3.346 3.346Z"
+                  />
+                </svg>
+              </div>
+              <div
+                className="absolute top-0 size-6 bg-primary blur-lg rounded-full opacity-0 group-hover/coinflip-card:animate-flash-glow"
+                bis_skin_checked="1"
+              />
+            </div>
+            <div
+              className="flex items-center gap-4 transition-opacity duration-300"
+              bis_skin_checked="1"
+            >
+              <div
+                className="size-16 relative bg-[#232E4E]/65 border-2 rounded-xl p-0.75 flex items-center justify-center transition-colors duration-300 border-[#314274]"
+                bis_skin_checked="1"
+              >
+                <div
+                  className="size-11.5 bg-linear-to-b rounded-[10px]"
+                  bis_skin_checked="1"
+                >
+                  <div
+                    className="size-full bg-[#18213A] rounded-lg"
+                    bis_skin_checked="1"
+                  />
+                </div>
+                <div
+                  className="size-5 rounded-full absolute -top-1.5 -right-1.5"
+                  bis_skin_checked="1"
+                >
+                  <img
+                    src="/coinflip/heads.webp"
+                    alt="Unknown"
+                    className="size-full object-cover no-interaction"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              className="size-14.5 rounded-full bg-[#18213A] relative flex items-center justify-center ml-auto"
+              bis_skin_checked="1"
+            />
+          </div>
+        </div>
+        <div
+          className="flex items-center justify-center w-full sm:justify-between md:w-auto"
+          bis_skin_checked="1"
+        >
+          <div className="items-center -space-x-5 flex" bis_skin_checked="1">
+            <div
+              data-state="closed"
+              data-grace-area-trigger=""
+              className="coinflip-row-item size-14.5 md:size-17 group relative bg-[#1B2542] border-[5px] border-[#243157] hover:border-[#314274] transition-colors rounded-full size-14.5 md:size-17"
+              bis_skin_checked="1"
+            >
+              <img
+                src="https://cdn.mm2wild.com/items/23.webp"
+                alt="Frostsaber"
+                className="coinflip-row-item-image absolute inset-0 size-full object-contain group-hover:scale-110 transition-transform will-change-transform opacity-0 ease-in-out no-interaction"
+                loading="lazy"
+                fetchPriority="low"
+                style={{ opacity: "1" }}
+              />
+            </div>
+          </div>
+          <div
+            className="w-0.5 h-7 rounded-full bg-accent/25 block sm:hidden mx-4"
+            bis_skin_checked="1"
+          />
+        </div>
+        <div
+          className="flex flex-col items-center gap-2 w-full sm:flex-row sm:justify-between md:w-100"
+          bis_skin_checked="1"
+        >
+          <div
+            className="flex flex-col min-w-fit items-center sm:items-start md:gap-0.5 md:mr-auto md:w-42 md:items-center"
+            bis_skin_checked="1"
+          >
+            <div className="flex items-center gap-2" bis_skin_checked="1">
+              <img src="/coin.webp" className="bg-cover bg-center size-4.5" />
+              <span className="tabular-nums font-semibold">12</span>
+            </div>
+            <p className="text-accent font-semibold text-sm">
+              <span className="normal-nums">(</span>
+              <span className="tabular-nums font-semibold">12</span> -{" "}
+              <span className="tabular-nums font-semibold">13</span>
+              <span className="normal-nums">)</span>
+            </p>
+          </div>
+          <div
+            className="w-0.5 h-7 rounded-full bg-accent/25 hidden sm:block md:hidden"
+            bis_skin_checked="1"
+          />
+          <div className="flex items-center gap-2" bis_skin_checked="1">
+            <button
+              type="button"
+              className="relative cursor-pointer outline-none flex select-none transition-opacity group/button w-30 h-10.5"
+            >
+              <div
+                className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                style={{
+                  top: "var(--sb-shadow-size,3px)",
+                  backgroundColor: "rgb(0, 73, 229)",
+                }}
+                bis_skin_checked="1"
+              />
+              <div
+                className="rounded-lg font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0"
+                style={{
+                  height: "calc(100% - var(--sb-shadow-size,3px))",
+                  backgroundColor: "rgb(35, 105, 255)",
+                  color: "rgb(255, 255, 255)",
+                }}
+                bis_skin_checked="1"
+              >
+                <div
+                  className="transition-opacity flex items-center justify-center size-full"
+                  bis_skin_checked="1"
+                >
+                  JOIN
+                </div>
+              </div>
+            </button>
+            <button
+              type="button"
+              className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5"
+            >
+              <div
+                className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                style={{
+                  top: "var(--sb-shadow-size,3px)",
+                  backgroundColor: "rgb(34, 51, 100)",
+                }}
+                bis_skin_checked="1"
+              />
+              <div
+                className="font-bold size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 px-2.5 md:px-3 rounded-lg"
+                style={{
+                  height: "calc(100% - var(--sb-shadow-size,3px))",
+                  backgroundColor: "rgb(87, 104, 154)",
+                  color: "rgb(255, 255, 255)",
+                }}
+                bis_skin_checked="1"
+              >
+                <div
+                  className="transition-opacity flex items-center justify-center size-full"
+                  style={{ filter: "drop-shadow(rgb(34, 51, 100) 0px 2px 0px)" }}
+                  bis_skin_checked="1"
+                >
+                  <span className="hidden sm:block">VIEW</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="size-5 sm:hidden"
+                  >
+                    <g fill="currentColor">
+                      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
+                      <path
+                        fillRule="evenodd"
+                        d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.76 1.76 0 0 1 0-1.113M17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0"
+                        clipRule="evenodd"
+                      />
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CoinflipContent({
   isPriceAscending,
   onTogglePrice,
@@ -42,6 +624,47 @@ function CoinflipContent({
   onViewCoinflip,
 }) {
   const [playerTooltip, setPlayerTooltip] = useState(null);
+  const [visibleRowCount, setVisibleRowCount] = useState(COINFLIP_PAGE_SIZE);
+  const [hasMoreRows, setHasMoreRows] = useState(false);
+  const coinflipListRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const rows = Array.from(
+      coinflipListRef.current?.querySelectorAll(
+        ":scope > .coinflip-list-item",
+      ) ?? [],
+    );
+    const joinableRow = rows.find((row) => row.classList.contains("is-joinable"));
+    const activeRow = rows.find((row) =>
+      row.classList.contains("coinflip-active-row"),
+    );
+    const completedRows = rows.filter(
+      (row) => row !== joinableRow && row !== activeRow,
+    );
+    const orderedCompletedRows = isPriceAscending
+      ? completedRows
+      : [...completedRows].reverse();
+    const pinnedRows = [joinableRow, activeRow].filter(Boolean);
+    const visibleCompletedCount = Math.max(
+      visibleRowCount - pinnedRows.length,
+      0,
+    );
+    const visibleRows = new Set([
+      ...pinnedRows,
+      ...orderedCompletedRows.slice(0, visibleCompletedCount),
+    ]);
+
+    rows.forEach((row) => {
+      row.hidden = !visibleRows.has(row);
+    });
+    setHasMoreRows(visibleRowCount < rows.length);
+
+    return () => {
+      rows.forEach((row) => {
+        row.hidden = false;
+      });
+    };
+  }, [isPriceAscending, visibleRowCount]);
 
   const showPlayerTooltip = (event) => {
     const trigger = event.target.closest("[data-grace-area-trigger]");
@@ -51,7 +674,8 @@ function CoinflipContent({
     const playerCoin = playerFrame?.querySelector(
       'img[src*="/coinflip/heads"], img[src*="/coinflip/tails"]',
     );
-    const label = playerCoin?.alt?.trim();
+    const itemImage = trigger.querySelector(".coinflip-row-item-image[alt]");
+    const label = playerCoin?.alt?.trim() || itemImage?.alt?.trim();
     if (!label) return;
 
     const rect = trigger.getBoundingClientRect();
@@ -66,6 +690,66 @@ function CoinflipContent({
     const trigger = event.target.closest("[data-grace-area-trigger]");
     if (!trigger || trigger.contains(event.relatedTarget)) return;
     setPlayerTooltip(null);
+  };
+
+  const loadMoreRows = () => {
+    const list = coinflipListRef.current;
+    if (
+      !list ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setVisibleRowCount((count) => count + COINFLIP_PAGE_SIZE);
+      return;
+    }
+
+    const visibleRows = Array.from(
+      list.querySelectorAll(":scope > .coinflip-list-item:not([hidden])"),
+    );
+    visibleRows.forEach((row) => {
+      row.getAnimations().forEach((animation) => animation.cancel());
+    });
+    const firstPositions = new Map(
+      visibleRows.map((row) => [row, row.getBoundingClientRect().top]),
+    );
+
+    flushSync(() => {
+      setVisibleRowCount((count) => count + COINFLIP_PAGE_SIZE);
+    });
+
+    const revealedRows = Array.from(
+      list.querySelectorAll(":scope > .coinflip-list-item:not([hidden])"),
+    );
+    let revealIndex = 0;
+
+    revealedRows.forEach((row) => {
+      const firstTop = firstPositions.get(row);
+      if (firstTop !== undefined) {
+        const deltaY = firstTop - row.getBoundingClientRect().top;
+        if (deltaY === 0) return;
+        row.animate(
+          [
+            { transform: `translateY(${deltaY}px)` },
+            { transform: "translateY(0)" },
+          ],
+          { duration: 300, easing: "ease" },
+        );
+        return;
+      }
+
+      row.animate(
+        [
+          { opacity: 0, transform: "translateY(-12px)" },
+          { opacity: 1, transform: "translateY(0)" },
+        ],
+        {
+          duration: 300,
+          delay: revealIndex * 35,
+          easing: "ease",
+          fill: "backwards",
+        },
+      );
+      revealIndex += 1;
+    });
   };
 
   return (
@@ -181,6 +865,7 @@ function CoinflipContent({
         </div>
         <div
           data-v-e7c3a4a2=""
+          ref={coinflipListRef}
           className={`coinflip-list relative ${isPriceAscending ? "" : "is-price-descending"}`}
           onMouseOver={showPlayerTooltip}
           onMouseOut={hidePlayerTooltip}
@@ -192,14 +877,16 @@ function CoinflipContent({
           }}
           bis_skin_checked="1"
         >
+          <ActiveCoinflipRow />
+          <JoinableCoinflipRow />
           <div
             data-v-e7c3a4a2=""
-            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item coinflip-public-row"
             bis_skin_checked="1"
             style={{}}
           >
             <div
-              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764]"
               bis_skin_checked="1"
             >
               <div
@@ -508,12 +1195,12 @@ function CoinflipContent({
           </div>
           <div
             data-v-e7c3a4a2=""
-            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item coinflip-public-row"
             bis_skin_checked="1"
             style={{}}
           >
             <div
-              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764]"
               bis_skin_checked="1"
             >
               <div
@@ -655,19 +1342,14 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      className="size-10 relative"
                       bis_skin_checked="1"
                     >
-                      <video
-                        playsInline="false"
-                        autoPlay
+                      <img
+                        src="/coinflip/tails.webp"
+                        alt="tails"
                         className="size-full object-cover"
-                      >
-                        <source
-                          src="/flips/t2t.webm"
-                          type='video/webm; codecs="vp8, vorbis"'
-                        />
-                      </video>
+                      />
                     </div>
                   </div>
                 </div>
@@ -830,12 +1512,12 @@ function CoinflipContent({
           </div>
           <div
             data-v-e7c3a4a2=""
-            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item coinflip-public-row"
             bis_skin_checked="1"
             style={{}}
           >
             <div
-              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764]"
               bis_skin_checked="1"
             >
               <div
@@ -1144,12 +1826,12 @@ function CoinflipContent({
           </div>
           <div
             data-v-e7c3a4a2=""
-            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item coinflip-public-row"
             bis_skin_checked="1"
             style={{}}
           >
             <div
-              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764]"
               bis_skin_checked="1"
             >
               <div
@@ -1291,19 +1973,14 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      className="size-10 relative"
                       bis_skin_checked="1"
                     >
-                      <video
-                        playsInline="false"
-                        autoPlay
+                      <img
+                        src="/coinflip/heads.webp"
+                        alt="heads"
                         className="size-full object-cover"
-                      >
-                        <source
-                          src="/flips/h2h.webm"
-                          type='video/webm; codecs="vp8, vorbis"'
-                        />
-                      </video>
+                      />
                     </div>
                   </div>
                 </div>
@@ -1466,12 +2143,12 @@ function CoinflipContent({
           </div>
           <div
             data-v-e7c3a4a2=""
-            className="@container/coinflip-card will-change-transform is-history coinflip-list-item"
+            className="@container/coinflip-card will-change-transform is-history coinflip-list-item coinflip-public-row"
             bis_skin_checked="1"
             style={{}}
           >
             <div
-              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764] opacity-40"
+              className="group/coinflip-card relative flex flex-col items-center justify-between gap-3 px-5 py-3.5 rounded-xl bg-[#243157] transition-all duration-300 ease-in-out cursor-pointer overflow-hidden md:flex-row hover:bg-[#273764]"
               bis_skin_checked="1"
             >
               <div
@@ -1613,19 +2290,14 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      className="size-10 relative"
                       bis_skin_checked="1"
                     >
-                      <video
-                        playsInline="false"
-                        autoPlay
+                      <img
+                        src="/coinflip/heads.webp"
+                        alt="heads"
                         className="size-full object-cover"
-                      >
-                        <source
-                          src="/flips/t2h.webm"
-                          type='video/webm; codecs="vp8, vorbis"'
-                        />
-                      </video>
+                      />
                     </div>
                   </div>
                 </div>
@@ -1935,19 +2607,14 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      className="size-10 relative"
                       bis_skin_checked="1"
                     >
-                      <video
-                        playsInline="false"
-                        autoPlay
+                      <img
+                        src="/coinflip/heads.webp"
+                        alt="heads"
                         className="size-full object-cover"
-                      >
-                        <source
-                          src="/flips/t2h.webm"
-                          type='video/webm; codecs="vp8, vorbis"'
-                        />
-                      </video>
+                      />
                     </div>
                   </div>
                 </div>
@@ -2257,19 +2924,14 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      className="size-10 relative"
                       bis_skin_checked="1"
                     >
-                      <video
-                        playsInline="false"
-                        autoPlay
+                      <img
+                        src="/coinflip/tails.webp"
+                        alt="tails"
                         className="size-full object-cover"
-                      >
-                        <source
-                          src="/flips/t2t.webm"
-                          type='video/webm; codecs="vp8, vorbis"'
-                        />
-                      </video>
+                      />
                     </div>
                   </div>
                 </div>
@@ -3521,19 +4183,14 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      className="size-10 relative"
                       bis_skin_checked="1"
                     >
-                      <video
-                        playsInline="false"
-                        autoPlay
+                      <img
+                        src="/coinflip/heads.webp"
+                        alt="heads"
                         className="size-full object-cover"
-                      >
-                        <source
-                          src="/flips/h2h.webm"
-                          type='video/webm; codecs="vp8, vorbis"'
-                        />
-                      </video>
+                      />
                     </div>
                   </div>
                 </div>
@@ -4157,19 +4814,14 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      className="size-10 relative"
                       bis_skin_checked="1"
                     >
-                      <video
-                        playsInline="false"
-                        autoPlay
+                      <img
+                        src="/coinflip/heads.webp"
+                        alt="heads"
                         className="size-full object-cover"
-                      >
-                        <source
-                          src="/flips/h2h.webm"
-                          type='video/webm; codecs="vp8, vorbis"'
-                        />
-                      </video>
+                      />
                     </div>
                   </div>
                 </div>
@@ -4479,19 +5131,14 @@ function CoinflipContent({
                     bis_skin_checked="1"
                   >
                     <div
-                      className="size-17 max-w-none absolute top-1/2 left-1/2 -translate-1/2"
+                      className="size-10 relative"
                       bis_skin_checked="1"
                     >
-                      <video
-                        playsInline="false"
-                        autoPlay
+                      <img
+                        src="/coinflip/tails.webp"
+                        alt="tails"
                         className="size-full object-cover"
-                      >
-                        <source
-                          src="/flips/t2t.webm"
-                          type='video/webm; codecs="vp8, vorbis"'
-                        />
-                      </video>
+                      />
                     </div>
                   </div>
                 </div>
@@ -4966,15 +5613,18 @@ function CoinflipContent({
             </div>
           </div>
         </div>
-        <div
-          data-v-e7c3a4a2=""
-          className="flex justify-center"
-          bis_skin_checked="1"
-        >
-          <button
+        {hasMoreRows ? (
+          <div
             data-v-e7c3a4a2=""
-            className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full sm:w-auto"
+            className="flex justify-center"
+            bis_skin_checked="1"
           >
+            <button
+              data-v-e7c3a4a2=""
+              type="button"
+              onClick={loadMoreRows}
+              className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 w-full sm:w-auto"
+            >
             <div
               className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
               style={{
@@ -5002,8 +5652,9 @@ function CoinflipContent({
                 </p>
               </div>
             </div>
-          </button>
-        </div>
+            </button>
+          </div>
+        ) : null}
       </div>
       </div>
       <CoinflipPlayerTooltip tooltip={playerTooltip} />
@@ -5019,7 +5670,9 @@ export default function CoinflipPage() {
 
   const togglePriceOrder = () => {
     const rows = Array.from(
-      document.querySelectorAll(".coinflip-route .coinflip-list-item"),
+      document.querySelectorAll(
+        ".coinflip-route .coinflip-list-item:not([hidden])",
+      ),
     );
 
     if (
@@ -5042,6 +5695,7 @@ export default function CoinflipPage() {
     });
 
     rows.forEach((row) => {
+      if (row.hidden) return;
       const deltaY = firstPositions.get(row) - row.getBoundingClientRect().top;
       if (deltaY === 0) return;
       row.animate(
