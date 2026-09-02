@@ -170,7 +170,7 @@ export default function RoulettePage() {
   const [offset, setOffset] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [duration, setDuration] = useState(0);
-  const [betAmount, setBetAmount] = useState(10);
+  const [betAmount, setBetAmount] = useState(0);
   const [balance, setBalance] = useState(10000);
   const [history, setHistory] = useState([]);
   const [message, setMessage] = useState(null);
@@ -730,22 +730,28 @@ export default function RoulettePage() {
 
             {/* Bet input */}
             <div className="flex-1 flex flex-col gap-2 px-4 sm:px-0">
-              <div className="flex bg-[#283057] rounded-xl border-[1.5px] border-[#3E3C93] p-2">
+              <div
+                className="flex bg-[#283057] rounded-xl border-[1.5px] border-solid border-[#3E3C93] p-2"
+                style={{ border: "1.5px solid rgb(62, 60, 147)" }}
+              >
                 <div className="flex-1 flex items-center gap-2 min-w-0">
                   <img src="/coin.webp" alt="" className="bg-cover bg-center size-5.5 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="Enter amount"
-                      value={betAmount || ""}
-                      disabled={bettingLocked}
-                      onChange={(e) => {
-                        const v = e.target.value.replace(/[^0-9.]/g, "");
-                        setBetAmount(Math.max(0, Number(v) || 0));
-                      }}
-                      className="bg-transparent outline-none text-white font-medium text-sm placeholder:text-accent min-w-0 w-full size-full font-medium text-[15px] peer"
-                    />
+                    <div className="w-full relative flex group rounded-lg items-center justify-center">
+                      <div className="absolute inset-0.25 ring-2 ring-transparent rounded-lg transition-shadow pointer-events-none" />
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Enter amount"
+                        value={betAmount || ""}
+                        disabled={bettingLocked}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9.]/g, "");
+                          setBetAmount(Math.max(0, Number(v) || 0));
+                        }}
+                        className="bg-transparent outline-none text-white font-medium text-sm placeholder:text-accent min-w-0 w-full bg-transparent outline-none size-full font-medium peer text-[15px] placeholder:text-accent"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
