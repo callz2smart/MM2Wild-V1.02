@@ -39,7 +39,6 @@ const methodLabels = {
   affiliate: "Affiliate",
 };
 
-// Crypto icons — Solana, Litecoin, Bitcoin, Ethereum
 const cryptoIcons = ["solana", "litecoin", "bitcoin", "ethereum"];
 
 function SolanaIcon() {
@@ -110,7 +109,6 @@ const cryptoIconComponents = {
   ethereum: EthereumIcon,
 };
 
-// Deterministically pick a crypto icon from the transaction id
 function pickCryptoIcon(id) {
   const hash = (id || "").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
   return cryptoIcons[hash % cryptoIcons.length];
@@ -121,7 +119,6 @@ function MethodIcon({ method, id }) {
     const Icon = cryptoIconComponents[pickCryptoIcon(id)];
     return Icon ? <Icon /> : null;
   }
-  // Default: coin icon for rakeback, mm2, tips, affiliate
   return <img src="/coin.webp" alt="" className="bg-cover bg-center size-5" />;
 }
 

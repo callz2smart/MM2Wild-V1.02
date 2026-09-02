@@ -19,7 +19,6 @@ async function preloadImage(source) {
   try {
     await image.decode();
   } catch {
-    // A broken avatar must not prevent the signed-in header from rendering.
   }
 }
 
@@ -806,7 +805,6 @@ export default function Header({ onInitialRenderReady, selectedBalanceType, onBa
         const payload = await response.json().catch(() => null);
         if (response.ok && payload?.user) setSignedInUser(payload.user);
       } catch {
-        // The next session refresh will reconcile the displayed balance.
       }
     };
     window.addEventListener("mm2wild:balance-updated", updateBalance);

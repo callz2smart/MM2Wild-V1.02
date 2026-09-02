@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Footer, footerLogoInnerMarkup } from "./HomePage";
+import { footerLogoInnerMarkup } from "./HomePage";
 import LineWobbleLoader from "../components/LineWobbleLoader";
 
 const bonusCards = [
@@ -425,7 +425,6 @@ export default function RewardsPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

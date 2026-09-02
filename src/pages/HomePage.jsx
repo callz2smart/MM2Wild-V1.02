@@ -568,7 +568,6 @@ export default function HomePage() {
           <LiveBets />
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

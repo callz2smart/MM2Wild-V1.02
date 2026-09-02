@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Header from "./components/Header";
 import Subheader from "./components/Subheader";
 import ChatSidebar from "./components/ChatSidebar";
-import HomePage from "./pages/HomePage";
+import HomePage, { Footer } from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
 import TermsPage from "./pages/TermsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
@@ -13,11 +13,15 @@ import AffiliatesPage from "./pages/AffiliatesPage";
 import NotificationCenter from "./components/NotificationCenter";
 import RoulettePage from "./pages/RoulettePage";
 import CoinflipPage from "./pages/CoinflipPage";
+import CasesPage from "./pages/CasesPage";
+import LineWobbleLoader from "./components/LineWobbleLoader";
 
 export default function App() {
   const [pathname, setPathname] = useState(() => window.location.pathname);
   const [isHeaderReady, setIsHeaderReady] = useState(false);
   const [isChatPresenceReady, setIsChatPresenceReady] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(false);
+  const pageRef = useRef(null);
   const [selectedBalanceType, setSelectedBalanceType] = useState(() => (
     localStorage.getItem("mm2wild_balance_type") === "crypto" ? "crypto" : "mm2"
   ));
@@ -32,6 +36,7 @@ export default function App() {
 
   useEffect(() => {
     const updateRoute = () => {
+      setIsPageLoading(true);
       setPathname(window.location.pathname);
     };
 
@@ -67,7 +72,7 @@ export default function App() {
       if (nextLocation === currentLocation) return;
 
       window.history.pushState({}, "", nextLocation);
-      updateRoute();
+      window.dispatchEvent(new PopStateEvent("popstate"));
       window.scrollTo({ top: 0, behavior: "instant" });
     };
 
@@ -80,6 +85,55 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isPageLoading) return undefined;
+
+    let cancelled = false;
+    let firstFrame;
+    let secondFrame;
+    let minimumTimer;
+    let maximumTimer;
+
+    const waitForPaint = new Promise((resolve) => {
+      firstFrame = window.requestAnimationFrame(() => {
+        secondFrame = window.requestAnimationFrame(resolve);
+      });
+    });
+    const minimumDisplay = new Promise((resolve) => {
+      minimumTimer = window.setTimeout(resolve, 180);
+    });
+
+    const finishLoading = async () => {
+      await waitForPaint;
+      const visibleImages = [...(pageRef.current?.querySelectorAll("img") || [])].filter((image) => {
+        const rect = image.getBoundingClientRect();
+        return rect.bottom > 0 && rect.right > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth;
+      });
+      const imagesReady = Promise.allSettled(visibleImages.map((image) => {
+        if (image.complete) return image.decode?.().catch(() => {}) ?? Promise.resolve();
+        return new Promise((resolve) => {
+          image.addEventListener("load", resolve, { once: true });
+          image.addEventListener("error", resolve, { once: true });
+        });
+      }));
+      const maximumWait = new Promise((resolve) => {
+        maximumTimer = window.setTimeout(resolve, 1500);
+      });
+
+      await Promise.all([minimumDisplay, Promise.race([imagesReady, maximumWait])]);
+      if (!cancelled) setIsPageLoading(false);
+    };
+
+    finishLoading();
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+      window.clearTimeout(minimumTimer);
+      window.clearTimeout(maximumTimer);
+    };
+  }, [pathname, isPageLoading]);
+
   const isAccountPage = pathname.startsWith("/account/");
   const activeTab = pathname.replace("/account/", "");
   const isTermsPage = pathname === "/terms";
@@ -89,6 +143,7 @@ export default function App() {
   const isAffiliatesPage = pathname === "/affiliates";
   const isRoulettePage = pathname === "/games/roulette";
   const isCoinflipPage = pathname === "/games/coinflip";
+  const isCasesPage = pathname === "/games/cases";
 
   return (
     <>
@@ -104,24 +159,39 @@ export default function App() {
           onInitialRenderReady={markChatPresenceReady}
           selectedBalanceType={selectedBalanceType}
         />
-        {isAccountPage ? (
-          <ProfilePage activeTab={activeTab} />
-        ) : isTermsPage ? (
-          <TermsPage />
-        ) : isLeaderboardPage ? (
-          <LeaderboardPage />
-        ) : isFairnessPage ? (
-          <FairnessPage />
-        ) : isRewardsPage ? (
-          <RewardsPage />
-        ) : isAffiliatesPage ? (
-          <AffiliatesPage />
-        ) : isRoulettePage ? (
-          <RoulettePage />
-        ) : isCoinflipPage ? (
-          <CoinflipPage />
-        ) : (
-          <HomePage />
+        <div ref={pageRef} aria-busy={isPageLoading} className="min-h-screen flex flex-col">
+          {isAccountPage ? (
+            <ProfilePage activeTab={activeTab} />
+          ) : isTermsPage ? (
+            <TermsPage />
+          ) : isLeaderboardPage ? (
+            <LeaderboardPage />
+          ) : isFairnessPage ? (
+            <FairnessPage />
+          ) : isRewardsPage ? (
+            <RewardsPage />
+          ) : isAffiliatesPage ? (
+            <AffiliatesPage />
+          ) : isRoulettePage ? (
+            <RoulettePage />
+          ) : isCoinflipPage ? (
+            <CoinflipPage />
+          ) : isCasesPage ? (
+            <CasesPage />
+          ) : (
+            <HomePage />
+          )}
+          <div className="global-footer mt-auto">
+            <Footer />
+          </div>
+        </div>
+        {isPageLoading && (
+          <div
+            className="fixed right-0 bottom-0 z-50 bg-linear-to-br from-[#131C2F] to-[#212A53] flex items-center justify-center"
+            style={{ top: "var(--layout-top, 120px)", left: "var(--layout-left, 0px)" }}
+          >
+            <LineWobbleLoader />
+          </div>
         )}
       </main>
       <NotificationCenter />

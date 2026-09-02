@@ -584,6 +584,10 @@ a {
   transition: padding-left 0.2s ease-in-out;
 }
 
+.global-footer {
+  transition: padding-left 0.2s ease-in-out;
+}
+
 .roulette-item-container {
   padding-inline: 4px;
 }
@@ -648,6 +652,10 @@ a {
 
 @media (min-width: 1024px) {
   .site-content {
+    padding-left: var(--layout-left);
+  }
+
+  .global-footer {
     padding-left: var(--layout-left);
   }
 }

@@ -67,6 +67,7 @@ export function attachChatServer(httpServer, options = {}) {
   const history = [];
   const clients = new Set();
   const clientSockets = new Map();
+  const clientPresenceIds = new Map();
   const rain = createRainState({ store: createSupabaseRainStore(options.env) });
   let rainInterval = null;
   const roulette = createRouletteState({ env: options.env });
@@ -85,7 +86,7 @@ export function attachChatServer(httpServer, options = {}) {
   }
 
   function broadcastPresence() {
-    broadcast({ type: "presence", online: clients.size });
+    broadcast({ type: "presence", online: new Set(clientPresenceIds.values()).size });
   }
 
   function recordMessage(message) {
@@ -105,23 +106,25 @@ export function attachChatServer(httpServer, options = {}) {
     broadcast(tipMessage);
   }
 
-  async function handleConnection(socket, user, clientId) {
+  async function handleConnection(socket, user, clientId, presenceId) {
     const profile = profileFor(user);
     const identity = user ? { name: user.name, ...profile } : null;
 
     const previousSocket = clientSockets.get(clientId);
     if (previousSocket && previousSocket !== socket) {
       clients.delete(previousSocket);
+      clientPresenceIds.delete(previousSocket);
       previousSocket.close(1000, "Replaced by a refreshed connection");
     }
     clientSockets.set(clientId, socket);
     clients.add(socket);
+    clientPresenceIds.set(socket, presenceId);
 
     await rain.ready();
     socket.send(
       JSON.stringify({
         type: "init",
-        online: clients.size,
+        online: new Set(clientPresenceIds.values()).size,
         messages: history,
         you: identity,
         rain: rain.state(user?.uuid),
@@ -129,7 +132,6 @@ export function attachChatServer(httpServer, options = {}) {
     );
     broadcastPresence();
 
-    // Start the roulette lifecycle on the first connection and send init state.
     if (!rouletteStarted) {
       rouletteStarted = true;
       void roulette.start();
@@ -137,11 +139,8 @@ export function attachChatServer(httpServer, options = {}) {
     const rouletteState = await roulette.ready();
     socket.send(JSON.stringify({ ...rouletteState, type: "roulette_init" }));
 
-    // Forward roulette broadcasts to this socket (scoped to the user for myBet).
     const unsubscribeRoulette = roulette.subscribe((data, scopeUuid) => {
       if (socket.readyState !== socket.OPEN) return;
-      // Only send user-scoped snapshots to the matching user; broadcast
-      // events (scopeUuid === null) go to everyone.
       if (scopeUuid && scopeUuid !== user?.uuid) return;
       socket.send(data);
     });
@@ -262,11 +261,13 @@ export function attachChatServer(httpServer, options = {}) {
 
     socket.on("close", () => {
       if (clientSockets.get(clientId) === socket) clientSockets.delete(clientId);
+      clientPresenceIds.delete(socket);
       if (clients.delete(socket)) broadcastPresence();
       unsubscribeRoulette();
     });
     socket.on("error", () => {
       if (clientSockets.get(clientId) === socket) clientSockets.delete(clientId);
+      clientPresenceIds.delete(socket);
       if (clients.delete(socket)) broadcastPresence();
       unsubscribeRoulette();
     });
@@ -280,7 +281,8 @@ export function attachChatServer(httpServer, options = {}) {
       const cookieHeader = request.headers.cookie || "";
       const user = await resolveUser(cookieHeader, verifySession);
       const clientId = requestUrl.searchParams.get("clientId")?.slice(0, 128) || crypto.randomUUID();
-      await handleConnection(ws, user, clientId);
+      const presenceId = requestUrl.searchParams.get("presenceId")?.slice(0, 128) || clientId;
+      await handleConnection(ws, user, clientId, presenceId);
     });
   });
 

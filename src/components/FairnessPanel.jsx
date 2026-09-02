@@ -39,7 +39,6 @@ function CopyButton({ value }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard may be blocked; silently ignore.
     }
   };
 

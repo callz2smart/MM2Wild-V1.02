@@ -51,7 +51,6 @@ function rankValues(value) {
       const parsed = JSON.parse(text);
       if (Array.isArray(parsed)) return parsed;
     } catch {
-      // Fall back to the delimited text format below.
     }
   }
   return text.split(/[,;|]/);
@@ -1182,7 +1181,6 @@ export default function ChatSidebar({ onInitialRenderReady, selectedBalanceType 
     if (!anchor) return;
     const rect = anchor.getBoundingClientRect();
     const popupHeight = emojiPopupRef.current?.offsetHeight || 284;
-    // The popup's 8px bottom margin creates the visible gap above the form.
     const popupTop = Math.max(8, rect.top - popupHeight);
     setEmojiPopupStyle({
       position: "fixed",
@@ -1337,7 +1335,13 @@ export default function ChatSidebar({ onInitialRenderReady, selectedBalanceType 
       clientId = crypto.randomUUID();
       sessionStorage.setItem(clientIdKey, clientId);
     }
-    const socketUrl = `${protocol}//${window.location.host}/api/chat?clientId=${encodeURIComponent(clientId)}`;
+    const presenceIdKey = "mm2wild_presence_id";
+    let presenceId = sessionStorage.getItem(presenceIdKey);
+    if (!presenceId) {
+      presenceId = crypto.randomUUID();
+      sessionStorage.setItem(presenceIdKey, presenceId);
+    }
+    const socketUrl = `${protocol}//${window.location.host}/api/chat?clientId=${encodeURIComponent(clientId)}&presenceId=${encodeURIComponent(presenceId)}`;
     let disposed = false;
     let reconnectTimer = null;
 
@@ -1417,7 +1421,6 @@ export default function ChatSidebar({ onInitialRenderReady, selectedBalanceType 
         reconnectTimer = setTimeout(connect, 1500);
       });
       socket.addEventListener("error", () => {
-        // The close event always fires after an error, which handles cleanup.
       });
     };
 

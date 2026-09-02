@@ -1,7 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TripleGreenJackpotModal from "../components/TripleGreenJackpotModal";
 import RouletteResultModal from "../components/RouletteResultModal";
-// Roulette colors matching the reference: blue, green, gold, purple
 const COLORS = [
   { id: "blue", label: "BLUE", multiplier: 2, gradient: "radial-gradient(50% 50%, rgb(91, 119, 246) 0%, rgb(65, 81, 218) 100%)", linearGradient: "linear-gradient(90deg, rgb(91, 119, 246) 0%, rgb(65, 81, 218) 100%)", shadow: "rgb(11, 36, 146)", text: "#7CB0FF", rgb: "91,119,246" },
   { id: "green", label: "GREEN", multiplier: 14, gradient: "radial-gradient(50% 50%, rgb(92, 223, 154) 0%, rgb(15, 195, 101) 100%)", linearGradient: "linear-gradient(90deg, rgb(92, 223, 154) 0%, rgb(15, 195, 101) 100%)", shadow: "rgb(11, 146, 76)", text: "#5CDF9A", rgb: "92,223,154" },
@@ -16,7 +15,6 @@ const COLOR_ICON = {
   purple: "crown",
 };
 
-// 15-item roulette pattern matching the reference exactly — must match server.
 const REEL_PATTERN = [
   { color: "green", icon: "clover" },
   { color: "gold", icon: "crown" },
@@ -177,9 +175,7 @@ export default function RoulettePage() {
   const [jackpotModalOpen, setJackpotModalOpen] = useState(false);
   const [selectedResult, setSelectedResult] = useState(null);
   const [soundOn, setSoundOn] = useState(true);
-  // Server-driven countdown state.
   const [phase, setPhase] = useState("betting");
-  // Per-color pot info from server: { color: { players, amount } }
   const [pots, setPots] = useState(() =>
     Object.fromEntries(COLORS.map((c) => [c.id, { players: 0, amount: 0 }])),
   );
@@ -191,15 +187,13 @@ export default function RoulettePage() {
   const spinningRef = useRef(false);
   const socketRef = useRef(null);
   const spinTimeoutRef = useRef(null);
-  // Smooth countdown interpolation refs.
-  const serverRemainingRef = useRef(BETTING_DURATION_MS); // last remaining value from server (ms)
-  const serverUpdatedAtRef = useRef(Date.now()); // timestamp of last server update
+  const serverRemainingRef = useRef(BETTING_DURATION_MS);
+  const serverUpdatedAtRef = useRef(Date.now());
   const phaseRef = useRef("betting");
   const countdownTextRef = useRef(null);
   const countdownBarRef = useRef(null);
   const countdownRafRef = useRef(null);
 
-  // ── Idle slow scroll ──────────────────────────────────────────────────────
   useEffect(() => {
     if (spinning) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -207,9 +201,6 @@ export default function RoulettePage() {
     }
     let last = performance.now();
     function tick(now) {
-      // A spin can begin between this frame being queued and it running.
-      // Check the synchronous ref before touching the reel so an old idle
-      // frame can never overwrite the newly-started spin transition.
       if (spinningRef.current) {
         rafRef.current = null;
         return;
@@ -235,9 +226,6 @@ export default function RoulettePage() {
     };
   }, [spinning]);
 
-  // ── Smooth countdown interpolation ────────────────────────────────────────
-  // The server sends remaining-time updates every 250ms. To display a smooth
-  // countdown we interpolate locally between those updates using rAF.
   useEffect(() => {
     function tick() {
       const elapsed = Date.now() - serverUpdatedAtRef.current;
@@ -261,7 +249,6 @@ export default function RoulettePage() {
     };
   }, [phase]);
 
-  // Measure item width on mount and resize.
   useEffect(() => {
     function measure() {
       if (!reelRef.current) return;
@@ -280,7 +267,6 @@ export default function RoulettePage() {
   const closeJackpotModal = useCallback(() => setJackpotModalOpen(false), []);
   const closeResultModal = useCallback(() => setSelectedResult(null), []);
 
-  // ── Fetch initial balance from session ────────────────────────────────────
   useEffect(() => {
     let disposed = false;
     fetch("/api/session", { credentials: "include" })
@@ -294,7 +280,6 @@ export default function RoulettePage() {
     return () => { disposed = true; };
   }, []);
 
-  // ── WebSocket connection ──────────────────────────────────────────────────
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const clientIdKey = "mm2wild_roulette_client_id";
@@ -303,7 +288,13 @@ export default function RoulettePage() {
       clientId = crypto.randomUUID();
       sessionStorage.setItem(clientIdKey, clientId);
     }
-    const socketUrl = `${protocol}//${window.location.host}/api/chat?clientId=${encodeURIComponent(clientId)}`;
+    const presenceIdKey = "mm2wild_presence_id";
+    let presenceId = sessionStorage.getItem(presenceIdKey);
+    if (!presenceId) {
+      presenceId = crypto.randomUUID();
+      sessionStorage.setItem(presenceIdKey, presenceId);
+    }
+    const socketUrl = `${protocol}//${window.location.host}/api/chat?clientId=${encodeURIComponent(clientId)}&presenceId=${encodeURIComponent(presenceId)}`;
     let disposed = false;
     let reconnectTimer = null;
 
@@ -312,8 +303,6 @@ export default function RoulettePage() {
       if (!color) return;
       const spinDuration = Math.max(0, Math.min(SPINNING_DURATION_MS, requestedDuration));
 
-      // Get the reel transform element for direct DOM manipulation.
-      // This bypasses React's batched updates so the CSS transition fires.
       const reelEl = reelRef.current?.querySelector(".roulette-items-container");
       if (!reelEl || !reelRef.current) return;
 
@@ -323,13 +312,9 @@ export default function RoulettePage() {
       const containerWidth = reelRef.current.getBoundingClientRect().width;
       const currentOffset = idleOffsetRef.current;
 
-      // Find a landing index in the EXISTING reel where:
-      // 1. The color matches the winning color
-      // 2. The immediate neighbors are DIFFERENT colors (no "blue blue blue")
-      // 3. It's far enough ahead for a good spin effect
       const currentCenterIndex = Math.round((containerWidth / 2 - currentOffset) / itemWidth);
       const patternLen = REEL_PATTERN.length;
-      let targetIndex = currentCenterIndex + 35; // start 35 items ahead
+      let targetIndex = currentCenterIndex + 35;
       for (let i = 0; i < patternLen * 2; i++) {
         const idx = targetIndex + i;
         const pIdx = ((idx % patternLen) + patternLen) % patternLen;
@@ -346,35 +331,27 @@ export default function RoulettePage() {
       }
 
       const targetOffset = containerWidth / 2 - itemWidth * targetIndex - itemWidth / 2;
-      const jitter = Math.random() * 30 - 15; // small random offset within the item
+      const jitter = Math.random() * 30 - 15;
 
-      // Stop the idle animation synchronously. Waiting for React to commit
-      // `spinning` leaves a queued idle frame able to cancel this transition.
       spinningRef.current = true;
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
 
-      // Mark spinning state (shows center divider).
       setSpinning(true);
 
-      // Direct DOM: disable transition, snap to current position.
       reelEl.style.transition = "none";
       reelEl.style.transform = `translateX(${currentOffset}px)`;
 
-      // Force reflow so the browser registers the "none" transition.
       void reelEl.offsetHeight;
 
-      // Direct DOM: enable transition and set target — the browser animates.
       reelEl.style.transition = `transform ${spinDuration}ms cubic-bezier(0.12, 0.66, 0.16, 1)`;
       reelEl.style.transform = `translateX(${targetOffset + jitter}px)`;
 
-      // Keep React state in sync for after the spin ends.
       setDuration(spinDuration);
       setOffset(targetOffset + jitter);
 
-      // After the spin animation, resume idle scroll.
       if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
       spinTimeoutRef.current = setTimeout(() => {
         spinningRef.current = false;
@@ -413,7 +390,6 @@ export default function RoulettePage() {
           })));
           if (payload.pots) setPots(payload.pots);
           if (payload.result && payload.phase === "spinning") {
-            // We joined mid-spin — animate to the result.
             animateSpin(payload.result, nextRemaining);
           }
           break;
@@ -466,8 +442,6 @@ export default function RoulettePage() {
             time: new Date(h.time),
           })));
           if (payload.pots) setPots(payload.pots);
-          // Fallback: refetch balance in case the scoped roulette_balance
-          // event didn't arrive. The socket event is the primary path.
           fetch("/api/session", { credentials: "include" })
             .then((r) => (r.ok ? r.json() : null))
             .then((data) => {
@@ -493,7 +467,6 @@ export default function RoulettePage() {
           break;
         }
         default:
-          // Other chat events are handled by ChatSidebar; ignore here.
           break;
       }
     };
@@ -508,7 +481,6 @@ export default function RoulettePage() {
         if (!disposed) reconnectTimer = setTimeout(connect, 1500);
       });
       socket.addEventListener("error", () => {
-        // close event handles cleanup
       });
     };
 
@@ -522,9 +494,8 @@ export default function RoulettePage() {
       if (socket) socket.close();
       socketRef.current = null;
     };
-  }, [showMessage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showMessage]);
 
-  // ── Place a bet via socket ────────────────────────────────────────────────
   const placeBet = useCallback((colorId) => {
     const socket = socketRef.current;
     if (!socket || socket.readyState !== WebSocket.OPEN) {
@@ -542,7 +513,6 @@ export default function RoulettePage() {
     socket.send(JSON.stringify({ type: "roulette_bet", color: colorId, amount: betAmount }));
   }, [phase, betAmount, showMessage]);
 
-  // Aggregate counts per color from history.
   const last100Counts = useMemo(() => {
     const counts = {};
     for (const c of COLORS) counts[c.id] = 0;
@@ -561,7 +531,6 @@ export default function RoulettePage() {
     return count;
   }, [history]);
 
-  // Countdown display: remaining is in ms from server; convert to seconds.
   const bettingLocked = phase !== "betting";
 
   return (
@@ -784,7 +753,7 @@ export default function RoulettePage() {
                       type="button"
                       disabled={bettingLocked || betAmount <= 0 || betAmount > balance}
                       onClick={() => placeBet(color.id)}
-                      className="w-full h-[calc(100%-3px)] flex flex-col md:flex-row items-center justify-start px-3.5 py-2 md:py-0 rounded-xl text-white font-semibold hover:-translate-y-0.5 active:translate-y-0.5 transition-transform relative disabled:cursor-not-allowed"
+                      className="w-full h-[calc(100%-3px)] flex flex-col md:flex-row items-center justify-start px-3.5 py-2 md:py-0 rounded-xl text-white font-semibold hover:-translate-y-0.5 active:translate-y-0.5 transition-transform relative cursor-pointer disabled:cursor-not-allowed"
                       style={{ background: color.linearGradient }}
                     >
                       {icon(COLOR_ICON[color.id], "size-5.5 md:mr-2")}

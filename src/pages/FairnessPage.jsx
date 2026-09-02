@@ -1,5 +1,3 @@
-import { Footer } from "./HomePage";
-
 export default function FairnessPage() {
   return (
     <div className="site-content">
@@ -42,7 +40,6 @@ export default function FairnessPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

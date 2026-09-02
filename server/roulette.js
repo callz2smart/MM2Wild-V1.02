@@ -1,19 +1,5 @@
-// Server-side roulette round lifecycle.
-//
-// The roulette is a single shared wheel: every connected client sees the
-// same countdown, the same spin, and the same result. The result for each
-// round is derived from a provably-fair HMAC(serverSeed, `${clientSeed}:${nonce}`)
-// hash so players can verify outcomes after the seed is rotated.
-//
-// Round phases:
-//   betting  — 20s countdown during which players place bets.
-//   spinning — ~6s reel animation; betting is locked.
-//   After spinning the round resolves, payouts are applied, and a new
-//   betting phase begins automatically.
-
 const encoder = new TextEncoder();
 
-// Must match the client REEL_PATTERN in src/pages/RoulettePage.jsx.
 const REEL_PATTERN = [
   "green", "gold", "blue", "gold", "blue",
   "purple", "blue", "gold", "blue", "gold",
@@ -67,7 +53,6 @@ function sha256Hex(input) {
     );
 }
 
-// Derive the landing color for a round from the fairness seed.
 async function computeResult(serverSeed, clientSeed, nonce) {
   const hash = await hmacSha256Hex(serverSeed, `${clientSeed}:${nonce}`);
   const value = parseInt(hash.slice(0, 8), 16);
@@ -75,7 +60,6 @@ async function computeResult(serverSeed, clientSeed, nonce) {
   return REEL_PATTERN[index];
 }
 
-// ── Supabase helpers ────────────────────────────────────────────────────────
 
 function supabaseSettings(env) {
   const url = (env?.SUPABASE_URL || "").replace(/\/$/, "");
@@ -98,7 +82,6 @@ function createSupabaseStore(env) {
     });
 
   return {
-    // ── Roulette seed ───────────────────────────────────────────────────────
     async loadActiveSeed() {
       const query = new URLSearchParams({
         active: "eq.true",
@@ -162,7 +145,6 @@ function createSupabaseStore(env) {
       return this.createSeed();
     },
 
-    // ── Round history ───────────────────────────────────────────────────────
     async saveRound(round) {
       const response = await request("mm2wild_roulette_rounds", {
         method: "POST",
@@ -183,7 +165,6 @@ function createSupabaseStore(env) {
       return rows?.[0]?.id || null;
     },
 
-    // ── Per-player game records ─────────────────────────────────────────────
     async saveGame(game) {
       await request("mm2wild_roulette_games", {
         method: "POST",
@@ -223,7 +204,6 @@ function createSupabaseStore(env) {
       }));
     },
 
-    // ── User balance ────────────────────────────────────────────────────────
     async getUser(userUuid) {
       const query = new URLSearchParams({
         uuid: `eq.${userUuid}`,
@@ -237,8 +217,6 @@ function createSupabaseStore(env) {
     },
 
     async deductBalance(userUuid, amount) {
-      // Read current balance, check, then patch. (Supabase REST doesn't support
-      // atomic increments without an RPC, so we do a read-check-write.)
       const user = await this.getUser(userUuid);
       if (!user) return { ok: false, error: "Account not found." };
       const current = Number(user.mm2_balance || 0);
@@ -279,7 +257,6 @@ function createSupabaseStore(env) {
       return { ok: true, balance: newBalance };
     },
 
-    // ── Bet record ──────────────────────────────────────────────────────────
     async recordBet(userUuid, amount, profit, status, multiplier) {
       await request("mm2wild_bets", {
         method: "POST",
@@ -300,11 +277,10 @@ function createSupabaseStore(env) {
   };
 }
 
-// In-memory fallback store for local dev without Supabase.
 function createMemoryStore() {
   let seed = null;
   const rounds = [];
-  const balances = new Map(); // userUuid -> balance
+  const balances = new Map();
 
   return {
     async loadActiveSeed() {
@@ -351,7 +327,6 @@ function createMemoryStore() {
       return roundId;
     },
     async saveGame() {
-      // no-op in memory mode
     },
     async loadRecentRounds(limit = 100) {
       return rounds.slice(0, limit);
@@ -374,7 +349,6 @@ function createMemoryStore() {
       return { ok: true, balance: newBalance };
     },
     async recordBet() {
-      // no-op in memory mode
     },
   };
 }
@@ -382,13 +356,12 @@ function createMemoryStore() {
 export function createRouletteState({ env = null, now = () => Date.now() } = {}) {
   const store = env ? (createSupabaseStore(env) || createMemoryStore()) : createMemoryStore();
 
-  // Round state.
   let phase = "betting";
   let phaseEndsAt = now() + ROULETTE_BETTING_MS;
   let currentResult = null;
   let history = [];
   let pots = emptyPots();
-  let bets = new Map(); // userUuid -> { color, amount, name }
+  let bets = new Map();
   let seedRow = null;
   let roundNonce = 0;
   let readyPromise = null;
@@ -447,7 +420,6 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
     }
   }
 
-  // Send a payload only to a specific user's listener.
   function sendToUser(userUuid, payload) {
     const data = JSON.stringify(payload);
     for (const listener of listeners) {
@@ -510,7 +482,6 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       for (const uuid of pots[color].players.keys()) playerSet.add(uuid);
     }
 
-    // Save round for verification and capture the round ID.
     let roundId = null;
     try {
       roundId = await store.saveRound({
@@ -523,7 +494,6 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       });
     } catch {}
 
-    // Bump nonce.
     try {
       roundNonce = await store.bumpNonce(seedRow.id, roundNonce);
     } catch {
@@ -539,9 +509,8 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
     });
     if (history.length > 100) history.pop();
 
-    // Payout winners and record each player's games.
     const multiplier = ROULETTE_MULTIPLIERS[result];
-    const payouts = []; // { userUuid, payout, balance }
+    const payouts = [];
     for (const [userUuid, userBets] of bets) {
       let totalPayout = 0;
       for (const bet of userBets) {
@@ -550,7 +519,6 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
         const profit = won ? payout - bet.amount : -bet.amount;
         const status = won ? "won" : "lost";
 
-        // Record the game in the dedicated roulette games table.
         try {
           await store.saveGame({
             roundId,
@@ -565,7 +533,6 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
           });
         } catch {}
 
-        // Also record in the generic bets table for the bet history page.
         try {
           await store.recordBet(userUuid, bet.amount, profit, status, won ? multiplier : 0);
         } catch {}
@@ -573,7 +540,6 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
         if (won) totalPayout += payout;
       }
 
-      // Credit the total payout once per user.
       if (totalPayout > 0) {
         try {
           const creditResult = await store.creditBalance(userUuid, totalPayout);
@@ -591,14 +557,12 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       payouts,
     });
 
-    // Send each player their updated balance via a user-scoped message.
     for (const [userUuid, userBets] of bets) {
       let totalPayout = 0;
       for (const bet of userBets) {
         if (bet.color === result) totalPayout += bet.amount * multiplier;
       }
       const won = totalPayout > 0;
-      // Re-fetch the user's balance from the store.
       try {
         const user = await store.getUser(userUuid);
         if (user) {
@@ -620,7 +584,6 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       void startSpin();
       return;
     }
-    // Emit periodic state for countdown display.
     broadcast({ type: "roulette_tick", phase, remaining: Math.max(0, phaseEndsAt - now()) });
   }
 
@@ -646,7 +609,7 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
     getBet: (userUuid) => {
       const userBets = bets.get(userUuid);
       if (!userBets || userBets.length === 0) return null;
-      return userBets; // array of { color, amount, name, avatar }
+      return userBets;
     },
 
     subscribe(listener) {
@@ -662,12 +625,9 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       const value = Math.max(0, Math.floor(Number(amount) || 0));
       if (!value) return { ok: false, error: "Enter a valid bet amount." };
 
-      // Deduct balance on the server.
       const deduction = await store.deductBalance(userUuid, value);
       if (!deduction.ok) return { ok: false, error: deduction.error };
 
-      // Accumulate the bet — players can bet multiple times per round,
-      // on the same or different colors.
       const existing = bets.get(userUuid) || [];
       const existingOnColor = existing.find((b) => b.color === color);
       if (existingOnColor) {
@@ -677,7 +637,6 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       }
       bets.set(userUuid, existing);
 
-      // Update the pot: accumulate the player's amount on this color.
       const potPlayer = pots[color].players.get(userUuid);
       if (potPlayer) {
         potPlayer.amount += value;

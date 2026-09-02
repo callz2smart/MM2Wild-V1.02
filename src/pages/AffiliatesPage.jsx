@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Footer } from "./HomePage";
 import LineWobbleLoader from "../components/LineWobbleLoader";
 import AffiliateStatusesModal from "../components/AffiliateStatusesModal";
 import { showNotification } from "../components/NotificationCenter";
@@ -193,7 +192,6 @@ export default function AffiliatesPage() {
         message: "Successfully copied to clipboard.",
       });
     } catch {
-      // Clipboard access can be blocked by browser permissions.
     }
   };
 
@@ -314,7 +312,6 @@ export default function AffiliatesPage() {
         {affiliate === null && <AffiliateSetup onSubmit={handleAffiliateCreated} />}
       </div>
       {statusesOpen && <AffiliateStatusesModal onClose={() => setStatusesOpen(false)} />}
-      <Footer />
     </div>
   );
 }

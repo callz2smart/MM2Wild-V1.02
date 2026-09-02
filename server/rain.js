@@ -127,8 +127,6 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
     try {
       await store.save(candidate);
     } catch (error) {
-      // Another server may have created the next rain between our load and
-      // save. Adopt that row instead of running a second in-memory rain.
       const stored = await store.loadCurrent();
       if (!stored) throw error;
       load(stored);

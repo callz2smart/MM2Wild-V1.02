@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Footer, footerLogoInnerMarkup } from "./HomePage";
+import { footerLogoInnerMarkup } from "./HomePage";
 import LeaderboardRulesModal from "../components/LeaderboardRulesModal";
 import LineWobbleLoader from "../components/LineWobbleLoader";
 
@@ -290,7 +290,6 @@ export default function LeaderboardPage() {
           </div>
         </div>
       </div>
-      <Footer />
       {rulesOpen && <LeaderboardRulesModal onClose={() => setRulesOpen(false)} />}
     </div>
   );

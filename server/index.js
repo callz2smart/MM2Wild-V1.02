@@ -525,9 +525,6 @@ async function sendUserTip(request, env) {
 
 export { resolveSessionUser };
 
-// Cloudflare Durable Object that powers the live chat in production.
-// The local Vite dev server mirrors the same protocol in server/chat.js so
-// the client code is identical between environments.
 export class ChatRoom {
   constructor(state, env) {
     this.state = state;
@@ -607,6 +604,7 @@ export class ChatRoom {
     const [client, server] = Object.values(pair);
 
     const clientId = requestUrl.searchParams.get("clientId")?.slice(0, 128) || crypto.randomUUID();
+    const presenceId = requestUrl.searchParams.get("presenceId")?.slice(0, 128) || clientId;
     const previousSocket = this.clientSockets.get(clientId);
     if (previousSocket && previousSocket !== server) {
       this.sessions.delete(previousSocket);
@@ -615,13 +613,13 @@ export class ChatRoom {
     this.clientSockets.set(clientId, server);
     this.sessions.add(server);
 
-    server.serializeAttachment({ profile, userUuid: account?.uuid || null, lastMessageAt: 0 });
+    server.serializeAttachment({ profile, userUuid: account?.uuid || null, presenceId, lastMessageAt: 0 });
 
     await this.rain.ready();
     server.send(
       JSON.stringify({
         type: "init",
-        online: this.sessions.size,
+        online: this.onlineCount(),
         messages: this.history,
         you: profile,
         rain: this.rain.state(account?.uuid),
@@ -630,7 +628,6 @@ export class ChatRoom {
     this.broadcastPresence();
     this.startRainInterval();
 
-    // Start the roulette lifecycle on the first connection and send init state.
     if (!this.rouletteStarted) {
       this.rouletteStarted = true;
       void this.roulette.start();
@@ -638,7 +635,6 @@ export class ChatRoom {
     const rouletteState = await this.roulette.ready();
     server.send(JSON.stringify({ ...rouletteState, type: "roulette_init" }));
 
-    // Forward roulette broadcasts to this socket (scoped to the user for myBet).
     const unsubscribeRoulette = this.roulette.subscribe((data, scopeUuid) => {
       if (server.readyState !== 1) return;
       if (scopeUuid && scopeUuid !== account?.uuid) return;
@@ -774,10 +770,19 @@ export class ChatRoom {
   }
 
   broadcastPresence() {
-    const data = JSON.stringify({ type: "presence", online: this.sessions.size });
+    const data = JSON.stringify({ type: "presence", online: this.onlineCount() });
     for (const peer of this.sessions) {
       if (peer.readyState === 1) peer.send(data);
     }
+  }
+
+  onlineCount() {
+    const presenceIds = new Set();
+    for (const peer of this.sessions) {
+      const attachment = peer.deserializeAttachment?.() || {};
+      presenceIds.add(attachment.presenceId || attachment.userUuid || "anonymous");
+    }
+    return presenceIds.size;
   }
 }
 
@@ -787,7 +792,6 @@ function chatColorForLevel(level) {
   return "#BEBEBE";
 }
 
-// ── Provably-fair seed management ───────────────────────────────────────────
 
 function generateServerSeed() {
   const bytes = new Uint8Array(32);
@@ -853,7 +857,6 @@ async function getFairness(request, env) {
     let seed = await getActiveFairnessSeed(env, user.uuid);
     if (!seed) seed = await createFairnessSeed(env, user.uuid);
 
-    // Fetch the most recently rotated seed so the user can verify it.
     const prevQuery = new URLSearchParams({
       user_uuid: `eq.${user.uuid}`,
       active: "eq.false",
@@ -934,7 +937,6 @@ async function rotateServerSeed(request, env) {
     let current = await getActiveFairnessSeed(env, user.uuid);
     if (!current) current = await createFairnessSeed(env, user.uuid);
 
-    // Deactivate the current seed and stamp the rotation time.
     const deactivateQuery = new URLSearchParams({ id: `eq.${current.id}` });
     await supabaseRequest(
       env,
@@ -946,7 +948,6 @@ async function rotateServerSeed(request, env) {
       },
     );
 
-    // Create a fresh active seed, carrying over the client seed.
     const newSeed = await createFairnessSeed(env, user.uuid, current.client_seed);
 
     return json({
@@ -965,15 +966,12 @@ async function rotateServerSeed(request, env) {
   }
 }
 
-// ── Bet history ─────────────────────────────────────────────────────────────
 
 const VALID_GAME_FILTERS = ["all", "mines", "plinko", "battles", "coinflip", "roulette", "cases", "upgrader"];
 
-// ── Transaction history ─────────────────────────────────────────────────────
 
 const VALID_METHOD_FILTERS = ["all", "rakeback", "mm2_deposit", "mm2_withdraw", "crypto_deposit", "crypto_withdraw", "tip_sent", "tip_received", "affiliate"];
 
-// ── Security / Sessions ─────────────────────────────────────────────────────
 
 async function getSessions(request, env) {
   const sessionCookie = cookieValue(request, "mm2wild_session");
