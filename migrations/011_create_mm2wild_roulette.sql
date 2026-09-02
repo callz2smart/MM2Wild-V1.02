@@ -29,7 +29,7 @@ create index if not exists idx_mm2wild_roulette_rounds_created
   on public.mm2wild_roulette_rounds (created_at desc);
 
 -- One row per player per round: records their bet, the result, and payout.
-create table if not exists public.mm2wild_roulette_games (
+create table if not exists public.mm2wild_roulette_bets (
   id uuid primary key default gen_random_uuid(),
   round_id uuid references public.mm2wild_roulette_rounds(id) on delete cascade,
   user_uuid uuid not null references public.mm2wild_users(uuid) on delete cascade,
@@ -43,14 +43,14 @@ create table if not exists public.mm2wild_roulette_games (
   created_at timestamptz not null default now()
 );
 
-create index if not exists idx_mm2wild_roulette_games_user_created
-  on public.mm2wild_roulette_games (user_uuid, created_at desc);
-create index if not exists idx_mm2wild_roulette_games_round
-  on public.mm2wild_roulette_games (round_id);
+create index if not exists idx_mm2wild_roulette_bets_user_created
+  on public.mm2wild_roulette_bets (user_uuid, created_at desc);
+create index if not exists idx_mm2wild_roulette_bets_round
+  on public.mm2wild_roulette_bets (round_id);
 
 alter table public.mm2wild_roulette_seed enable row level security;
 alter table public.mm2wild_roulette_rounds enable row level security;
-alter table public.mm2wild_roulette_games enable row level security;
+alter table public.mm2wild_roulette_bets enable row level security;
 revoke all on table public.mm2wild_roulette_seed from anon, authenticated;
 revoke all on table public.mm2wild_roulette_rounds from anon, authenticated;
-revoke all on table public.mm2wild_roulette_games from anon, authenticated;
+revoke all on table public.mm2wild_roulette_bets from anon, authenticated;

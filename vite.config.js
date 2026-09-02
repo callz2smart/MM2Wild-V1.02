@@ -60,6 +60,8 @@ export default defineConfig(({ mode }) => {
     MM2WILD_USER_SECRET: loadedEnv.MM2WILD_USER_SECRET,
     SUPABASE_URL: loadedEnv.SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: loadedEnv.SUPABASE_SERVICE_ROLE_KEY,
+    EOS_RPC_URL: loadedEnv.EOS_RPC_URL,
+    EOS_BLOCKS_AHEAD: loadedEnv.EOS_BLOCKS_AHEAD,
   };
 
   return {

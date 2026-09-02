@@ -38,6 +38,7 @@ const ITEM_BOX_SHADOW =
 
 const BETTING_DURATION_MS = 20_000;
 const SPINNING_DURATION_MS = 6_000;
+const WAITING_DURATION_MS = 2_000;
 
 const ICON_PATHS = {
   clover: (
@@ -176,6 +177,7 @@ export default function RoulettePage() {
   const [selectedResult, setSelectedResult] = useState(null);
   const [soundOn, setSoundOn] = useState(true);
   const [phase, setPhase] = useState("betting");
+  const [miningBlockNumber, setMiningBlockNumber] = useState(null);
   const [pots, setPots] = useState(() =>
     Object.fromEntries(COLORS.map((c) => [c.id, { players: 0, amount: 0 }])),
   );
@@ -331,8 +333,6 @@ export default function RoulettePage() {
       }
 
       const targetOffset = containerWidth / 2 - itemWidth * targetIndex - itemWidth / 2;
-      const jitter = Math.random() * 30 - 15;
-
       spinningRef.current = true;
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
@@ -347,17 +347,17 @@ export default function RoulettePage() {
       void reelEl.offsetHeight;
 
       reelEl.style.transition = `transform ${spinDuration}ms cubic-bezier(0.12, 0.66, 0.16, 1)`;
-      reelEl.style.transform = `translateX(${targetOffset + jitter}px)`;
+      reelEl.style.transform = `translateX(${targetOffset}px)`;
 
       setDuration(spinDuration);
-      setOffset(targetOffset + jitter);
+      setOffset(targetOffset);
 
       if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
       spinTimeoutRef.current = setTimeout(() => {
-        spinningRef.current = false;
-        setSpinning(false);
-        idleOffsetRef.current = 0;
-        setOffset(0);
+        setDuration(0);
+        setOffset(targetOffset);
+        setPhase("waiting");
+        phaseRef.current = "waiting";
       }, spinDuration);
     };
 
@@ -373,10 +373,15 @@ export default function RoulettePage() {
         case "roulette_init":
         case "roulette_state": {
           const nextPhase = payload.phase || "betting";
-          const fallbackDuration = nextPhase === "betting" ? BETTING_DURATION_MS : SPINNING_DURATION_MS;
+          const fallbackDuration = nextPhase === "betting"
+            ? BETTING_DURATION_MS
+            : nextPhase === "spinning"
+              ? SPINNING_DURATION_MS
+              : WAITING_DURATION_MS;
           const nextRemaining = payload.remaining
             ?? (payload.endsAt ? Math.max(0, payload.endsAt - Date.now()) : fallbackDuration);
           setPhase(nextPhase);
+          setMiningBlockNumber(payload.eosBlockNum ?? null);
           phaseRef.current = nextPhase;
           serverRemainingRef.current = nextRemaining;
           serverUpdatedAtRef.current = Date.now();
@@ -391,6 +396,8 @@ export default function RoulettePage() {
           if (payload.pots) setPots(payload.pots);
           if (payload.result && payload.phase === "spinning") {
             animateSpin(payload.result, nextRemaining);
+          } else if (payload.result && payload.phase === "waiting") {
+            animateSpin(payload.result, 0);
           }
           break;
         }
@@ -404,11 +411,16 @@ export default function RoulettePage() {
         }
         case "roulette_phase": {
           const nextPhase = payload.phase || "betting";
-          const fallbackDuration = nextPhase === "betting" ? BETTING_DURATION_MS : SPINNING_DURATION_MS;
+          const fallbackDuration = nextPhase === "betting"
+            ? BETTING_DURATION_MS
+            : nextPhase === "spinning"
+              ? SPINNING_DURATION_MS
+              : WAITING_DURATION_MS;
           const nextRemaining = payload.remaining
             ?? (payload.endsAt ? Math.max(0, payload.endsAt - Date.now()) : fallbackDuration);
           setPhase(nextPhase);
           phaseRef.current = nextPhase;
+          if (nextPhase === "betting") setMiningBlockNumber(null);
           serverRemainingRef.current = nextRemaining;
           serverUpdatedAtRef.current = Date.now();
           if (nextPhase === "betting") {
@@ -420,6 +432,14 @@ export default function RoulettePage() {
             setOffset(0);
             setPots(Object.fromEntries(COLORS.map((c) => [c.id, { players: 0, amount: 0 }])));
           }
+          break;
+        }
+        case "roulette_mining": {
+          setPhase("mining");
+          phaseRef.current = "mining";
+          setMiningBlockNumber(payload.blockNumber ?? null);
+          serverRemainingRef.current = 0;
+          serverUpdatedAtRef.current = Date.now();
           break;
         }
         case "roulette_spin": {
@@ -624,15 +644,25 @@ export default function RoulettePage() {
               <RouletteReel reel={ROULETTE_REEL} offset={offset} spinning={spinning} duration={duration} />
             </div>
 
-            {/* Rolling countdown + history */}
             <div className="flex flex-col gap-2 px-4 sm:px-0">
               <div className="min-h-6">
-                <p className="font-semibold text-accent text-center">
-                  {phase === "spinning" ? "ROLLING..." : " ROLLING IN "}
-                  {phase === "betting" && (
-                    <span ref={countdownTextRef} className="text-white tabular-nums">20.00S</span>
-                  )}
-                </p>
+                {phase === "betting" || (phase === "mining" && miningBlockNumber == null) ? (
+                  <p className="font-semibold text-accent text-center">
+                    ROLLING IN <span ref={countdownTextRef} className="text-white tabular-nums">{phase === "betting" ? "20.00S" : "0.00S"}</span>
+                  </p>
+                ) : phase === "mining" ? (
+                  <div className="font-semibold text-center flex items-center justify-center gap-2">
+                    <svg className="size-4.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>MINING BLOCK</span>
+                    {miningBlockNumber != null && <span className="text-accent">- #{miningBlockNumber}</span>}
+                  </div>
+                ) : (
+                  <p className="font-semibold text-accent text-center">
+                    {phase === "spinning" ? "ROLLING..." : "WAITING..."}
+                  </p>
+                )}
               </div>
               <div className="bg-[#313B6B] rounded-xl h-2 shadow-[inset_0px_2px_6px_rgba(0,0,0,0.32)] overflow-hidden">
                 <div

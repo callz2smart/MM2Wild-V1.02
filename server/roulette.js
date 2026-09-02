@@ -17,7 +17,14 @@ export const ROULETTE_MULTIPLIERS = {
 
 export const ROULETTE_BETTING_MS = 20 * 1000;
 export const ROULETTE_SPINNING_MS = 6 * 1000;
+export const ROULETTE_WAITING_MS = 2 * 1000;
 export const ROULETTE_TICK_MS = 250;
+export const EOS_BLOCKS_AHEAD = 4;
+export const EOS_POLL_MS = 500;
+export const EOS_PREFETCH_MS = 2500;
+
+const DEFAULT_EOS_RPC_URL = "https://eos.greymass.com";
+const EOS_MAINNET_CHAIN_ID = "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906";
 
 function generateServerSeed() {
   const bytes = new Uint8Array(32);
@@ -53,11 +60,34 @@ function sha256Hex(input) {
     );
 }
 
-async function computeResult(serverSeed, clientSeed, nonce) {
-  const hash = await hmacSha256Hex(serverSeed, `${clientSeed}:${nonce}`);
+async function computeResult(serverSeed, clientSeed, nonce, eosBlockId) {
+  const hash = await hmacSha256Hex(serverSeed, `${clientSeed}:${nonce}:${eosBlockId}`);
   const value = parseInt(hash.slice(0, 8), 16);
   const index = value % REEL_PATTERN.length;
   return REEL_PATTERN[index];
+}
+
+function eosSettings(env) {
+  return {
+    url: (env?.EOS_RPC_URL || DEFAULT_EOS_RPC_URL).replace(/\/$/, ""),
+    blocksAhead: Math.max(1, Number(env?.EOS_BLOCKS_AHEAD) || EOS_BLOCKS_AHEAD),
+  };
+}
+
+async function eosRequest(settings, path, body = {}) {
+  const response = await fetch(`${settings.url}/v1/chain/${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(8000),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data) throw new Error(`EOS ${path} request failed.`);
+  return data;
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 
@@ -145,28 +175,55 @@ function createSupabaseStore(env) {
       return this.createSeed();
     },
 
-    async saveRound(round) {
+    async createPendingRound(round) {
       const response = await request("mm2wild_roulette_rounds", {
         method: "POST",
+        headers: {
+          "content-type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=representation",
+        },
+        body: JSON.stringify({
+          id: round.id,
+          seed_id: round.seedId,
+          nonce: round.nonce,
+          client_seed: round.clientSeed,
+          result: null,
+          total_pot: round.totalPot,
+          total_players: round.totalPlayers,
+          eos_block_num: round.eosBlockNum,
+          eos_block_id: null,
+          eos_chain_id: round.eosChainId,
+          eos_block_status: "pending",
+          eos_requested_at: new Date().toISOString(),
+        }),
+      });
+      const rows = await response.json().catch(() => null);
+      if (!response.ok || !rows?.[0]?.id) throw new Error("Could not persist the EOS block commitment.");
+      return rows[0].id;
+    },
+
+    async completePendingRound(roundId, eosBlockId, result) {
+      const query = new URLSearchParams({ id: `eq.${roundId}`, select: "id" });
+      const response = await request(`mm2wild_roulette_rounds?${query}`, {
+        method: "PATCH",
         headers: {
           "content-type": "application/json",
           Prefer: "return=representation",
         },
         body: JSON.stringify({
-          seed_id: round.seedId,
-          nonce: round.nonce,
-          client_seed: round.clientSeed,
-          result: round.result,
-          total_pot: round.totalPot,
-          total_players: round.totalPlayers,
+          eos_block_id: eosBlockId,
+          eos_block_status: "mined",
+          eos_mined_at: new Date().toISOString(),
+          result,
         }),
       });
       const rows = await response.json().catch(() => null);
-      return rows?.[0]?.id || null;
+      if (!response.ok || !rows?.[0]?.id) throw new Error("Could not save the mined EOS block.");
+      return rows[0].id;
     },
 
-    async saveGame(game) {
-      await request("mm2wild_roulette_games", {
+    async saveBet(game) {
+      await request("mm2wild_roulette_bets", {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -188,7 +245,8 @@ function createSupabaseStore(env) {
 
     async loadRecentRounds(limit = 100) {
       const query = new URLSearchParams({
-        select: "id,nonce,result,total_players,created_at",
+        select: "id,nonce,result,total_players,created_at,eos_block_num,eos_block_id,eos_chain_id,eos_block_status,eos_requested_at,eos_mined_at",
+        result: "not.is.null",
         order: "created_at.desc",
         limit: String(limit),
       });
@@ -201,6 +259,12 @@ function createSupabaseStore(env) {
         color: row.result,
         players: row.total_players,
         time: row.created_at,
+        eosBlockNum: row.eos_block_num,
+        eosBlockId: row.eos_block_id,
+        eosChainId: row.eos_chain_id,
+        eosBlockStatus: row.eos_block_status,
+        eosRequestedAt: row.eos_requested_at,
+        eosMinedAt: row.eos_mined_at,
       }));
     },
 
@@ -314,19 +378,33 @@ function createMemoryStore() {
     async rotateSeed() {
       return this.createSeed();
     },
-    async saveRound(round) {
-      const roundId = crypto.randomUUID();
+    async createPendingRound(round) {
+      const existing = rounds.find((entry) => entry.id === round.id);
+      if (existing) return existing.id;
       rounds.unshift({
-        id: roundId,
+        id: round.id,
         roundNumber: round.nonce,
-        color: round.result,
+        color: null,
         players: round.totalPlayers,
         time: new Date().toISOString(),
+        eosBlockNum: round.eosBlockNum,
+        eosBlockId: null,
+        eosChainId: round.eosChainId,
+        eosBlockStatus: "pending",
       });
       if (rounds.length > 100) rounds.pop();
+      return round.id;
+    },
+    async completePendingRound(roundId, eosBlockId, result) {
+      const round = rounds.find((entry) => entry.id === roundId);
+      if (!round) throw new Error("Pending roulette round was not found.");
+      round.color = result;
+      round.eosBlockId = eosBlockId;
+      round.eosBlockStatus = "mined";
+      round.eosMinedAt = new Date().toISOString();
       return roundId;
     },
-    async saveGame() {
+    async saveBet() {
     },
     async loadRecentRounds(limit = 100) {
       return rounds.slice(0, limit);
@@ -355,10 +433,16 @@ function createMemoryStore() {
 
 export function createRouletteState({ env = null, now = () => Date.now() } = {}) {
   const store = env ? (createSupabaseStore(env) || createMemoryStore()) : createMemoryStore();
+  const eos = eosSettings(env);
 
   let phase = "betting";
   let phaseEndsAt = now() + ROULETTE_BETTING_MS;
   let currentResult = null;
+  let currentRoundId = null;
+  let currentEosBlockNum = null;
+  let currentEosBlockId = null;
+  let preparedEosTarget = null;
+  let eosTargetPromise = null;
   let history = [];
   let pots = emptyPots();
   let bets = new Map();
@@ -398,8 +482,16 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       type: "roulette_state",
       phase,
       remaining,
-      totalDuration: phase === "betting" ? ROULETTE_BETTING_MS : ROULETTE_SPINNING_MS,
+      totalDuration: phase === "betting"
+        ? ROULETTE_BETTING_MS
+        : phase === "spinning"
+          ? ROULETTE_SPINNING_MS
+          : phase === "waiting"
+            ? ROULETTE_WAITING_MS
+            : 0,
       result: currentResult,
+      eosBlockNum: currentEosBlockNum,
+      eosBlockId: currentEosBlockId,
       history: history.slice(0, 100),
       pots: publicPots(),
       myBet: playerBets ? playerBets.map((b) => ({ color: b.color, amount: b.amount })) : null,
@@ -443,21 +535,147 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
     phase = "betting";
     phaseEndsAt = now() + ROULETTE_BETTING_MS;
     currentResult = null;
+    currentRoundId = null;
+    currentEosBlockNum = null;
+    currentEosBlockId = null;
+    preparedEosTarget = null;
+    eosTargetPromise = null;
     pots = emptyPots();
     bets = new Map();
     broadcast({ type: "roulette_phase", phase: "betting", endsAt: phaseEndsAt });
+    scheduleMining();
   }
 
-  async function startSpin() {
-    await ready();
-    phase = "spinning";
-    phaseEndsAt = now() + ROULETTE_SPINNING_MS;
+  function scheduleMining() {
+    if (spinTimer) clearTimeout(spinTimer);
+    spinTimer = setTimeout(() => void mineEosBlock(), Math.max(0, phaseEndsAt - now()));
+  }
 
+  async function startWaiting(result) {
+    phase = "waiting";
+    phaseEndsAt = now() + ROULETTE_WAITING_MS;
+    broadcast({ type: "roulette_phase", phase: "waiting", endsAt: phaseEndsAt });
+    await resolveRound(result);
+    const remaining = Math.max(0, phaseEndsAt - now());
+    if (spinTimer) clearTimeout(spinTimer);
+    spinTimer = setTimeout(startBetting, remaining);
+  }
+
+  function roundTotals() {
+    let totalPot = 0;
+    const playerSet = new Set();
+    for (const color of ROULETTE_COLORS) {
+      totalPot += pots[color].amount;
+      for (const uuid of pots[color].players.keys()) playerSet.add(uuid);
+    }
+    return { totalPot, totalPlayers: playerSet.size };
+  }
+
+  async function fetchEosTarget(projectToCountdownEnd) {
+    const candidate = await eosRequest(eos, "get_info");
+    const blocksUntilCountdownEnd = projectToCountdownEnd
+      ? Math.max(0, Math.ceil((phaseEndsAt - now()) / 500))
+      : 0;
+    const blockNum = Number(candidate.head_block_num) + blocksUntilCountdownEnd + eos.blocksAhead;
+    if (candidate.chain_id !== EOS_MAINNET_CHAIN_ID || !Number.isSafeInteger(blockNum)) {
+      throw new Error("The configured RPC is not an EOS mainnet endpoint.");
+    }
+    return { chainId: candidate.chain_id, blockNum };
+  }
+
+  function prepareEosTarget() {
+    if (preparedEosTarget || eosTargetPromise) return;
+    eosTargetPromise = fetchEosTarget(true)
+      .then((target) => {
+        preparedEosTarget = target;
+        return target;
+      })
+      .catch(() => {
+        eosTargetPromise = null;
+        return null;
+      });
+  }
+
+  async function mineEosBlock() {
+    if (!seedRow) await ready();
+    if (phase !== "betting") return;
+    phase = "mining";
+    phaseEndsAt = now();
+
+    let target = preparedEosTarget;
+    if (!target && eosTargetPromise) target = await eosTargetPromise;
+    while (phase === "mining" && !target) {
+      try {
+        target = await fetchEosTarget(false);
+      } catch {
+        await wait(EOS_POLL_MS);
+      }
+    }
+    if (phase !== "mining") return;
+    currentEosBlockNum = target.blockNum;
+
+    broadcast({
+      type: "roulette_mining",
+      blockNumber: currentEosBlockNum,
+      nonce: roundNonce,
+      serverSeedHash: seedRow.server_seed_hash,
+      clientSeed: seedRow.client_seed || "",
+    });
+
+    const totals = roundTotals();
+    const pendingRoundId = crypto.randomUUID();
+    while (phase === "mining" && !currentRoundId) {
+      try {
+        currentRoundId = await store.createPendingRound({
+          id: pendingRoundId,
+          seedId: seedRow.id,
+          nonce: roundNonce,
+          clientSeed: seedRow.client_seed || "",
+          totalPot: totals.totalPot,
+          totalPlayers: totals.totalPlayers,
+          eosBlockNum: currentEosBlockNum,
+          eosChainId: target.chainId,
+        });
+      } catch {
+        await wait(EOS_POLL_MS);
+      }
+    }
+    if (phase !== "mining") return;
+
+    let block;
+    while (phase === "mining") {
+      try {
+        block = await eosRequest(eos, "get_block", { block_num_or_id: currentEosBlockNum });
+        if (block?.id) break;
+      } catch {}
+      await wait(EOS_POLL_MS);
+    }
+    if (phase !== "mining" || !block?.id) return;
+
+    currentEosBlockId = block.id;
     const result = await computeResult(
       seedRow.server_seed,
       seedRow.client_seed || "",
       roundNonce,
+      currentEosBlockId,
     );
+
+    while (phase === "mining") {
+      try {
+        await store.completePendingRound(currentRoundId, currentEosBlockId, result);
+        break;
+      } catch {
+        await wait(EOS_POLL_MS);
+      }
+    }
+    if (phase !== "mining") return;
+
+    startSpin(result);
+  }
+
+  function startSpin(result) {
+    phase = "spinning";
+    phaseEndsAt = now() + ROULETTE_SPINNING_MS;
     currentResult = result;
 
     broadcast({
@@ -466,11 +684,13 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       nonce: roundNonce,
       serverSeedHash: seedRow.server_seed_hash,
       clientSeed: seedRow.client_seed || "",
+      eosBlockNum: currentEosBlockNum,
+      eosBlockId: currentEosBlockId,
       endsAt: phaseEndsAt,
     });
 
     if (spinTimer) clearTimeout(spinTimer);
-    spinTimer = setTimeout(() => resolveRound(result), ROULETTE_SPINNING_MS);
+    spinTimer = setTimeout(() => void startWaiting(result), ROULETTE_SPINNING_MS);
   }
 
   async function resolveRound(result) {
@@ -482,17 +702,7 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       for (const uuid of pots[color].players.keys()) playerSet.add(uuid);
     }
 
-    let roundId = null;
-    try {
-      roundId = await store.saveRound({
-        seedId: seedRow.id,
-        nonce: roundNonce,
-        clientSeed: seedRow.client_seed || "",
-        result,
-        totalPot,
-        totalPlayers: playerSet.size,
-      });
-    } catch {}
+    const roundId = currentRoundId;
 
     try {
       roundNonce = await store.bumpNonce(seedRow.id, roundNonce);
@@ -506,6 +716,9 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       color: result,
       players: playerSet.size,
       time: new Date().toISOString(),
+      eosBlockNum: currentEosBlockNum,
+      eosBlockId: currentEosBlockId,
+      eosBlockStatus: "mined",
     });
     if (history.length > 100) history.pop();
 
@@ -520,7 +733,7 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
         const status = won ? "won" : "lost";
 
         try {
-          await store.saveGame({
+          await store.saveBet({
             roundId,
             userUuid,
             color: bet.color,
@@ -555,6 +768,8 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       history: history.slice(0, 100),
       pots: publicPots(),
       payouts,
+      eosBlockNum: currentEosBlockNum,
+      eosBlockId: currentEosBlockId,
     });
 
     for (const [userUuid, userBets] of bets) {
@@ -576,14 +791,14 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       } catch {}
     }
 
-    startBetting();
   }
 
   function tick() {
     if (phase === "betting" && now() >= phaseEndsAt) {
-      void startSpin();
+      void mineEosBlock();
       return;
     }
+    if (phase === "betting" && phaseEndsAt - now() <= EOS_PREFETCH_MS) prepareEosTarget();
     broadcast({ type: "roulette_tick", phase, remaining: Math.max(0, phaseEndsAt - now()) });
   }
 
@@ -655,6 +870,7 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       if (phase === "betting" && phaseEndsAt <= now()) {
         phaseEndsAt = now() + ROULETTE_BETTING_MS;
       }
+      if (phase === "betting") scheduleMining();
       startTickTimer();
       return snapshot();
     },
@@ -663,6 +879,11 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       phase = "betting";
       phaseEndsAt = now() + ROULETTE_BETTING_MS;
       currentResult = null;
+      currentRoundId = null;
+      currentEosBlockNum = null;
+      currentEosBlockId = null;
+      preparedEosTarget = null;
+      eosTargetPromise = null;
       history = [];
       pots = emptyPots();
       bets = new Map();
