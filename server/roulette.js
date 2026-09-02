@@ -207,14 +207,20 @@ function createSupabaseStore(env) {
 
     async loadRecentRounds(limit = 100) {
       const query = new URLSearchParams({
-        select: "result,created_at",
+        select: "id,nonce,result,total_players,created_at",
         order: "created_at.desc",
         limit: String(limit),
       });
       const response = await request(`mm2wild_roulette_rounds?${query}`);
       const rows = await response.json().catch(() => null);
       if (!response.ok || !Array.isArray(rows)) return [];
-      return rows.map((row) => ({ color: row.result, time: row.created_at }));
+      return rows.map((row) => ({
+        id: row.id,
+        roundNumber: row.nonce,
+        color: row.result,
+        players: row.total_players,
+        time: row.created_at,
+      }));
     },
 
     // ── User balance ────────────────────────────────────────────────────────
@@ -334,7 +340,13 @@ function createMemoryStore() {
     },
     async saveRound(round) {
       const roundId = crypto.randomUUID();
-      rounds.unshift({ id: roundId, color: round.result, time: new Date().toISOString() });
+      rounds.unshift({
+        id: roundId,
+        roundNumber: round.nonce,
+        color: round.result,
+        players: round.totalPlayers,
+        time: new Date().toISOString(),
+      });
       if (rounds.length > 100) rounds.pop();
       return roundId;
     },
@@ -490,6 +502,7 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
   }
 
   async function resolveRound(result) {
+    const completedRoundNonce = roundNonce;
     let totalPot = 0;
     const playerSet = new Set();
     for (const color of ROULETTE_COLORS) {
@@ -517,7 +530,13 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       roundNonce += 1;
     }
 
-    history.unshift({ color: result, time: new Date().toISOString() });
+    history.unshift({
+      id: roundId,
+      roundNumber: completedRoundNonce,
+      color: result,
+      players: playerSet.size,
+      time: new Date().toISOString(),
+    });
     if (history.length > 100) history.pop();
 
     // Payout winners and record each player's games.

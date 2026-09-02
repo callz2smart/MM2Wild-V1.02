@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, startTransition } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Header from "./components/Header";
 import Subheader from "./components/Subheader";
 import ChatSidebar from "./components/ChatSidebar";
@@ -32,7 +32,7 @@ export default function App() {
 
   useEffect(() => {
     const updateRoute = () => {
-      startTransition(() => setPathname(window.location.pathname));
+      setPathname(window.location.pathname);
     };
 
     const handleInternalNavigation = (event) => {

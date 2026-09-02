@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TripleGreenJackpotModal from "../components/TripleGreenJackpotModal";
+import RouletteResultModal from "../components/RouletteResultModal";
 // Roulette colors matching the reference: blue, green, gold, purple
 const COLORS = [
   { id: "blue", label: "BLUE", multiplier: 2, gradient: "radial-gradient(50% 50%, rgb(91, 119, 246) 0%, rgb(65, 81, 218) 100%)", linearGradient: "linear-gradient(90deg, rgb(91, 119, 246) 0%, rgb(65, 81, 218) 100%)", shadow: "rgb(11, 36, 146)", text: "#7CB0FF", rgb: "91,119,246" },
@@ -79,11 +80,13 @@ function buildReel(views = 6) {
   }));
 }
 
+const ROULETTE_REEL = buildReel(8);
+
 function formatNumber(n) {
   return n.toLocaleString("en-US");
 }
 
-function RouletteReel({ reel, offset, spinning, duration }) {
+const RouletteReel = memo(function RouletteReel({ reel, offset, spinning, duration }) {
   return (
     <div className="relative">
       <div className="absolute top-7 sm:top-14 -translate-y-full w-45 h-25 sm:w-71 sm:h-40 left-1/2 -translate-x-1/2 pointer-events-none">
@@ -133,7 +136,7 @@ function RouletteReel({ reel, offset, spinning, duration }) {
       </div>
     </div>
   );
-}
+});
 
 function ShadowButton({ children, onClick, disabled }) {
   return (
@@ -164,16 +167,15 @@ function ShadowButton({ children, onClick, disabled }) {
 }
 
 export default function RoulettePage() {
-  const [reel, setReel] = useState(() => buildReel(60));
   const [offset, setOffset] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [duration, setDuration] = useState(0);
   const [betAmount, setBetAmount] = useState(10);
   const [balance, setBalance] = useState(10000);
   const [history, setHistory] = useState([]);
-  const [lastResult, setLastResult] = useState(null);
   const [message, setMessage] = useState(null);
   const [jackpotModalOpen, setJackpotModalOpen] = useState(false);
+  const [selectedResult, setSelectedResult] = useState(null);
   const [soundOn, setSoundOn] = useState(true);
   // Server-driven countdown state.
   const [phase, setPhase] = useState("betting");
@@ -181,18 +183,14 @@ export default function RoulettePage() {
   const [pots, setPots] = useState(() =>
     Object.fromEntries(COLORS.map((c) => [c.id, { players: 0, amount: 0 }])),
   );
-  // Player's confirmed bets for the current round (array of { color, amount }).
-  const [myBets, setMyBets] = useState([]);
-  // Fairness info from server.
-  const [fairness, setFairness] = useState(null);
 
   const reelRef = useRef(null);
   const itemWidthRef = useRef(100);
   const idleOffsetRef = useRef(0);
   const rafRef = useRef(null);
+  const spinningRef = useRef(false);
   const socketRef = useRef(null);
   const spinTimeoutRef = useRef(null);
-  const clientIdRef = useRef(null);
   // Smooth countdown interpolation refs.
   const serverRemainingRef = useRef(BETTING_DURATION_MS); // last remaining value from server (ms)
   const serverUpdatedAtRef = useRef(Date.now()); // timestamp of last server update
@@ -209,6 +207,13 @@ export default function RoulettePage() {
     }
     let last = performance.now();
     function tick(now) {
+      // A spin can begin between this frame being queued and it running.
+      // Check the synchronous ref before touching the reel so an old idle
+      // frame can never overwrite the newly-started spin transition.
+      if (spinningRef.current) {
+        rafRef.current = null;
+        return;
+      }
       const dt = now - last;
       last = now;
       idleOffsetRef.current -= (dt / 1000) * 30;
@@ -216,12 +221,17 @@ export default function RoulettePage() {
       if (patternWidth > 0 && idleOffsetRef.current <= -patternWidth) {
         idleOffsetRef.current += patternWidth;
       }
-      setOffset(idleOffsetRef.current);
+      const reelElement = reelRef.current?.querySelector(".roulette-items-container");
+      if (reelElement) {
+        reelElement.style.transition = "none";
+        reelElement.style.transform = `translateX(${idleOffsetRef.current}px)`;
+      }
       rafRef.current = requestAnimationFrame(tick);
     }
     rafRef.current = requestAnimationFrame(tick);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     };
   }, [spinning]);
 
@@ -268,6 +278,7 @@ export default function RoulettePage() {
     window.setTimeout(() => setMessage(null), 3000);
   }, []);
   const closeJackpotModal = useCallback(() => setJackpotModalOpen(false), []);
+  const closeResultModal = useCallback(() => setSelectedResult(null), []);
 
   // ── Fetch initial balance from session ────────────────────────────────────
   useEffect(() => {
@@ -292,7 +303,6 @@ export default function RoulettePage() {
       clientId = crypto.randomUUID();
       sessionStorage.setItem(clientIdKey, clientId);
     }
-    clientIdRef.current = clientId;
     const socketUrl = `${protocol}//${window.location.host}/api/chat?clientId=${encodeURIComponent(clientId)}`;
     let disposed = false;
     let reconnectTimer = null;
@@ -304,7 +314,7 @@ export default function RoulettePage() {
 
       // Get the reel transform element for direct DOM manipulation.
       // This bypasses React's batched updates so the CSS transition fires.
-      const reelEl = reelRef.current?.querySelector(".flex.relative.will-change-transform");
+      const reelEl = reelRef.current?.querySelector(".roulette-items-container");
       if (!reelEl || !reelRef.current) return;
 
       const first = reelRef.current.querySelector("[data-item]");
@@ -338,9 +348,16 @@ export default function RoulettePage() {
       const targetOffset = containerWidth / 2 - itemWidth * targetIndex - itemWidth / 2;
       const jitter = Math.random() * 30 - 15; // small random offset within the item
 
-      // Mark spinning state (stops idle animation, shows center divider).
+      // Stop the idle animation synchronously. Waiting for React to commit
+      // `spinning` leaves a queued idle frame able to cancel this transition.
+      spinningRef.current = true;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+
+      // Mark spinning state (shows center divider).
       setSpinning(true);
-      setLastResult(null);
 
       // Direct DOM: disable transition, snap to current position.
       reelEl.style.transition = "none";
@@ -360,8 +377,8 @@ export default function RoulettePage() {
       // After the spin animation, resume idle scroll.
       if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
       spinTimeoutRef.current = setTimeout(() => {
+        spinningRef.current = false;
         setSpinning(false);
-        setLastResult(color);
         idleOffsetRef.current = 0;
         setOffset(0);
       }, spinDuration);
@@ -387,13 +404,14 @@ export default function RoulettePage() {
           serverRemainingRef.current = nextRemaining;
           serverUpdatedAtRef.current = Date.now();
           if (payload.history) setHistory(payload.history.map((h) => ({
+            id: h.id,
+            roundNumber: h.roundNumber ?? h.nonce,
+            players: h.players ?? 0,
             color: COLORS.find((c) => c.id === h.color) || { id: h.color, ...COLORS.find((c) => c.id === h.color) },
             icon: COLOR_ICON[h.color] || "clover",
             time: new Date(h.time),
           })));
           if (payload.pots) setPots(payload.pots);
-          if (payload.myBet !== undefined) setMyBets(payload.myBet || []);
-          if (payload.fairness) setFairness(payload.fairness);
           if (payload.result && payload.phase === "spinning") {
             // We joined mid-spin — animate to the result.
             animateSpin(payload.result, nextRemaining);
@@ -402,7 +420,7 @@ export default function RoulettePage() {
         }
         case "roulette_tick": {
           const nextPhase = payload.phase || "betting";
-          setPhase(nextPhase);
+          if (phaseRef.current !== nextPhase) setPhase(nextPhase);
           phaseRef.current = nextPhase;
           serverRemainingRef.current = payload.remaining ?? 0;
           serverUpdatedAtRef.current = Date.now();
@@ -419,11 +437,11 @@ export default function RoulettePage() {
           serverUpdatedAtRef.current = Date.now();
           if (nextPhase === "betting") {
             if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
+            spinningRef.current = false;
             setSpinning(false);
             setDuration(0);
             idleOffsetRef.current = 0;
             setOffset(0);
-            setMyBets([]);
             setPots(Object.fromEntries(COLORS.map((c) => [c.id, { players: 0, amount: 0 }])));
           }
           break;
@@ -435,16 +453,14 @@ export default function RoulettePage() {
             ?? (payload.endsAt ? Math.max(0, payload.endsAt - Date.now()) : SPINNING_DURATION_MS);
           serverRemainingRef.current = spinRemaining;
           serverUpdatedAtRef.current = Date.now();
-          setFairness({
-            serverSeedHash: payload.serverSeedHash,
-            clientSeed: payload.clientSeed,
-            nonce: payload.nonce,
-          });
           animateSpin(payload.color, spinRemaining);
           break;
         }
         case "roulette_result": {
           if (payload.history) setHistory(payload.history.map((h) => ({
+            id: h.id,
+            roundNumber: h.roundNumber ?? h.nonce,
+            players: h.players ?? 0,
             color: COLORS.find((c) => c.id === h.color) || { id: h.color },
             icon: COLOR_ICON[h.color] || "clover",
             time: new Date(h.time),
@@ -465,15 +481,6 @@ export default function RoulettePage() {
           break;
         }
         case "roulette_bet_confirmed": {
-          setMyBets((prev) => {
-            const existing = prev.find((b) => b.color === payload.bet.color);
-            if (existing) {
-              return prev.map((b) => b.color === payload.bet.color
-                ? { ...b, amount: b.amount + payload.bet.amount }
-                : b);
-            }
-            return [...prev, payload.bet];
-          });
           if (payload.balance != null) setBalance(payload.balance);
           break;
         }
@@ -617,11 +624,18 @@ export default function RoulettePage() {
                   type="button"
                   onClick={() => setSoundOn((s) => !s)}
                   className="text-accent size-10 flex items-center justify-center rounded-lg bg-[#202D57] hover:bg-[#2D3D73] transition-colors cursor-pointer"
-                  aria-label="Sound"
+                  aria-label={soundOn ? "Mute sound" : "Unmute sound"}
+                  aria-pressed={!soundOn}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" fill="currentColor">
-                    <path d="M14 20.725v-2.05q2.25-.65 3.625-2.5t1.375-4.2-1.375-4.2T14 5.275v-2.05q3.1.7 5.05 3.138T21 11.975t-1.95 5.613T14 20.725M3 15V9h4l5-5v16l-5-5zm11 1V7.95q1.175.55 1.838 1.65T16.5 12q0 1.275-.663 2.363T14 16" />
-                  </svg>
+                  {soundOn ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" fill="currentColor">
+                      <path d="M14 20.725v-2.05q2.25-.65 3.625-2.5t1.375-4.2-1.375-4.2T14 5.275v-2.05q3.1.7 5.05 3.138T21 11.975t-1.95 5.613T14 20.725M3 15V9h4l5-5v16l-5-5zm11 1V7.95q1.175.55 1.838 1.65T16.5 12q0 1.275-.663 2.363T14 16" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5">
+                      <path fill="currentColor" d="m19.8 22.6-3.025-3.025q-.625.4-1.325.688t-1.45.462v-2.05q.35-.125.688-.25t.637-.3L12 14.8V20l-5-5H3V9h3.2L1.4 4.2l1.4-1.4 18.4 18.4zm-.2-5.8-1.45-1.45q.425-.775.638-1.625t.212-1.75q0-2.35-1.375-4.2T14 5.275v-2.05q3.1.7 5.05 3.138T21 11.975q0 1.325-.363 2.55T19.6 16.8m-3.35-3.35L14 11.2V7.95q1.175.55 1.838 1.65T16.5 12q0 .375-.062.738t-.188.712M12 9.2 9.4 6.6 12 4z" />
+                    </svg>
+                  )}
                 </button>
                 <a
                   href="/fairness"
@@ -638,7 +652,7 @@ export default function RoulettePage() {
 
             {/* Reel */}
             <div ref={reelRef} className="w-full">
-              <RouletteReel reel={reel} offset={offset} spinning={spinning} duration={duration} />
+              <RouletteReel reel={ROULETTE_REEL} offset={offset} spinning={spinning} duration={duration} />
             </div>
 
             {/* Rolling countdown + history */}
@@ -673,16 +687,19 @@ export default function RoulettePage() {
                           const color = COLORS.find((c) => c.id === entry.color?.id);
                           if (!color) return null;
                           return (
-                            <div
+                            <button
+                              type="button"
                               key={`${entry.time?.getTime()}-${i}`}
                               className="rounded-full flex items-center justify-center cursor-pointer size-6 md:size-8"
+                              onClick={() => setSelectedResult(entry)}
+                              aria-label={`View Roulette result ${entry.roundNumber ?? i + 1}`}
                               style={{
                                 background: color.gradient,
                                 boxShadow: "rgba(0, 0, 0, 0.25) 0px -1.5px 0px inset, rgba(255, 255, 255, 0.25) 0px 1.5px 0px inset",
                               }}
                             >
                               {icon(entry.icon, "size-[62.5%] drop-shadow-[0px_2px_4px_rgba(0,0,0,0.54)]")}
-                            </div>
+                            </button>
                           );
                         })
                       )}
@@ -853,6 +870,13 @@ export default function RoulettePage() {
           </div>
         </div>
         {jackpotModalOpen && <TripleGreenJackpotModal onClose={closeJackpotModal} />}
+        {selectedResult && (
+          <RouletteResultModal
+            result={selectedResult}
+            resultIcon={icon(selectedResult.icon, "drop-shadow-[0px_4px_12px_rgba(0,0,0,0.34)] size-12")}
+            onClose={closeResultModal}
+          />
+        )}
       </div>
   );
 }
