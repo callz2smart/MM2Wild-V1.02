@@ -39,6 +39,7 @@ const ITEM_BOX_SHADOW =
 const BETTING_DURATION_MS = 20_000;
 const SPINNING_DURATION_MS = 6_000;
 const WAITING_DURATION_MS = 2_000;
+const MINING_BLOCK_DISPLAY_MS = 3_000;
 
 const ICON_PATHS = {
   clover: (
@@ -178,6 +179,8 @@ export default function RoulettePage() {
   const [soundOn, setSoundOn] = useState(true);
   const [phase, setPhase] = useState("betting");
   const [miningBlockNumber, setMiningBlockNumber] = useState(null);
+  const [jackpotAmount, setJackpotAmount] = useState(0);
+  const [jackpotGreenStreak, setJackpotGreenStreak] = useState(0);
   const [pots, setPots] = useState(() =>
     Object.fromEntries(COLORS.map((c) => [c.id, { players: 0, amount: 0 }])),
   );
@@ -299,6 +302,19 @@ export default function RoulettePage() {
     const socketUrl = `${protocol}//${window.location.host}/api/chat?clientId=${encodeURIComponent(clientId)}&presenceId=${encodeURIComponent(presenceId)}`;
     let disposed = false;
     let reconnectTimer = null;
+    let miningBlockDisplayTimer = null;
+
+    const showMiningBlock = (blockNumber) => {
+      if (miningBlockDisplayTimer) clearTimeout(miningBlockDisplayTimer);
+      miningBlockDisplayTimer = null;
+      setMiningBlockNumber(blockNumber ?? null);
+      if (blockNumber != null) {
+        miningBlockDisplayTimer = setTimeout(() => {
+          setMiningBlockNumber(null);
+          miningBlockDisplayTimer = null;
+        }, MINING_BLOCK_DISPLAY_MS);
+      }
+    };
 
     const animateSpin = (colorId, requestedDuration = SPINNING_DURATION_MS) => {
       const color = COLORS.find((c) => c.id === colorId);
@@ -381,7 +397,7 @@ export default function RoulettePage() {
           const nextRemaining = payload.remaining
             ?? (payload.endsAt ? Math.max(0, payload.endsAt - Date.now()) : fallbackDuration);
           setPhase(nextPhase);
-          setMiningBlockNumber(payload.eosBlockNum ?? null);
+          showMiningBlock(nextPhase === "mining" ? payload.eosBlockNum : null);
           phaseRef.current = nextPhase;
           serverRemainingRef.current = nextRemaining;
           serverUpdatedAtRef.current = Date.now();
@@ -394,6 +410,10 @@ export default function RoulettePage() {
             time: new Date(h.time),
           })));
           if (payload.pots) setPots(payload.pots);
+          if (payload.jackpot) {
+            setJackpotAmount(Number(payload.jackpot.amount || 0));
+            setJackpotGreenStreak(Number(payload.jackpot.greenStreak || 0));
+          }
           if (payload.result && payload.phase === "spinning") {
             animateSpin(payload.result, nextRemaining);
           } else if (payload.result && payload.phase === "waiting") {
@@ -420,7 +440,7 @@ export default function RoulettePage() {
             ?? (payload.endsAt ? Math.max(0, payload.endsAt - Date.now()) : fallbackDuration);
           setPhase(nextPhase);
           phaseRef.current = nextPhase;
-          if (nextPhase === "betting") setMiningBlockNumber(null);
+          if (nextPhase === "betting") showMiningBlock(null);
           serverRemainingRef.current = nextRemaining;
           serverUpdatedAtRef.current = Date.now();
           if (nextPhase === "betting") {
@@ -437,7 +457,7 @@ export default function RoulettePage() {
         case "roulette_mining": {
           setPhase("mining");
           phaseRef.current = "mining";
-          setMiningBlockNumber(payload.blockNumber ?? null);
+          showMiningBlock(payload.blockNumber);
           serverRemainingRef.current = 0;
           serverUpdatedAtRef.current = Date.now();
           break;
@@ -462,6 +482,10 @@ export default function RoulettePage() {
             time: new Date(h.time),
           })));
           if (payload.pots) setPots(payload.pots);
+          if (payload.jackpot) {
+            setJackpotAmount(Number(payload.jackpot.amount || 0));
+            setJackpotGreenStreak(Number(payload.jackpot.greenStreak || 0));
+          }
           fetch("/api/session", { credentials: "include" })
             .then((r) => (r.ok ? r.json() : null))
             .then((data) => {
@@ -472,14 +496,30 @@ export default function RoulettePage() {
         }
         case "roulette_pots": {
           if (payload.pots) setPots(payload.pots);
+          if (payload.jackpot) setJackpotAmount(Number(payload.jackpot.amount || 0));
           break;
         }
         case "roulette_bet_confirmed": {
-          if (payload.balance != null) setBalance(payload.balance);
+          if (payload.balance != null) {
+            const nextBalance = Number(payload.balance);
+            setBalance(nextBalance);
+            window.dispatchEvent(new CustomEvent("mm2wild:balance-updated", {
+              detail: { mm2Balance: nextBalance },
+            }));
+          }
           break;
         }
         case "roulette_balance": {
-          if (payload.balance != null) setBalance(payload.balance);
+          if (payload.balance != null) {
+            const nextBalance = Number(payload.balance);
+            setBalance(nextBalance);
+            window.dispatchEvent(new CustomEvent("mm2wild:balance-updated", {
+              detail: { mm2Balance: nextBalance },
+            }));
+          }
+          if (Number(payload.jackpotPayout || 0) > 0) {
+            showMessage(`TRIPLE GREEN JACKPOT +${formatNumber(Number(payload.jackpotPayout))}`, "win");
+          }
           break;
         }
         case "roulette_error": {
@@ -509,6 +549,7 @@ export default function RoulettePage() {
     return () => {
       disposed = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (miningBlockDisplayTimer) clearTimeout(miningBlockDisplayTimer);
       if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
       const socket = socketRef.current;
       if (socket) socket.close();
@@ -542,15 +583,6 @@ export default function RoulettePage() {
     return counts;
   }, [history]);
 
-  const consecutiveGreenResults = useMemo(() => {
-    let count = 0;
-    for (const entry of history) {
-      if (entry.color?.id !== "green" || count === 3) break;
-      count += 1;
-    }
-    return count;
-  }, [history]);
-
   const bettingLocked = phase !== "betting";
 
   return (
@@ -564,7 +596,7 @@ export default function RoulettePage() {
                   <p className="text-accent text-sm">TRIPLE GREEN POT</p>
                   <div className="flex items-center gap-1.5">
                     <img src="/coin.webp" alt="" className="bg-cover bg-center size-4.5" />
-                    <span>0</span>
+                    <span className="tabular-nums">{formatNumber(jackpotAmount)}</span>
                     <button
                       type="button"
                       className="cursor-pointer ml-1 hover:opacity-80 transition-opacity"
@@ -579,7 +611,7 @@ export default function RoulettePage() {
                 </div>
                 <div className="flex gap-1.25">
                   {[0, 1, 2].map((idx) => {
-                    const isActive = idx < consecutiveGreenResults;
+                    const isActive = idx < jackpotGreenStreak;
                     return (
                       <button
                         key={idx}
@@ -646,11 +678,11 @@ export default function RoulettePage() {
 
             <div className="flex flex-col gap-2 px-4 sm:px-0">
               <div className="min-h-6">
-                {phase === "betting" || (phase === "mining" && miningBlockNumber == null) ? (
+                {phase === "betting" ? (
                   <p className="font-semibold text-accent text-center">
-                    ROLLING IN <span ref={countdownTextRef} className="text-white tabular-nums">{phase === "betting" ? "20.00S" : "0.00S"}</span>
+                    ROLLING IN <span ref={countdownTextRef} className="text-white tabular-nums">20.00S</span>
                   </p>
-                ) : phase === "mining" ? (
+                ) : phase === "mining" && miningBlockNumber != null ? (
                   <div className="font-semibold text-center flex items-center justify-center gap-2">
                     <svg className="size-4.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -660,7 +692,7 @@ export default function RoulettePage() {
                   </div>
                 ) : (
                   <p className="font-semibold text-accent text-center">
-                    {phase === "spinning" ? "ROLLING..." : "WAITING..."}
+                    {phase === "mining" || phase === "spinning" ? "ROLLING..." : "WAITING..."}
                   </p>
                 )}
               </div>

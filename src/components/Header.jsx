@@ -799,7 +799,12 @@ export default function Header({ onInitialRenderReady, selectedBalanceType, onBa
 
   useEffect(() => {
     const controller = new AbortController();
-    const updateBalance = async () => {
+    const updateBalance = async (event) => {
+      const mm2Balance = Number(event.detail?.mm2Balance);
+      if (Number.isFinite(mm2Balance)) {
+        setSignedInUser((current) => current ? { ...current, mm2_balance: mm2Balance } : current);
+        return;
+      }
       try {
         const response = await fetch("/api/session", { signal: controller.signal });
         const payload = await response.json().catch(() => null);

@@ -82,7 +82,7 @@ export default function TripleGreenJackpotModal({ onClose }) {
           <div className="bg-[#33447F]/95 h-0.5 rounded-full" />
           <p className="text-accent text-[15px] font-medium">
             0.5% of all plays from each Roulette round will be added into the pot.<br /><br />
-            The pot will be won any time that there are gem hits in a row - everyone who played the gem coin during any of these 3 rounds will take a split of the pot.<br /><br />
+            The pot will be won any time that three green coins hit in a row - everyone who played the green coin during any of these 3 rounds will take a split of the pot.<br /><br />
             The pot will be split into three, and the winnings from each third will be shared with the players from each round proportionate to their plays.
           </p>
           <div className="p-3 bg-[#283564] rounded-[10px]">

@@ -125,6 +125,22 @@ function createSupabaseStore(env) {
       return rows[0] || null;
     },
 
+    async loadJackpotState() {
+      const response = await request("rpc/mm2wild_get_roulette_jackpot", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: "{}",
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result) return null;
+      return {
+        amount: Number(result.amount || 0),
+        greenStreak: Number(result.greenStreak || 0),
+      };
+    },
+
     async createSeed() {
       const serverSeed = generateServerSeed();
       const serverSeedHash = await sha256Hex(serverSeed);
@@ -223,7 +239,7 @@ function createSupabaseStore(env) {
     },
 
     async saveBet(game) {
-      await request("mm2wild_roulette_bets", {
+      const response = await request("mm2wild_roulette_bets", {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -241,6 +257,36 @@ function createSupabaseStore(env) {
           status: game.status,
         }),
       });
+      if (!response.ok) throw new Error("Could not persist the roulette bet.");
+    },
+
+    async processJackpot(round) {
+      const response = await request("rpc/mm2wild_process_roulette_jackpot", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          p_round_id: round.roundId,
+          p_green_bets: round.greenBets,
+        }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result) {
+        throw new Error(result?.message || "Could not process the roulette jackpot.");
+      }
+      return {
+        amount: Number(result.amount || 0),
+        greenStreak: Number(result.greenStreak || 0),
+        triggered: Boolean(result.triggered),
+        potAmount: Number(result.potAmount || 0),
+        paidAmount: Number(result.paidAmount || 0),
+        payouts: Array.isArray(result.payouts) ? result.payouts.map((payout) => ({
+          userUuid: payout.userUuid,
+          roundId: payout.roundId,
+          payout: Number(payout.payout || 0),
+        })) : [],
+      };
     },
 
     async loadRecentRounds(limit = 100) {
@@ -281,28 +327,21 @@ function createSupabaseStore(env) {
     },
 
     async deductBalance(userUuid, amount) {
-      const user = await this.getUser(userUuid);
-      if (!user) return { ok: false, error: "Account not found." };
-      const current = Number(user.mm2_balance || 0);
-      if (current < amount) return { ok: false, error: "Insufficient balance." };
-      const newBalance = current - amount;
-      const newWagered = Number(user.total_wagered || 0) + amount;
-      const query = new URLSearchParams({ uuid: `eq.${userUuid}` });
-      const response = await request(`mm2wild_users?${query}`, {
-        method: "PATCH",
+      const response = await request("rpc/mm2wild_place_roulette_wager", {
+        method: "POST",
         headers: {
           "content-type": "application/json",
-          Prefer: "return=representation",
         },
         body: JSON.stringify({
-          mm2_balance: newBalance,
-          total_wagered: newWagered,
+          p_user_uuid: userUuid,
+          p_amount: amount,
         }),
       });
-      if (!response.ok) return { ok: false, error: "Could not deduct balance." };
-      const rows = await response.json().catch(() => null);
-      const finalBalance = rows?.[0]?.mm2_balance != null ? Number(rows[0].mm2_balance) : newBalance;
-      return { ok: true, balance: finalBalance };
+      const result = await response.json().catch(() => null);
+      if (!response.ok || result?.balance == null) {
+        return { ok: false, error: result?.message || "Could not deduct balance." };
+      }
+      return { ok: true, balance: Number(result.balance) };
     },
 
     async creditBalance(userUuid, amount) {
@@ -345,6 +384,9 @@ function createMemoryStore() {
   let seed = null;
   const rounds = [];
   const balances = new Map();
+  let jackpotAmount = 0;
+  let jackpotGreenRounds = [];
+  const processedJackpotRounds = new Map();
 
   return {
     async loadActiveSeed() {
@@ -359,6 +401,9 @@ function createMemoryStore() {
         };
       }
       return seed;
+    },
+    async loadJackpotState() {
+      return { amount: jackpotAmount, greenStreak: jackpotGreenRounds.length };
     },
     async createSeed() {
       const serverSeed = generateServerSeed();
@@ -406,6 +451,53 @@ function createMemoryStore() {
     },
     async saveBet() {
     },
+    async processJackpot(round) {
+      const processed = processedJackpotRounds.get(round.roundId);
+      if (processed) return processed;
+
+      const contribution = Math.round((round.totalPot * 0.005 + Number.EPSILON) * 100) / 100;
+      jackpotAmount = Math.round((jackpotAmount + contribution + Number.EPSILON) * 100) / 100;
+      if (round.result === "green") {
+        jackpotGreenRounds.push({ roundId: round.roundId, bets: round.greenBets });
+      } else {
+        jackpotGreenRounds = [];
+      }
+
+      const result = {
+        amount: jackpotAmount,
+        greenStreak: jackpotGreenRounds.length,
+        triggered: false,
+        potAmount: 0,
+        paidAmount: 0,
+        payouts: [],
+      };
+
+      if (jackpotGreenRounds.length === 3) {
+        result.triggered = true;
+        result.potAmount = jackpotAmount;
+        const third = jackpotAmount / 3;
+        for (const greenRound of jackpotGreenRounds) {
+          const roundTotal = greenRound.bets.reduce((sum, bet) => sum + bet.amount, 0);
+          if (roundTotal <= 0) continue;
+          for (const bet of greenRound.bets) {
+            const payout = Math.floor((third * (bet.amount / roundTotal) + Number.EPSILON) * 100) / 100;
+            if (payout <= 0) continue;
+            const current = balances.get(bet.userUuid) ?? 10000;
+            balances.set(bet.userUuid, current + payout);
+            result.paidAmount += payout;
+            result.payouts.push({ userUuid: bet.userUuid, roundId: greenRound.roundId, payout });
+          }
+        }
+        result.paidAmount = Math.round((result.paidAmount + Number.EPSILON) * 100) / 100;
+        jackpotAmount = Math.max(0, Math.round((jackpotAmount - result.paidAmount + Number.EPSILON) * 100) / 100);
+        jackpotGreenRounds = [];
+        result.amount = jackpotAmount;
+        result.greenStreak = 0;
+      }
+
+      processedJackpotRounds.set(round.roundId, result);
+      return result;
+    },
     async loadRecentRounds(limit = 100) {
       return rounds.slice(0, limit);
     },
@@ -446,6 +538,9 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
   let history = [];
   let pots = emptyPots();
   let bets = new Map();
+  let jackpotAmount = 0;
+  let jackpotGreenStreak = 0;
+  let jackpotContributionSettled = false;
   let seedRow = null;
   let roundNonce = 0;
   let readyPromise = null;
@@ -475,6 +570,16 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
     return obj;
   }
 
+  function publicJackpot() {
+    const pendingContribution = jackpotContributionSettled
+      ? 0
+      : Math.round(roundTotals().totalPot * 0.5) / 100;
+    return {
+      amount: Math.round((jackpotAmount + pendingContribution + Number.EPSILON) * 100) / 100,
+      greenStreak: jackpotGreenStreak,
+    };
+  }
+
   function snapshot(userUuid) {
     const remaining = Math.max(0, phaseEndsAt - now());
     const playerBets = userUuid ? bets.get(userUuid) : null;
@@ -494,6 +599,7 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       eosBlockId: currentEosBlockId,
       history: history.slice(0, 100),
       pots: publicPots(),
+      jackpot: publicJackpot(),
       myBet: playerBets ? playerBets.map((b) => ({ color: b.color, amount: b.amount })) : null,
       fairness: seedRow
         ? {
@@ -526,6 +632,15 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
         if (!seedRow) seedRow = await store.createSeed();
         roundNonce = seedRow.nonce || 0;
         history = await store.loadRecentRounds(100);
+        try {
+          const jackpot = await store.loadJackpotState();
+          if (jackpot) {
+            jackpotAmount = jackpot.amount;
+            jackpotGreenStreak = jackpot.greenStreak;
+          }
+        } catch (error) {
+          console.error("Could not load roulette jackpot state:", error);
+        }
       })().catch(() => {});
     }
     await readyPromise;
@@ -542,6 +657,7 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
     eosTargetPromise = null;
     pots = emptyPots();
     bets = new Map();
+    jackpotContributionSettled = false;
     broadcast({ type: "roulette_phase", phase: "betting", endsAt: phaseEndsAt });
     scheduleMining();
   }
@@ -761,6 +877,29 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       }
     }
 
+    const greenBets = [];
+    for (const [userUuid, userBets] of bets) {
+      const greenAmount = userBets
+        .filter((bet) => bet.color === "green")
+        .reduce((sum, bet) => sum + bet.amount, 0);
+      if (greenAmount > 0) greenBets.push({ userUuid, amount: greenAmount });
+    }
+
+    let jackpotResult = null;
+    try {
+      jackpotResult = await store.processJackpot({
+        roundId,
+        result,
+        totalPot,
+        greenBets,
+      });
+      jackpotAmount = jackpotResult.amount;
+      jackpotGreenStreak = jackpotResult.greenStreak;
+      jackpotContributionSettled = true;
+    } catch (error) {
+      console.error("Could not process roulette jackpot:", error);
+    }
+
     broadcast({
       type: "roulette_result",
       color: result,
@@ -768,16 +907,33 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       history: history.slice(0, 100),
       pots: publicPots(),
       payouts,
+      jackpot: {
+        amount: jackpotAmount,
+        greenStreak: jackpotGreenStreak,
+        triggered: Boolean(jackpotResult?.triggered),
+        potAmount: jackpotResult?.potAmount || 0,
+        paidAmount: jackpotResult?.paidAmount || 0,
+      },
       eosBlockNum: currentEosBlockNum,
       eosBlockId: currentEosBlockId,
     });
 
-    for (const [userUuid, userBets] of bets) {
+    const jackpotPayoutsByUser = new Map();
+    for (const payout of jackpotResult?.payouts || []) {
+      jackpotPayoutsByUser.set(
+        payout.userUuid,
+        (jackpotPayoutsByUser.get(payout.userUuid) || 0) + payout.payout,
+      );
+    }
+    const affectedUsers = new Set([...bets.keys(), ...jackpotPayoutsByUser.keys()]);
+    for (const userUuid of affectedUsers) {
+      const userBets = bets.get(userUuid) || [];
       let totalPayout = 0;
       for (const bet of userBets) {
         if (bet.color === result) totalPayout += bet.amount * multiplier;
       }
-      const won = totalPayout > 0;
+      const jackpotPayout = jackpotPayoutsByUser.get(userUuid) || 0;
+      const won = totalPayout > 0 || jackpotPayout > 0;
       try {
         const user = await store.getUser(userUuid);
         if (user) {
@@ -786,6 +942,7 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
             balance: Number(user.mm2_balance || 0),
             won,
             payout: totalPayout,
+            jackpotPayout,
           });
         }
       } catch {}
@@ -860,7 +1017,7 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       }
       pots[color].amount += value;
 
-      broadcast({ type: "roulette_pots", pots: publicPots() });
+      broadcast({ type: "roulette_pots", pots: publicPots(), jackpot: publicJackpot() });
 
       return { ok: true, bet: { color, amount: value }, balance: deduction.balance };
     },
@@ -887,6 +1044,7 @@ export function createRouletteState({ env = null, now = () => Date.now() } = {})
       history = [];
       pots = emptyPots();
       bets = new Map();
+      jackpotContributionSettled = false;
     },
   };
 
