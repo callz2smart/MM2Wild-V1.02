@@ -130,11 +130,221 @@ function FairnessIcon() {
   );
 }
 
+function IdlePlayer({ avatar, coin, name, side }) {
+  const isLeft = side === "left";
+
+  return (
+    <div className="flex-1 relative flex flex-col sm:items-center gap-4">
+      <div
+        className={`flex flex-col gap-2 text-center transition-opacity duration-300 sm:items-center ${isLeft ? "items-start" : "items-end"}`}
+      >
+        <div className="size-18 sm:size-30 relative" style={avatar ? { cursor: "pointer" } : undefined}>
+          <div className="bg-linear-to-b from-[#283667]/0 to-[#283667] size-full rounded-[22px] sm:rounded-4xl p-0.5">
+            <div className="size-full flex items-center justify-center rounded-[20px] sm:rounded-[30px] bg-[#161D3A]">
+              {avatar ? (
+                <img
+                  src={avatar}
+                  className="object-contain object-center ease-in-out opacity-0 transition-opacity no-interaction size-[86%] rounded-[16px] sm:rounded-[22px]"
+                  alt={avatar}
+                  loading="lazy"
+                  fetchPriority="low"
+                  style={{ opacity: 1 }}
+                />
+              ) : null}
+            </div>
+          </div>
+          <div
+            className={`size-8 sm:size-11 rounded-full absolute -top-1.5 sm:-top-2 ${isLeft ? "-left-1.5 sm:-left-2" : "-right-1.5 sm:-right-2"}`}
+          >
+            <img
+              src={`/coinflip/${coin}.webp`}
+              alt={coin}
+              className="size-full object-cover pointer-events-none"
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-1.5" style={avatar ? { cursor: "pointer" } : undefined}>
+          {avatar ? (
+            <div
+              className="bg-gradient-to-b from-(--level-border-start) to-(--level-border-end) p-0.5 rounded-md"
+              style={{
+                "--level-border-start": "#222a3f",
+                "--level-border-end": "#BEBEBE",
+                "--level-text": "#BEBEBE",
+              }}
+            >
+              <div
+                className="rounded-sm size-full flex items-center justify-center font-medium !leading-none text-(--level-text) bg-[#1A1D39] px-1.75 sm:px-2.25 py-0.5 text-xs sm:text-[13px]"
+                style={{ backgroundColor: "rgb(26, 35, 57)" }}
+              >
+                1
+              </div>
+            </div>
+          ) : null}
+          <p className="font-medium text-sm sm:text-base">{avatar ? name : "Waiting..."}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IdleItemCard() {
+  return (
+    <div
+      className="won-item flex flex-col rounded-xl shadow-lg overflow-hidden relative p-3 py-4"
+      style={{ background: "url('/leafs-item.png') center / cover no-repeat rgb(32, 45, 87)" }}
+    >
+      <svg className="absolute inset-0" viewBox="0 0 140 176" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="140" height="176" fill="url(#rarity-item-detailed-Godly)" fillOpacity="0.12" />
+      </svg>
+      <div className="w-10/12 mx-auto aspect-square relative">
+        <img
+          loading="lazy"
+          src="https://cdn.mm2wild.com/items/138.webp"
+          alt="Winter's Edge"
+          className="absolute top-1/2 left-1/2 -translate-1/2 size-10/12 object-contain opacity-0 transition-opacity duration-300 no-interaction drop-shadow-[0_12px_10px_rgba(0,0,0,0.3)]"
+          style={{ opacity: 1 }}
+        />
+      </div>
+      <div className="flex flex-col mt-2 relative items-center">
+        <p className="font-medium text-sm truncate w-full text-center">Winter&apos;s Edge</p>
+        <div className="flex items-center gap-1.5">
+          <img src="/coin.webp" className="bg-cover bg-center size-4" alt="" />
+          <span className="tabular-nums font-semibold text-sm">10</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IdleModalContent({ onClose, orange }) {
+  const [isFairnessOpen, setIsFairnessOpen] = useState(false);
+  const playerCoin = orange ? "heads" : "tails";
+  const waitingCoin = orange ? "tails" : "heads";
+  const joinColor = orange ? "243, 138, 57" : "35, 105, 255";
+  const joinShadow = orange ? "171, 91, 29" : "0, 73, 229";
+  const playerAvatar =
+    "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-B2EF54E3E066D91C690A43B85F79AFAA-Png/180/180/AvatarHeadshot/Webp/noFilter";
+
+  return (
+    <div className="bg-[#192243] sm:rounded-2xl shadow-lg flex flex-col max-h-[calc(100vh-48px)] overflow-hidden relative">
+      <div className="max-h-[calc(100dvh-48px)] overflow-y-auto relative [&amp;::-webkit-scrollbar]:w-1 [&amp;::-webkit-scrollbar-track]:bg-transparent [&amp;::-webkit-scrollbar-thumb]:bg-primary [&amp;::-webkit-scrollbar-thumb]:rounded-full [&amp;::-webkit-scrollbar-thumb:hover]:bg-primary/80">
+        <h2 id="coinflip-view-title" className="sr-only">Coinflip #253873</h2>
+        <button type="button" className="text-accent cursor-pointer absolute top-4 right-4 z-1" onClick={onClose} aria-label="Close coinflip">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" aria-hidden="true">
+            <path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" />
+          </svg>
+        </button>
+
+        <div className="flex flex-col relative">
+          <div className="absolute inset-0 pointer-events-none transition-colors duration-1000 ease-out bg-radial-[90.62%_73.93%_at_49.77%_0%] to-[rgba(25,34,67,0)] from-[rgba(255,255,255,0.12)]" />
+          <img src="/coinflip/coinflip-bg.webp" alt="Coinflip" className="absolute inset-0 size-full object-cover pointer-events-none opacity-32 mask-b-from-77%" />
+
+          <div className="flex items-center justify-center pt-14 pb-10 relative w-full px-6">
+            <div className="flex flex-col gap-5 items-center z-1 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
+              <div className="size-22 sm:size-40 bg-[#141A32]/40 rounded-full flex items-center justify-center relative mb-10 sm:mb-0">
+                <div className="size-[85%] relative overflow-hidden rounded-full bg-[#1A1F37] flex items-center justify-center">
+                  <video src="/coinflip/coinflip-idle.webm" className="size-[80%] object-contain" autoPlay loop playsInline />
+                </div>
+              </div>
+            </div>
+            <IdlePlayer avatar={playerAvatar} coin={playerCoin} name="traroblox1236" side="left" />
+            <IdlePlayer coin={waitingCoin} side="right" />
+          </div>
+
+          <div className="relative px-6 flex flex-col gap-4">
+            <div className="flex items-start gap-8 justify-center">
+              <div
+                className="rounded-xl p-4 transition-opacity duration-300 flex-1 max-w-md"
+                style={{
+                  background: `radial-gradient(70% 165% at 50% 0%, rgba(${orange ? "35, 105, 255" : "243, 138, 57"}, 0.25) 0%, rgba(40, 53, 102, 0) 100%), rgb(35, 48, 93)`,
+                }}
+              >
+                <div className="flex flex-col items-center justify-center gap-0.5">
+                  <div className="flex items-center justify-center gap-1">
+                    <img src="/coin.webp" className="bg-cover bg-center size-5" alt="" />
+                    <span className="tabular-nums font-semibold">10</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1 text-accent font-medium text-xs sm:text-sm">
+                    <p>50% Chance</p>
+                    <div className="size-1 bg-accent rounded-full hidden sm:block" />
+                    <p className="hidden sm:block">1 Items</p>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="rounded-xl p-4 transition-opacity duration-300 flex-1 max-w-md"
+                style={{
+                  background: `radial-gradient(70% 165% at 50% 0%, rgba(${joinColor}, 0.25) 0%, rgba(40, 53, 102, 0) 100%), rgb(35, 48, 93)`,
+                }}
+              >
+                <div className="flex flex-col items-center justify-center">
+                  <button type="button" className="relative cursor-pointer outline-none flex select-none transition-opacity group/button h-10.5 sm:h-11.5 w-full">
+                    <div
+                      className="absolute left-0 right-0 bottom-0 rounded-lg pointer-events-none"
+                      style={{ top: "var(--sb-shadow-size,3px)", backgroundColor: `rgb(${joinShadow})` }}
+                    />
+                    <div
+                      className="rounded-lg size-full flex items-center relative transition-transform duration-125 will-change-transform group-hover/button:-translate-y-0.5 group-active/button:translate-y-0 text-sm sm:text-base px-4.5 font-bold"
+                      style={{ height: "calc(100% - var(--sb-shadow-size,3px))", backgroundColor: `rgb(${joinColor})`, color: "rgb(255, 255, 255)" }}
+                    >
+                      <div className="transition-opacity flex items-center justify-center size-full" style={{ filter: `drop-shadow(rgb(${joinShadow}) 0px 2px 0px)` }}>JOIN</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-8 justify-center h-64 overflow-y-auto scrollbar-hide pb-6">
+              <div className="transition-opacity duration-300 flex-1 max-w-md">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2"><IdleItemCard /></div>
+              </div>
+              <div className="transition-opacity duration-300 flex-1 max-w-md">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">
+                  {Array.from({ length: 6 }, (_, index) => (
+                    <div key={index} className="bg-[#243157]/30 rounded-xl aspect-140/177" />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="absolute left-0 right-0 bottom-0 h-10 bg-linear-to-b from-transparent to-[#192243]/80 pointer-events-none" />
+          </div>
+        </div>
+
+        <div className="bg-[#1D284E] px-6 py-4 relative">
+          <div className="h-0.5 left-0 right-0 top-0 absolute" style={{ background: "linear-gradient(90deg, rgba(46, 60, 104, 0) 0%, rgb(46, 60, 104) 20.19%, rgb(46, 60, 104) 50%, rgb(46, 60, 104) 79.81%, rgba(46, 60, 104, 0) 100%)" }} />
+          <div className="flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 512 512" className="size-5 text-[#E5AD4E]" aria-hidden="true"><path fill="currentColor" d={coinIconPath} /></svg>
+              <button type="button" className="font-semibold flex items-center gap-1.5 cursor-pointer" onClick={() => setIsFairnessOpen((isOpen) => !isOpen)} aria-expanded={isFairnessOpen} aria-controls="coinflip-idle-fairness-details">
+                Coinflip <span className="inline-block text-accent italic -skew-x-8">#253873</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`size-4 transition-transform duration-300 text-accent ${isFairnessOpen ? "rotate-180" : ""}`} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path fill="none" stroke="currentColor" d="m6 9 6 6 6-6" /></svg>
+              </button>
+            </div>
+            <a href="/fairness" className="h-10 px-3 bg-[#2E3C68] rounded-lg text-accent text-sm font-semibold flex items-center gap-1.25 hover:bg-[#2E3C68]/80 transition-colors">
+              <FairnessIcon />
+              <span className="hidden sm:block">PROVABLY FAIR</span>
+            </a>
+          </div>
+          <div id="coinflip-idle-fairness-details" className={`overflow-hidden transition-all duration-300 ease-in-out ${isFairnessOpen ? "max-h-27" : "max-h-0"}`}>
+            <div className="space-y-1 pt-4 text-accent font-semibold text-sm">
+              <p className="truncate">HASHED SEED: <span className="text-accent/70">be762edb25b33035e7c5531657964f9c1e350e81ec2ed61f5b92ddc4e3f9d136</span></p>
+              <p className="truncate">SERVER SEED: <span className="text-accent/70">Concealed</span></p>
+              <p className="truncate">EOS BLOCK: <span className="text-accent/70">Unavailable</span></p>
+              <p className="truncate">EOS HASH: <span className="text-accent/70">Unavailable</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ModalContent({ onClose }) {
   const [isFairnessOpen, setIsFairnessOpen] = useState(false);
   return (
     <div className="max-h-[calc(100dvh-48px)] overflow-y-auto relative rounded-2xl bg-[#192243] [&amp;::-webkit-scrollbar]:w-1 [&amp;::-webkit-scrollbar-track]:bg-transparent [&amp;::-webkit-scrollbar-thumb]:bg-primary [&amp;::-webkit-scrollbar-thumb]:rounded-full [&amp;::-webkit-scrollbar-thumb:hover]:bg-primary/80">
-      <h2 id="coinflip-view-title" className="sr-only">Coinflip #252978</h2>
+      <h2 id="coinflip-view-title" className="sr-only">Coinflip #253873</h2>
       <button type="button" className="text-accent cursor-pointer absolute top-4 right-4 z-1" onClick={onClose} aria-label="Close coinflip">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" aria-hidden="true">
           <path fill="none" stroke="currentColor" d="M20 4 4 20M4 4l16 16" />
@@ -186,7 +396,7 @@ function ModalContent({ onClose }) {
               aria-expanded={isFairnessOpen}
               aria-controls="coinflip-fairness-details"
             >
-              Coinflip <span className="text-accent italic">#252978</span>
+              Coinflip <span className="inline-block text-accent italic -skew-x-8">#253873</span>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`size-4 transition-transform duration-300 text-accent ${isFairnessOpen ? "rotate-180" : ""}`} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path fill="none" stroke="currentColor" d="m6 9 6 6 6-6" />
               </svg>
@@ -212,7 +422,7 @@ function ModalContent({ onClose }) {
   );
 }
 
-export default function CoinflipViewModal({ onClose }) {
+export default function CoinflipViewModal({ onClose, idle = false, orange = false }) {
   const [isOpen, setIsOpen] = useState(true);
   const closeTimerRef = useRef(null);
   const isClosingRef = useRef(false);
@@ -288,7 +498,11 @@ export default function CoinflipViewModal({ onClose }) {
           }
         }}
       >
-        <ModalContent onClose={requestClose} />
+        {idle ? (
+          <IdleModalContent onClose={requestClose} orange={orange} />
+        ) : (
+          <ModalContent onClose={requestClose} />
+        )}
       </div>
     </>,
     document.body,

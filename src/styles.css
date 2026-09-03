@@ -74,6 +74,54 @@ body {
   background: #0d1429;
 }
 
+.plinko-range {
+  height: 1rem;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.plinko-range::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    #e5ad4e 0%,
+    #e5ad4e calc((var(--plinko-value, 8) - 8) * 12.5%),
+    #1b2641 calc((var(--plinko-value, 8) - 8) * 12.5%),
+    #1b2641 100%
+  );
+}
+
+.plinko-range::-webkit-slider-thumb {
+  width: 1rem;
+  height: 1rem;
+  margin-top: -0.25rem;
+  appearance: none;
+  border-radius: 9999px;
+  background: #fff;
+}
+
+.plinko-range::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #1b2641;
+}
+
+.plinko-range::-moz-range-progress {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #e5ad4e;
+}
+
+.plinko-range::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  border: 0;
+  border-radius: 9999px;
+  background: #fff;
+}
+
 .coinflip-route .coinflip-list {
   display: flex;
   flex-direction: column;
@@ -93,10 +141,34 @@ body {
 }
 
 .coinflip-route .coinflip-list:not(.is-price-descending) .is-joinable {
-  order: -1;
+  order: -2;
 }
 
 .coinflip-route .coinflip-list.is-price-descending .is-joinable {
+  order: 2;
+}
+
+.coinflip-route
+  .coinflip-list:not(.is-price-descending)
+  .coinflip-primary-joinable-row {
+  order: -3;
+}
+
+.coinflip-route
+  .coinflip-list.is-price-descending
+  .coinflip-primary-joinable-row {
+  order: 3;
+}
+
+.coinflip-route
+  .coinflip-list:not(.is-price-descending)
+  .coinflip-flipping-row {
+  order: -1;
+}
+
+.coinflip-route
+  .coinflip-list.is-price-descending
+  .coinflip-flipping-row {
   order: 1;
 }
 

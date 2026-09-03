@@ -208,7 +208,7 @@ export function attachChatServer(httpServer, options = {}) {
       }
 
       if (payload.type === "rain_join") {
-        const result = await rain.join(user.uuid);
+        const result = await rain.join(user.uuid, identity);
         if (!result.ok) {
           socket.send(JSON.stringify({ type: "error", error: result.error }));
           return;

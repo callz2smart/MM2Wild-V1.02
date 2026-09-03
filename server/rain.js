@@ -13,6 +13,7 @@ function newRain(startedAt) {
     joinEndsAt: startedAt + RAIN_DURATION_MS + RAIN_JOIN_DURATION_MS,
     cooldownEndsAt: startedAt + RAIN_DURATION_MS + RAIN_JOIN_DURATION_MS + RAIN_COOLDOWN_DURATION_MS,
     participantIds: new Set(),
+    participantProfiles: new Map(),
   };
 }
 
@@ -41,12 +42,21 @@ export function createSupabaseRainStore(env) {
 
       const entriesQuery = new URLSearchParams({
         rain_id: `eq.${rows[0].id}`,
-        select: "user_uuid",
+        select: "user_uuid,username,roblox_user_id,payout",
       });
       const entriesResponse = await request(`mm2wild_rain_entries?${entriesQuery}`);
       const entries = await entriesResponse.json().catch(() => null);
       if (!entriesResponse.ok || !Array.isArray(entries)) throw new Error("Rain entries could not be loaded.");
-      return { ...rows[0], participantIds: entries.map((entry) => entry.user_uuid) };
+      return {
+        ...rows[0],
+        participantIds: entries.map((entry) => entry.user_uuid),
+        participants: entries.map((entry) => ({
+          userUuid: entry.user_uuid,
+          name: entry.username,
+          robloxUserId: entry.roblox_user_id,
+          payout: Number(entry.payout) || 0,
+        })),
+      };
     },
 
     async save(rain) {
@@ -87,6 +97,27 @@ export function createSupabaseRainStore(env) {
       if (!response.ok) throw new Error("Rain pot could not be updated.");
     },
 
+    async settle(rainId) {
+      const response = await request("rpc/mm2wild_settle_rain", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ p_rain_id: rainId }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result) throw new Error(result?.message || "Rain payouts could not be completed.");
+      return {
+        rainId: result.rainId,
+        pool: Number(result.pool) || 0,
+        participantCount: Number(result.participantCount) || 0,
+        payouts: Array.isArray(result.payouts) ? result.payouts.map((payout) => ({
+          userUuid: payout.userUuid,
+          name: payout.name,
+          robloxUserId: payout.robloxUserId,
+          payout: Number(payout.payout) || 0,
+        })) : [],
+      };
+    },
+
     async addParticipant(rainId, userUuid) {
       const response = await request("mm2wild_rain_entries?on_conflict=rain_id,user_uuid", {
         method: "POST",
@@ -119,6 +150,7 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
       joinEndsAt: Number.isFinite(joinEndsAt) ? joinEndsAt : now() + RAIN_DURATION_MS + RAIN_JOIN_DURATION_MS,
       cooldownEndsAt: (Number.isFinite(joinEndsAt) ? joinEndsAt : now() + RAIN_DURATION_MS + RAIN_JOIN_DURATION_MS) + RAIN_COOLDOWN_DURATION_MS,
       participantIds: new Set(row.participantIds || []),
+      participantProfiles: new Map((row.participants || []).map((participant) => [participant.userUuid, participant])),
     };
     if (row.status === "cooldown") rain.phase = "cooldown";
   }
@@ -133,6 +165,30 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
     }
   }
 
+  function localSettlement() {
+    const participantIds = [...rain.participantIds];
+    const totalCents = Math.max(0, Math.round(rain.pool * 100));
+    const baseCents = participantIds.length ? Math.floor(totalCents / participantIds.length) : 0;
+    const extraCents = participantIds.length ? totalCents % participantIds.length : 0;
+    return {
+      rainId: rain.id,
+      pool: rain.pool,
+      participantCount: participantIds.length,
+      payouts: participantIds.map((userUuid, index) => ({
+        userUuid,
+        ...(rain.participantProfiles.get(userUuid) || {}),
+        payout: (baseCents + (index < extraCents ? 1 : 0)) / 100,
+      })),
+    };
+  }
+
+  function applySettlement(result) {
+    for (const payout of result?.payouts || []) {
+      const current = rain.participantProfiles.get(payout.userUuid) || {};
+      rain.participantProfiles.set(payout.userUuid, { ...current, ...payout });
+    }
+  }
+
   function updatePhase() {
     const timestamp = now();
     if (timestamp >= rain.cooldownEndsAt) {
@@ -144,7 +200,14 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
         : Promise.resolve()).catch(() => {});
     } else if (timestamp >= rain.joinEndsAt && rain.phase !== "cooldown") {
       rain.phase = "cooldown";
-      transitionPromise = (store ? store.save(rain) : Promise.resolve()).catch(() => {});
+      const settlingRainId = rain.id;
+      transitionPromise = (store ? store.settle(rain.id) : Promise.resolve(localSettlement()))
+        .then((result) => {
+          if (rain.id === settlingRainId) applySettlement(result);
+        })
+        .catch(() => {
+          if (rain.id === settlingRainId) rain.phase = "joining";
+        });
     } else if (timestamp >= rain.endsAt && rain.phase === "active") {
       rain.phase = "joining";
       transitionPromise = (store ? store.save(rain) : Promise.resolve()).catch(() => {});
@@ -162,6 +225,10 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
       canJoin: rain.phase === "joining",
       visible: rain.phase !== "cooldown",
       participantCount: rain.participantIds.size,
+      participants: [...rain.participantIds].map((userUuid) => ({
+        userUuid,
+        ...(rain.participantProfiles.get(userUuid) || {}),
+      })),
       joined: Boolean(userUuid && rain.participantIds.has(userUuid)),
       remaining,
       countdown: rain.phase === "joining"
@@ -212,15 +279,19 @@ export function createRainState({ store = null, now = () => Date.now() } = {}) {
       return { ok: true, pool: rain.pool };
     },
 
-    async join(userUuid) {
+    async join(userUuid, profile = null) {
       await api.ready();
       updatePhase();
       if (rain.phase !== "joining") return { ok: false, error: "This rain is not open for joining." };
       if (!userUuid) return { ok: false, error: "Sign in to join the rain." };
-      if (rain.participantIds.has(userUuid)) return { ok: true, joined: true };
+      if (rain.participantIds.has(userUuid)) {
+        if (profile) rain.participantProfiles.set(userUuid, { userUuid, ...profile });
+        return { ok: true, joined: true };
+      }
       try {
         if (store) await store.addParticipant(rain.id, userUuid);
         rain.participantIds.add(userUuid);
+        if (profile) rain.participantProfiles.set(userUuid, { userUuid, ...profile });
         return { ok: true, joined: true };
       } catch (error) {
         return { ok: false, error: error.message || "You could not join this rain." };

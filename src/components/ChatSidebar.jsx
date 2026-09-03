@@ -41,6 +41,12 @@ const chatEmojis = [
 
 const chatEmojiByName = new Map(chatEmojis.map((emoji) => [emoji.name.toLowerCase(), emoji]));
 
+function colorForLevel(level) {
+  if (level >= 30) return "#F33972";
+  if (level >= 20) return "#F36D39";
+  return "#BEBEBE";
+}
+
 function rankValues(value) {
   if (Array.isArray(value)) return value;
 
@@ -1046,6 +1052,74 @@ function RainPot({ onTip, onJoin, rain }) {
   );
 }
 
+function RainEndedMessage({ rain, onProfileClick }) {
+  const pool = Math.max(0, Math.round(Number(rain.pool) || 0));
+  const participantCount = Math.max(0, Number(rain.participantCount) || 0);
+  const participants = Array.isArray(rain.participants) ? rain.participants : [];
+  const baseShare = participantCount ? Math.floor(pool / participantCount) : 0;
+  const remainder = participantCount ? pool - baseShare * participantCount : 0;
+
+  return (
+    <div
+      data-v-efaf4035=""
+      className={`p-3 rounded-xl flex flex-col gap-2.5 relative overflow-hidden min-w-0 ${rain.animate ? "chat-message-enter" : ""}`}
+      style={{ background: "radial-gradient(83.67% 582.39% at 100% 50%, rgba(229, 173, 78, 0.45) 0%, rgba(54, 70, 119, 0) 100%), rgb(54, 70, 119)" }}
+    >
+      <img src="/falling-coins.webp" alt="falling-coins" width="80" height="80" className="absolute -right-2 -top-5 no-interaction pointer-events-none opacity-90" />
+      <img src="/simple-leafs.webp" alt="simple-leafs" width="150" height="150" className="absolute rotate-15 -right-6 -bottom-10 no-interaction pointer-events-none" />
+      <img src="/simple-leafs.webp" alt="simple-leafs" width="80" height="80" className="absolute -scale-x-100 -rotate-10 -left-4 -bottom-4 no-interaction pointer-events-none" />
+      <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col relative">
+          <h3 className="font-medium text-white text-sm">The Rain has ended!</h3>
+          <p className="text-sm text-[#D7E3FF]/85 font-medium leading-none">
+            A Total of <span className="text-[#E5AD4E]">{participantCount} {participantCount === 1 ? "Player" : "Players"}</span> Claimed
+          </p>
+        </div>
+        <div className="bg-[#425799] rounded-lg px-2 py-1 flex items-center gap-1.5 w-max">
+          <img src="/coin.webp" className="bg-cover bg-center size-4.5" alt="" />
+          <span className="tabular-nums text-sm font-medium">{pool}</span>
+        </div>
+      </div>
+      <div className="h-0.5 bg-accent/25 rounded-full" />
+      <div className="flex flex-col gap-1.5 relative">
+        {participants.slice(0, 5).map((participant, index) => {
+          const name = participant.name || participant.username || "Player";
+          const level = participant.level ?? 1;
+          const color = participant.color || colorForLevel(level);
+          const storedPayout = Number(participant.payout);
+          const amount = Number.isFinite(storedPayout)
+            ? storedPayout
+            : baseShare + (index < remainder ? 1 : 0);
+          const profile = {
+            rank: participant.rank || "user",
+            level,
+            color,
+            avatar: participant.avatar || "/coin.webp",
+          };
+          return (
+            <div key={participant.userUuid || `${name}-${index}`} className="flex items-center gap-1.5">
+              <div
+                className="size-6.5 p-0.25 rounded-[6px] shrink-0 flex flex-col items-center relative bg-linear-to-b from-(--level-border-start) from-5% to-(--level-border-end)"
+                style={{ "--level-border-start": "#252b3f", "--level-border-end": color, "--level-text": color, cursor: "pointer" }}
+                onClick={() => onProfileClick?.(name, profile)}
+              >
+                <div className="size-full flex items-center justify-center rounded-[5px]" style={{ backgroundColor: "rgb(26, 35, 57)" }}>
+                  <img src={profile.avatar} className="size-9/12 object-contain object-center rounded-[5px] ease-in-out transition-opacity no-interaction" alt={`${name} avatar`} loading="lazy" />
+                </div>
+              </div>
+              <div className="text-sm font-medium text-white flex-1 truncate text-left" style={{ cursor: "pointer" }} onClick={() => onProfileClick?.(name, profile)}>{name}</div>
+              <div className="flex items-center gap-1 shrink-0">
+                <img src="/coin.webp" className="bg-cover bg-center size-4.5" alt="" />
+                <span className="tabular-nums text-sm font-medium">{amount}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ChatMessage({
   name,
   body,
@@ -1175,6 +1249,25 @@ export default function ChatSidebar({ onInitialRenderReady, selectedBalanceType 
   const emojiPopupRef = useRef(null);
   const emojiPopupStateRef = useRef(null);
   const emojiCloseTimerRef = useRef(null);
+  const announcedRainIdsRef = useRef(new Set());
+
+  useEffect(() => {
+    if (rainState.phase !== "cooldown" || !rainState.rainId) return;
+    if (announcedRainIdsRef.current.has(rainState.rainId)) return;
+    announcedRainIdsRef.current.add(rainState.rainId);
+    window.dispatchEvent(new CustomEvent("mm2wild:balance-updated"));
+    setMessages((current) => [
+      ...current,
+      {
+        type: "rain-ended",
+        rainId: rainState.rainId,
+        pool: rainState.pool,
+        participantCount: rainState.participantCount,
+        participants: rainState.participants,
+        animate: true,
+      },
+    ]);
+  }, [rainState.phase, rainState.rainId, rainState.pool, rainState.participantCount, rainState.participants]);
 
   const positionEmojiPopup = useCallback(() => {
     const anchor = chatFormRef.current;
@@ -1548,7 +1641,9 @@ export default function ChatSidebar({ onInitialRenderReady, selectedBalanceType 
               tabIndex={0}
             >
               <div className="flex-1 flex flex-col gap-5 px-3.5">
-                {messages.map((entry, index) => (
+                {messages.map((entry, index) => entry.type === "rain-ended" ? (
+                  <RainEndedMessage key={`rain-ended-${entry.rainId}`} rain={entry} onProfileClick={openProfile} />
+                ) : (
                   <ChatMessage
                     key={`${entry.name}-${index}-${entry.body}`}
                     name={entry.name}

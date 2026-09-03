@@ -83,7 +83,9 @@ function buildReel(views = 6) {
 const ROULETTE_REEL = buildReel(8);
 
 function formatNumber(n) {
-  return n.toLocaleString("en-US");
+  return Number(n || 0).toLocaleString("en-US", {
+    maximumFractionDigits: 0,
+  });
 }
 
 const RouletteReel = memo(function RouletteReel({ reel, offset, spinning, duration }) {

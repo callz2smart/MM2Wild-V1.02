@@ -59,7 +59,8 @@ const CASES = [
 const SORTS = [
   { id: "highest", label: "Highest Price" },
   { id: "lowest", label: "Lowest Price" },
-  { id: "name", label: "Name" },
+  { id: "highest-risk", label: "Highest Risk" },
+  { id: "lowest-risk", label: "Lowest Risk" },
 ];
 
 const RISK_COLORS = ["rgb(92, 223, 154)", "rgb(223, 138, 92)", "rgb(223, 92, 92)"];
@@ -121,7 +122,8 @@ export default function CasesPage() {
       ? CASES.filter((caseItem) => caseItem.name.toLocaleLowerCase().includes(normalizedSearch))
       : [...CASES];
     if (sort === "lowest") return filtered.sort((a, b) => a.price - b.price);
-    if (sort === "name") return filtered.sort((a, b) => a.name.localeCompare(b.name));
+    if (sort === "highest-risk") return filtered.sort((a, b) => b.risk - a.risk);
+    if (sort === "lowest-risk") return filtered.sort((a, b) => a.risk - b.risk);
     return filtered.sort((a, b) => b.price - a.price);
   }, [search, sort]);
 
@@ -146,28 +148,38 @@ export default function CasesPage() {
                 </div>
               </div>
               <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-4 min-w-0">
-                <div className="flex flex-col relative w-full @[820px]/content:w-[282px]">
+                <div className="flex flex-col relative w-full @[820px]/content:w-70">
                   <div className="h-11 relative group/button">
                     <div className="absolute top-1/2 left-0 right-0 bottom-0 bg-[#223364] rounded-lg" />
                     <button
-                      className="ring-offset-background focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap [&>span]:line-clamp-1 w-full h-[calc(100%-3px)] bg-[#57689A] group-hover/button:-translate-y-0.5 data-[state=open]:translate-y-0 transition-transform duration-125 text-white [&>*]:drop-shadow-[0_2px_0_#223364] rounded-lg px-4 flex items-center outline-none cursor-pointer group relative"
+                      className="ring-offset-background focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap w-full h-[calc(100%-3px)] bg-[#57689A] group-hover/button:-translate-y-0.5 data-[state=open]:translate-y-0 transition-transform duration-125 text-white [&>*]:drop-shadow-[0_2px_0_#223364] rounded-lg px-4 flex items-center outline-none cursor-pointer group relative min-w-40"
                       type="button"
                       aria-expanded={sortOpen}
                       data-state={sortOpen ? "open" : "closed"}
                       onClick={() => setSortOpen((open) => !open)}
                     >
                       <SortIcon />
-                      <span className="text-left truncate flex-1 min-w-0 font-semibold uppercase">SORT BY: {selectedSort.label}</span>
+                      <span className="text-left flex-1 whitespace-nowrap font-semibold uppercase">SORT BY: {selectedSort.label}</span>
                       <ChevronIcon />
                     </button>
                   </div>
                   {sortOpen && (
-                    <div className="absolute top-[calc(100%+6px)] right-0 z-20 min-w-full p-1.5 rounded-lg bg-[#344677] shadow-xl">
+                    <div
+                      className="absolute top-[calc(100%+8px)] right-0 z-20 min-w-full flex flex-col gap-0 rounded-lg bg-[#263457] px-2 py-2.5 shadow-md outline-none animate-in fade-in-0 zoom-in-95"
+                      role="listbox"
+                      aria-label="Sort cases"
+                    >
                       {SORTS.map((option) => (
                         <button
                           key={option.id}
                           type="button"
-                          className="w-full rounded-md px-3 py-2 text-left text-sm font-semibold whitespace-nowrap hover:bg-[#57689A] transition-colors cursor-pointer"
+                          role="option"
+                          aria-selected={sort === option.id}
+                          className={`h-9 w-full rounded-md px-2.5 text-left text-sm font-semibold transition-colors cursor-pointer ${
+                            sort === option.id
+                              ? "bg-[#57689A] text-white"
+                              : "bg-transparent text-accent hover:bg-[#57689A] hover:text-white"
+                          }`}
                           onClick={() => {
                             setSort(option.id);
                             setSortOpen(false);

@@ -697,7 +697,7 @@ export class ChatRoom {
       }
 
       if (payload.type === "rain_join") {
-        const result = await this.rain.join(userUuid);
+        const result = await this.rain.join(userUuid, identity);
         if (!result.ok) {
           server.send(JSON.stringify({ type: "error", error: result.error }));
           return;

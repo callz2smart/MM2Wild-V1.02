@@ -14,6 +14,7 @@ import NotificationCenter from "./components/NotificationCenter";
 import RoulettePage from "./pages/RoulettePage";
 import CoinflipPage from "./pages/CoinflipPage";
 import CasesPage from "./pages/CasesPage";
+import PlinkoPage from "./pages/PlinkoPage";
 import LineWobbleLoader from "./components/LineWobbleLoader";
 
 export default function App() {
@@ -144,6 +145,7 @@ export default function App() {
   const isRoulettePage = pathname === "/games/roulette";
   const isCoinflipPage = pathname === "/games/coinflip";
   const isCasesPage = pathname === "/games/cases";
+  const isPlinkoPage = pathname === "/games/plinko";
 
   return (
     <>
@@ -178,6 +180,8 @@ export default function App() {
             <CoinflipPage />
           ) : isCasesPage ? (
             <CasesPage />
+          ) : isPlinkoPage ? (
+            <PlinkoPage selectedBalanceType={selectedBalanceType} />
           ) : (
             <HomePage />
           )}

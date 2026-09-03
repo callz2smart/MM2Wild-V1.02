@@ -256,7 +256,7 @@ function ModalContent({ onClose }) {
                             className={`h-9 w-full rounded-md px-2.5 text-left text-sm font-semibold transition-colors ${
                               priceSort === option
                                 ? "bg-[#57689A] text-white"
-                                : "bg-transparent text-accent hover:bg-[#31436F] hover:text-white"
+                                : "bg-transparent text-accent hover:bg-[#57689A] hover:text-white"
                             }`}
                             onClick={() => {
                               setPriceSort(option);
